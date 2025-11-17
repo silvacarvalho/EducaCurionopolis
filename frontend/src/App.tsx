@@ -7,6 +7,8 @@ import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import RelatoriosPage from './pages/RelatoriosPage';
+import EscolasPage from './pages/EscolasPage';
+import ProfessoresPage from './pages/ProfessoresPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -40,6 +42,22 @@ function App() {
         element={
           <ProtectedRoute>
             <RelatoriosPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/escolas"
+        element={
+          <ProtectedRoute>
+            <EscolasPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/professores"
+        element={
+          <ProtectedRoute>
+            <ProfessoresPage />
           </ProtectedRoute>
         }
       />

@@ -2,7 +2,7 @@
 Teachers Router
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from ..database import get_db
@@ -84,7 +84,10 @@ async def list_professores(
     List teachers
     Filtered by escola_id if provided
     """
-    query = db.query(Professor)
+    query = db.query(Professor).options(
+        joinedload(Professor.usuario),
+        joinedload(Professor.escola)
+    )
 
     # DIRETOR sees only their school's teachers
     if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
@@ -112,7 +115,10 @@ async def get_professor(
     current_user: Usuario = Depends(get_current_active_user)
 ):
     """Get teacher by ID"""
-    professor = db.query(Professor).filter(Professor.id == professor_id).first()
+    professor = db.query(Professor).options(
+        joinedload(Professor.usuario),
+        joinedload(Professor.escola)
+    ).filter(Professor.id == professor_id).first()
 
     if not professor:
         raise HTTPException(
@@ -155,11 +161,37 @@ async def update_professor(
                 detail="Acesso negado"
             )
 
-    # Update fields
+    # Update professor fields
     if professor_data.formacao is not None:
         professor.formacao = professor_data.formacao
     if professor_data.ativo is not None:
         professor.ativo = professor_data.ativo
+
+    # Update usuario fields
+    usuario = professor.usuario
+    if usuario:
+        if professor_data.nome_completo:
+            usuario.nome_completo = professor_data.nome_completo
+
+        if professor_data.email:
+            # Check email uniqueness
+            existing = db.query(Usuario).filter(
+                Usuario.email == professor_data.email,
+                Usuario.id != usuario.id
+            ).first()
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email já cadastrado"
+                )
+            usuario.email = professor_data.email
+
+        if professor_data.telefone is not None:
+            usuario.telefone = professor_data.telefone
+
+        if professor_data.senha:
+            from ..auth import get_password_hash
+            usuario.senha_hash = get_password_hash(professor_data.senha)
 
     db.commit()
     db.refresh(professor)

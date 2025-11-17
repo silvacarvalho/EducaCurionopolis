@@ -118,6 +118,10 @@ class ProfessorCreate(BaseSchema):
 
 
 class ProfessorUpdate(BaseSchema):
+    nome_completo: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefone: Optional[str] = None
+    senha: Optional[str] = Field(None, min_length=6, max_length=72)
     formacao: Optional[str] = None
     ativo: Optional[bool] = None
 
@@ -128,6 +132,11 @@ class ProfessorResponse(ProfessorBase):
     escola_id: int
     ativo: bool
     created_at: datetime
+    usuario: Optional['UsuarioResponse'] = None
+    escola: Optional['EscolaResponse'] = None
+
+    class Config:
+        from_attributes = True
 
 
 # ============================================

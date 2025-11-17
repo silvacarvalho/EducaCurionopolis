@@ -85,6 +85,15 @@ export const escolasAPI = {
   },
 };
 
+export const diretoresAPI = {
+  list: (params?: any) => api.get('/diretores', { params }),
+  get: (id: number) => api.get(`/diretores/${id}`),
+  create: (data: any) => api.post('/diretores', data),
+  update: (id: number, data: any) => api.put(`/diretores/${id}`, data),
+  delete: (id: number) => api.delete(`/diretores/${id}`),
+  getEscola: (id: number) => api.get(`/diretores/${id}/escola`),
+};
+
 export const professoresAPI = {
   list: (params?: any) => api.get('/professores', { params }),
   get: (id: number) => api.get(`/professores/${id}`),
