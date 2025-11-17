@@ -16,6 +16,7 @@ from .routers import (
     auth,
     usuarios,
     escolas,
+    diretores,
     professores,
     turmas,
     disciplinas,
@@ -125,6 +126,13 @@ app.include_router(
     escolas.router,
     prefix="/api/v1/escolas",
     tags=["Escolas"]
+)
+
+# Directors
+app.include_router(
+    diretores.router,
+    prefix="/api/v1/diretores",
+    tags=["Diretores"]
 )
 
 # Teachers
