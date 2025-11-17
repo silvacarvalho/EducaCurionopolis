@@ -12,6 +12,7 @@ from .database import init_db, engine, Base
 
 # Import routers
 from .routers import (
+    setup,
     auth,
     usuarios,
     escolas,
@@ -97,6 +98,13 @@ async def startup_event():
 # ============================================
 # ROUTERS REGISTRATION
 # ============================================
+
+# Setup - First-time configuration (no authentication required)
+app.include_router(
+    setup.router,
+    prefix="/api/v1/setup",
+    tags=["⚙️ Setup - Configuração Inicial"]
+)
 
 # Authentication
 app.include_router(
