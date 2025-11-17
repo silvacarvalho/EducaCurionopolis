@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Script para criar usuário administrador inicial
 Execute: python create_admin.py
 """
 import sys
+import io
+
+# Fix encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
 from app.database import SessionLocal, init_db
 from app.models import Usuario, PerfilUsuario
 from app.auth import get_password_hash
@@ -48,9 +56,16 @@ def create_admin():
 
         # Password with confirmation
         while True:
-            senha = input("🔐 Senha (mínimo 6 caracteres): ").strip()
+            senha = input("🔐 Senha (mínimo 6, máximo 72 caracteres): ").strip()
             if len(senha) < 6:
                 print("❌ Senha muito curta! Mínimo 6 caracteres.\n")
+                continue
+            if len(senha) > 72:
+                print("❌ Senha muito longa! Máximo 72 caracteres.\n")
+                continue
+            # Check byte length for UTF-8 characters
+            if len(senha.encode('utf-8')) > 72:
+                print("❌ Senha muito longa! Máximo 72 bytes (alguns caracteres especiais ocupam mais espaço).\n")
                 continue
 
             senha_confirm = input("🔐 Confirme a senha: ").strip()

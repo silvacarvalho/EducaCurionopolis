@@ -56,7 +56,14 @@ async def create_first_admin(
         )
 
     # Force Gestão Municipal profile
-    hashed_password = get_password_hash(usuario_data.senha)
+    try:
+        hashed_password = get_password_hash(usuario_data.senha)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
     db_usuario = Usuario(
         cpf=usuario_data.cpf,
         nome_completo=usuario_data.nome_completo,

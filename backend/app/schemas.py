@@ -33,7 +33,7 @@ class UsuarioBase(BaseSchema):
 
 
 class UsuarioCreate(UsuarioBase):
-    senha: str = Field(..., min_length=6)
+    senha: str = Field(..., min_length=6, max_length=72)
 
 
 class UsuarioUpdate(BaseSchema):
@@ -430,7 +430,7 @@ class PasswordResetBulk(BaseSchema):
 
 class PasswordChange(BaseSchema):
     senha_atual: str
-    senha_nova: str = Field(..., min_length=6)
+    senha_nova: str = Field(..., min_length=6, max_length=72)
 
 
 # ============================================
