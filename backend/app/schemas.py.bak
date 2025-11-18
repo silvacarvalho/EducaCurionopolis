@@ -171,7 +171,6 @@ class TurmaResponse(TurmaBase):
     created_at: datetime
     professor: Optional['ProfessorResponse'] = None
     escola: Optional['EscolaResponse'] = None
-    total_alunos: int = 0  # Número de alunos ativos na turma
 
     class Config:
         from_attributes = True
@@ -277,40 +276,6 @@ class AvaliacaoBimestralResponse(AvaliacaoBimestralBase):
 class AvaliacaoBimestralBulk(BaseSchema):
     """For bulk evaluation creation"""
     avaliacoes: List[AvaliacaoBimestralCreate]
-
-
-
-
-# ============================================
-# AVALIAÇÃO AGREGADA SCHEMAS
-# ============================================
-
-class AvaliacaoAgregadaBase(BaseSchema):
-    bimestre: int = Field(..., ge=1, le=4)
-    ano_letivo: int = Field(..., ge=2020, le=2100)
-    qtd_abaixo_media: int = Field(default=0, ge=0)
-    qtd_na_media: int = Field(default=0, ge=0)
-    qtd_acima_media: int = Field(default=0, ge=0)
-    observacoes: Optional[str] = None
-
-
-class AvaliacaoAgregadaCreate(AvaliacaoAgregadaBase):
-    turma_id: int
-    disciplina_id: int
-
-
-class AvaliacaoAgregadaUpdate(BaseSchema):
-    qtd_abaixo_media: Optional[int] = Field(None, ge=0)
-    qtd_na_media: Optional[int] = Field(None, ge=0)
-    qtd_acima_media: Optional[int] = Field(None, ge=0)
-    observacoes: Optional[str] = None
-
-
-class AvaliacaoAgregadaResponse(AvaliacaoAgregadaBase):
-    id: int
-    turma_id: int
-    disciplina_id: int
-    created_at: datetime
 
 
 # ============================================
@@ -540,35 +505,3 @@ class DrillDownData(BaseSchema):
     value: int
     percentage: float
     details: Optional[List[dict]] = None
-
-
-# ============================================
-# AVALIAÇÃO AGREGADA SCHEMAS
-# ============================================
-
-class AvaliacaoAgregadaBase(BaseSchema):
-    bimestre: int = Field(..., ge=1, le=4)
-    ano_letivo: int = Field(..., ge=2020, le=2100)
-    qtd_abaixo_media: int = Field(default=0, ge=0)
-    qtd_na_media: int = Field(default=0, ge=0)
-    qtd_acima_media: int = Field(default=0, ge=0)
-    observacoes: Optional[str] = None
-
-
-class AvaliacaoAgregadaCreate(AvaliacaoAgregadaBase):
-    turma_id: int
-    disciplina_id: int
-
-
-class AvaliacaoAgregadaUpdate(BaseSchema):
-    qtd_abaixo_media: Optional[int] = Field(None, ge=0)
-    qtd_na_media: Optional[int] = Field(None, ge=0)
-    qtd_acima_media: Optional[int] = Field(None, ge=0)
-    observacoes: Optional[str] = None
-
-
-class AvaliacaoAgregadaResponse(AvaliacaoAgregadaBase):
-    id: int
-    turma_id: int
-    disciplina_id: int
-    created_at: datetime

@@ -149,6 +149,7 @@ class Professor(Base):
     # Relationships
     usuario = relationship("Usuario", back_populates="professor")
     escola = relationship("Escola", back_populates="professores")
+    turmas = relationship("Turma", back_populates="professor")
     disciplinas = relationship("Disciplina", secondary=professor_disciplina, back_populates="professores")
     avaliacoes = relationship("AvaliacaoBimestral", back_populates="professor")
     diagnosticos_aplicados = relationship("DiagnosticoResultado", back_populates="professor")
@@ -160,7 +161,7 @@ class Professor(Base):
 class Turma(Base):
     """
     Class/Grade entity
-    Belongs to a school
+    Belongs to a school and can be assigned to a teacher
     """
     __tablename__ = "turmas"
 
@@ -170,6 +171,7 @@ class Turma(Base):
     ano_letivo = Column(Integer, nullable=False)  # Ex: 2024, 2025
     turno = Column(String(20))  # "Matutino", "Vespertino", "Noturno"
     escola_id = Column(Integer, ForeignKey('escolas.id'), nullable=False)
+    professor_id = Column(Integer, ForeignKey('professores.id'))  # Class teacher
     ativo = Column(Boolean, default=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -182,6 +184,7 @@ class Turma(Base):
 
     # Relationships
     escola = relationship("Escola", back_populates="turmas")
+    professor = relationship("Professor", back_populates="turmas")
     alunos = relationship("Aluno", back_populates="turma", cascade="all, delete-orphan")
     disciplinas = relationship("Disciplina", back_populates="turma", cascade="all, delete-orphan")
 
@@ -280,6 +283,43 @@ class AvaliacaoBimestral(Base):
 
     def __repr__(self):
         return f"<AvaliacaoBimestral(aluno_id={self.aluno_id}, bimestre={self.bimestre}, nivel={self.nivel_desempenho})>"
+
+
+class AvaliacaoAgregada(Base):
+    """
+    Aggregated evaluation by class/subject/bimester
+    Director/Coordinator registers quantities of students in each performance level
+    """
+    __tablename__ = "avaliacoes_agregadas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    turma_id = Column(Integer, ForeignKey('turmas.id'), nullable=False)
+    disciplina_id = Column(Integer, ForeignKey('disciplinas.id'), nullable=False)
+    bimestre = Column(Integer, nullable=False)  # 1, 2, 3, or 4
+    ano_letivo = Column(Integer, nullable=False)
+
+    # Quantities for each performance level
+    qtd_abaixo_media = Column(Integer, default=0, nullable=False)
+    qtd_na_media = Column(Integer, default=0, nullable=False)
+    qtd_acima_media = Column(Integer, default=0, nullable=False)
+
+    observacoes = Column(Text)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Unique constraint: one aggregated evaluation per class per subject per bimester per year
+    __table_args__ = (
+        UniqueConstraint('turma_id', 'disciplina_id', 'bimestre', 'ano_letivo',
+                        name='uq_avaliacao_agregada_turma_disciplina_bimestre'),
+    )
+
+    # Relationships
+    turma = relationship("Turma")
+    disciplina = relationship("Disciplina")
+
+    def __repr__(self):
+        return f"<AvaliacaoAgregada(turma_id={self.turma_id}, disciplina_id={self.disciplina_id}, bimestre={self.bimestre})>"
 
 
 # ============================================

@@ -69,6 +69,7 @@ export interface Professor {
   formacao?: string;
   ativo: boolean;
   created_at: string;
+  usuario?: Usuario;
 }
 
 export interface Turma {
@@ -78,8 +79,10 @@ export interface Turma {
   ano_letivo: number;
   turno?: string;
   escola_id: number;
+  professor_id?: number;
   ativo: boolean;
   created_at: string;
+  total_alunos?: number;  // Número de alunos ativos na turma
 }
 
 export interface Disciplina {
@@ -112,6 +115,19 @@ export interface AvaliacaoBimestral {
   bimestre: Bimestre;
   ano_letivo: number;
   nivel_desempenho: NivelDesempenho;
+  observacoes?: string;
+  created_at: string;
+}
+
+export interface AvaliacaoAgregada {
+  id: number;
+  turma_id: number;
+  disciplina_id: number;
+  bimestre: Bimestre;
+  ano_letivo: number;
+  qtd_abaixo_media: number;
+  qtd_na_media: number;
+  qtd_acima_media: number;
   observacoes?: string;
   created_at: string;
 }
@@ -221,4 +237,8 @@ export interface DrillDownData {
   percentual_acima?: number;
   escola_id?: number;
   turma_id?: number;
+  // Transfer indicators
+  tem_transferencias?: boolean;
+  total_transferidos?: number;
+  total_alunos_atuais?: number;
 }

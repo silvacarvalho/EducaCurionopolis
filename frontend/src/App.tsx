@@ -9,6 +9,12 @@ import Dashboard from './pages/Dashboard';
 import RelatoriosPage from './pages/RelatoriosPage';
 import EscolasPage from './pages/EscolasPage';
 import ProfessoresPage from './pages/ProfessoresPage';
+import TurmasAlunosPage from './pages/TurmasAlunosPage';
+import AvaliacoesPage from './pages/AvaliacoesPage';
+import DiagnosticosPage from './pages/DiagnosticosPage';
+import SAEBPage from './pages/SAEBPage';
+import MensagensPage from './pages/MensagensPage';
+import PerfilPage from './pages/PerfilPage';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -58,6 +64,54 @@ function App() {
         element={
           <ProtectedRoute>
             <ProfessoresPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/turmas"
+        element={
+          <ProtectedRoute>
+            <TurmasAlunosPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/avaliacoes"
+        element={
+          <ProtectedRoute>
+            <AvaliacoesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/diagnosticos"
+        element={
+          <ProtectedRoute>
+            <DiagnosticosPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/saeb"
+        element={
+          <ProtectedRoute>
+            <SAEBPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mensagens"
+        element={
+          <ProtectedRoute>
+            <MensagensPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <ProtectedRoute>
+            <PerfilPage />
           </ProtectedRoute>
         }
       />

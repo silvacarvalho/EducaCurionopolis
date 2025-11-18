@@ -22,6 +22,7 @@ from .routers import (
     disciplinas,
     alunos,
     avaliacoes,
+    avaliacoes_agregadas,
     diagnosticos,
     saeb,
     mensagens,
@@ -90,10 +91,10 @@ async def startup_event():
     Initialize database on application startup
     Creates all tables if they don't exist
     """
-    print("🚀 Iniciando EDUCA+ Curionópolis...")
-    print("📊 Criando tabelas no banco de dados...")
+    print(">> Iniciando EDUCA+ Curionopolis...")
+    print(">> Criando tabelas no banco de dados...")
     init_db()
-    print("✅ Banco de dados inicializado com sucesso!")
+    print(">> Banco de dados inicializado com sucesso!")
 
 
 # ============================================
@@ -168,6 +169,13 @@ app.include_router(
     avaliacoes.router,
     prefix="/api/v1/avaliacoes",
     tags=["Módulo: Avaliação"]
+)
+
+# Aggregated Evaluations Module  
+app.include_router(
+    avaliacoes_agregadas.router,
+    prefix="/api/v1/avaliacoes-agregadas",
+    tags=["Módulo: Avaliação Agregada"]
 )
 
 # Diagnostics Module

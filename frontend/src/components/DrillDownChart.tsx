@@ -26,7 +26,10 @@ import {
   Alert,
   ToggleButton,
   ToggleButtonGroup,
+  Chip,
+  Tooltip as MuiTooltip,
 } from '@mui/material';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import { DrillDownData } from '../types';
 
 interface DrillDownChartProps {
@@ -77,17 +80,32 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
   };
 
   const renderCustomBarLabel = (props: any) => {
-    const { x, y, width, value } = props;
+    const { x, y, width, value, payload } = props;
+    const hasTransfers = payload?.tem_transferencias;
+
     return (
-      <text
-        x={x + width / 2}
-        y={y - 10}
-        fill="#666"
-        textAnchor="middle"
-        fontSize={12}
-      >
-        {value}
-      </text>
+      <g>
+        <text
+          x={x + width / 2}
+          y={y - 10}
+          fill="#666"
+          textAnchor="middle"
+          fontSize={12}
+        >
+          {value}
+        </text>
+        {hasTransfers && (
+          <text
+            x={x + width / 2}
+            y={y - 25}
+            fill="#1976d2"
+            textAnchor="middle"
+            fontSize={16}
+          >
+            ⇄
+          </text>
+        )}
+      </g>
     );
   };
 
@@ -126,7 +144,15 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
 
         {/* Breadcrumbs for navigation */}
         {breadcrumbs.length > 0 && (
-          <Breadcrumbs sx={{ mb: 2 }}>
+          <Breadcrumbs
+            className="no-print"
+            sx={{
+              mb: 2,
+              '@media print': {
+                display: 'none'
+              }
+            }}
+          >
             {breadcrumbs.map((crumb, index) => (
               <Link
                 key={index}
@@ -144,12 +170,35 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
           </Breadcrumbs>
         )}
 
+        {/* Print-only navigation level indicator */}
+        {breadcrumbs.length > 0 && (
+          <Typography
+            variant="subtitle2"
+            className="print-only"
+            sx={{
+              mb: 2,
+              display: 'none',
+              '@media print': {
+                display: 'block'
+              }
+            }}
+          >
+            {breadcrumbs.map(b => b.label).join(' > ')}
+          </Typography>
+        )}
+
         {/* Chart type toggle */}
         <ToggleButtonGroup
           value={chartType}
           exclusive
           onChange={(_, newType) => newType && setChartType(newType)}
           size="small"
+          className="no-print"
+          sx={{
+            '@media print': {
+              display: 'none'
+            }
+          }}
         >
           <ToggleButton value="bar">Barras</ToggleButton>
           <ToggleButton value="pie">Pizza</ToggleButton>
@@ -162,8 +211,6 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
-              onClick={handleBarClick}
-              style={{ cursor: onDrillDown ? 'pointer' : 'default' }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
@@ -207,6 +254,18 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
                             </Typography>
                           </>
                         )}
+                        {/* Show transfer information if available */}
+                        {data.tem_transferencias && (
+                          <Box sx={{ mt: 1, pt: 1, borderTop: '1px solid #ddd' }}>
+                            <Typography variant="body2" color="info.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <SwapHorizIcon fontSize="small" />
+                              {data.total_transferidos} aluno(s) transferido(s)
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Alunos atuais: {data.total_alunos_atuais}
+                            </Typography>
+                          </Box>
+                        )}
                       </Paper>
                     );
                   }
@@ -214,7 +273,13 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
                 }}
               />
               <Legend />
-              <Bar dataKey="value" name="Quantidade" label={renderCustomBarLabel}>
+              <Bar
+                dataKey="value"
+                name="Quantidade"
+                label={renderCustomBarLabel}
+                onClick={handleBarClick}
+                cursor={onDrillDown ? 'pointer' : 'default'}
+              >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                 ))}

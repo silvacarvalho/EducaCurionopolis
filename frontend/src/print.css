@@ -1,0 +1,50 @@
+/**
+ * Print Styles for EDUCA+ Curionópolis
+ * Estilos para impressão e geração de PDF
+ */
+
+/* Elementos que aparecem apenas na impressão */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  /* Mostrar elementos exclusivos da impressão */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Ocultar elementos que não devem aparecer na impressão */
+  .no-print,
+  .MuiAppBar-root,
+  header,
+  nav {
+    display: none !important;
+  }
+
+  /* Ajustar layout para impressão */
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Evitar quebras de página dentro de elementos importantes */
+  .MuiPaper-root,
+  .MuiCard-root,
+  table {
+    page-break-inside: avoid;
+  }
+
+  /* Garantir que gráficos sejam renderizados corretamente */
+  canvas,
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Ajustar cores para impressão */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

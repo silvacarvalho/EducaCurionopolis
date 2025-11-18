@@ -113,6 +113,8 @@ export const turmasAPI = {
 export const disciplinasAPI = {
   list: (params?: any) => api.get('/disciplinas', { params }),
   create: (data: any) => api.post('/disciplinas', data),
+  update: (id: number, data: any) => api.put(`/disciplinas/${id}`, data),
+  delete: (id: number) => api.delete(`/disciplinas/${id}`),
   vincularProfessor: (professorId: number, disciplinaId: number) =>
     api.post('/disciplinas/vincular-professor', {
       professor_id: professorId,
@@ -140,6 +142,14 @@ export const avaliacoesAPI = {
     api.post('/avaliacoes/bulk', { avaliacoes }),
   update: (id: number, data: any) => api.put(`/avaliacoes/${id}`, data),
   delete: (id: number) => api.delete(`/avaliacoes/${id}`),
+};
+
+export const avaliacoesAgregadasAPI = {
+  list: (params?: any) => api.get('/avaliacoes-agregadas', { params }),
+  get: (id: number) => api.get(`/avaliacoes-agregadas/${id}`),
+  create: (data: any) => api.post('/avaliacoes-agregadas', data),
+  update: (id: number, data: any) => api.put(`/avaliacoes-agregadas/${id}`, data),
+  delete: (id: number) => api.delete(`/avaliacoes-agregadas/${id}`),
 };
 
 export const diagnosticosAPI = {
@@ -190,13 +200,23 @@ export const mensagensAPI = {
 };
 
 export const relatoriosAPI = {
-  // Avaliações
+  // Avaliações (Individual - Professor)
   avaliacaoGeral: (params?: any) =>
     api.get('/relatorios/avaliacoes/geral', { params }),
   avaliacaoDrillDownEscolas: (params?: any) =>
     api.get('/relatorios/avaliacoes/drill-down/escolas', { params }),
   avaliacaoDrillDownTurmas: (escolaId: number, params?: any) =>
     api.get(`/relatorios/avaliacoes/drill-down/turmas/${escolaId}`, { params }),
+
+  // Avaliações Agregadas (Diretor/Coordenador)
+  avaliacaoAgregadaGeral: (params?: any) =>
+    api.get('/relatorios/avaliacoes-agregadas/geral', { params }),
+  avaliacaoAgregadaDrillDownEscolas: (params?: any) =>
+    api.get('/relatorios/avaliacoes-agregadas/drill-down/escolas', { params }),
+  avaliacaoAgregadaDrillDownTurmas: (escolaId: number, params?: any) =>
+    api.get(`/relatorios/avaliacoes-agregadas/drill-down/turmas/${escolaId}`, { params }),
+  avaliacaoAgregadaDetalhamento: (turmaId: number, params?: any) =>
+    api.get(`/relatorios/avaliacoes-agregadas/detalhamento/${turmaId}`, { params }),
 
   // Diagnósticos
   diagnosticoGeral: (params?: any) =>

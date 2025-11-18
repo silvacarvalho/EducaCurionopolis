@@ -24,6 +24,19 @@ async def create_disciplina(
     # Verify turma access (which also verifies escola access)
     verify_turma_access(disciplina_data.turma_id, current_user, db)
 
+    # Check if disciplina with same name already exists in the same turma
+    existing_disciplina = db.query(Disciplina).filter(
+        Disciplina.turma_id == disciplina_data.turma_id,
+        Disciplina.nome == disciplina_data.nome,
+        Disciplina.ativo == True
+    ).first()
+
+    if existing_disciplina:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Já existe uma disciplina '{disciplina_data.nome}' cadastrada nesta turma"
+        )
+
     db_disciplina = Disciplina(**disciplina_data.dict())
     db.add(db_disciplina)
     db.commit()
@@ -149,3 +162,75 @@ async def desvincular_professor(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Professor não está vinculado a esta disciplina"
         )
+
+
+@router.put("/{disciplina_id}", response_model=DisciplinaResponse)
+async def update_disciplina(
+    disciplina_id: int,
+    disciplina_data: DisciplinaUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_diretor_or_gestao)
+):
+    """Update subject data"""
+    disciplina = db.query(Disciplina).filter(Disciplina.id == disciplina_id).first()
+
+    if not disciplina:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disciplina não encontrada"
+        )
+
+    # Verify turma access
+    verify_turma_access(disciplina.turma_id, current_user, db)
+
+    # Update fields
+    if disciplina_data.nome is not None:
+        # Check if new name already exists in the same turma (excluding current disciplina)
+        existing_disciplina = db.query(Disciplina).filter(
+            Disciplina.turma_id == disciplina.turma_id,
+            Disciplina.nome == disciplina_data.nome,
+            Disciplina.id != disciplina_id,
+            Disciplina.ativo == True
+        ).first()
+
+        if existing_disciplina:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Já existe outra disciplina '{disciplina_data.nome}' cadastrada nesta turma"
+            )
+
+        disciplina.nome = disciplina_data.nome
+
+    if disciplina_data.carga_horaria is not None:
+        disciplina.carga_horaria = disciplina_data.carga_horaria
+    if disciplina_data.ativo is not None:
+        disciplina.ativo = disciplina_data.ativo
+
+    db.commit()
+    db.refresh(disciplina)
+
+    return disciplina
+
+
+@router.delete("/{disciplina_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_disciplina(
+    disciplina_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_diretor_or_gestao)
+):
+    """Soft delete subject"""
+    disciplina = db.query(Disciplina).filter(Disciplina.id == disciplina_id).first()
+
+    if not disciplina:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disciplina não encontrada"
+        )
+
+    # Verify turma access
+    verify_turma_access(disciplina.turma_id, current_user, db)
+
+    disciplina.ativo = False
+    db.commit()
+
+    return None

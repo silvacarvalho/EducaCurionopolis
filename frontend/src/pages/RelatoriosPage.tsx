@@ -18,13 +18,22 @@ import {
   MenuItem,
   Tabs,
   Tab,
+  IconButton,
+  Menu,
 } from '@mui/material';
+import {
+  AccountCircle as AccountCircleIcon,
+  ArrowBack as ArrowBackIcon,
+  PictureAsPdf as PictureAsPdfIcon,
+  Print as PrintIcon
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DrillDownChart from '../components/DrillDownChart';
+import DetalhamentoAvaliacaoModal from '../components/DetalhamentoAvaliacaoModal';
 import { relatoriosAPI } from '../services/api';
 import { DrillDownData, Bimestre } from '../types';
-
+import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -47,8 +56,6 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const RelatoriosPage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   // Tab state
   const [tabValue, setTabValue] = useState(0);
@@ -56,6 +63,12 @@ const RelatoriosPage: React.FC = () => {
   // Filters
   const [anoLetivo, setAnoLetivo] = useState<number>(new Date().getFullYear());
   const [bimestre, setBimestre] = useState<Bimestre | ''>('');
+  const [disciplinaId, setDisciplinaId] = useState<number | ''>('');
+  const [escolaId, setEscolaId] = useState<number | ''>('');
+  const [turmaId, setTurmaId] = useState<number | ''>('');
+  const [disciplinas, setDisciplinas] = useState<any[]>([]);
+  const [escolas, setEscolas] = useState<any[]>([]);
+  const [turmas, setTurmas] = useState<any[]>([]);
 
   // Drill-down state for evaluations
   const [evalLevel, setEvalLevel] = useState<'geral' | 'escolas' | 'turmas'>('geral');
@@ -72,6 +85,66 @@ const RelatoriosPage: React.FC = () => {
     { label: string; onClick?: () => void }[]
   >([{ label: 'Visão Geral' }]);
 
+  // Modal state
+  const [detalhamentoModalOpen, setDetalhamentoModalOpen] = useState(false);
+  const [selectedTurmaId, setSelectedTurmaId] = useState<number | null>(null);
+  const [selectedTurmaNome, setSelectedTurmaNome] = useState<string>('');
+
+  // Print and PDF functions
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleGeneratePDF = async () => {
+    try {
+      // Import html2canvas and jsPDF dynamically
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      // Get the main content element
+      const content = document.querySelector('#relatorios-content') as HTMLElement;
+      if (!content) return;
+
+      // Generate canvas from HTML
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      // Calculate PDF dimensions
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+
+      // Add image to PDF
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add new pages if content is longer than one page
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Generate filename with current date and filters
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `relatorio_${date}_${anoLetivo}_bim${bimestre || 'todos'}.pdf`;
+
+      pdf.save(filename);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert('Erro ao gerar PDF. Por favor, tente novamente.');
+    }
+  };
+
   // Fetch evaluation data based on current level
   const fetchEvalData = async () => {
     setEvalLoading(true);
@@ -79,10 +152,13 @@ const RelatoriosPage: React.FC = () => {
 
     try {
       if (evalLevel === 'geral') {
-        // Fetch summary
-        const response = await relatoriosAPI.avaliacaoGeral({
+        // Fetch summary from aggregated evaluations
+        const response = await relatoriosAPI.avaliacaoAgregadaGeral({
           ano_letivo: anoLetivo,
           bimestre: bimestre || undefined,
+          disciplina_id: disciplinaId || undefined,
+          escola_id: escolaId || undefined,
+          turma_id: turmaId || undefined,
         });
         setSummaryData(response.data);
 
@@ -109,23 +185,29 @@ const RelatoriosPage: React.FC = () => {
           { label: 'Visão Geral', onClick: () => resetToGeral() },
         ]);
       } else if (evalLevel === 'escolas') {
-        // Fetch drill-down by schools
-        const response = await relatoriosAPI.avaliacaoDrillDownEscolas({
+        // Fetch drill-down by schools from aggregated data
+        const response = await relatoriosAPI.avaliacaoAgregadaDrillDownEscolas({
           ano_letivo: anoLetivo,
           bimestre: bimestre || undefined,
+          disciplina_id: disciplinaId || undefined,
+          escola_id: escolaId || undefined,
+          turma_id: turmaId || undefined,
         });
+        console.log('Escolas data received:', response.data);
         setEvalData(response.data);
         setBreadcrumbs([
           { label: 'Visão Geral', onClick: () => resetToGeral() },
           { label: 'Por Escola' },
         ]);
       } else if (evalLevel === 'turmas' && selectedEscolaId) {
-        // Fetch drill-down by classes
-        const response = await relatoriosAPI.avaliacaoDrillDownTurmas(
+        // Fetch drill-down by classes from aggregated data
+        const response = await relatoriosAPI.avaliacaoAgregadaDrillDownTurmas(
           selectedEscolaId,
           {
             ano_letivo: anoLetivo,
             bimestre: bimestre || undefined,
+            disciplina_id: disciplinaId || undefined,
+            turma_id: turmaId || undefined,
           }
         );
         setEvalData(response.data);
@@ -145,10 +227,55 @@ const RelatoriosPage: React.FC = () => {
   };
 
   useEffect(() => {
+    loadDisciplinas();
+    loadEscolas();
+  }, []);
+
+  useEffect(() => {
+    if (escolaId) {
+      loadTurmas(escolaId as number);
+    } else {
+      setTurmas([]);
+      setTurmaId('');
+    }
+  }, [escolaId]);
+
+  useEffect(() => {
     if (tabValue === 0) {
       fetchEvalData();
     }
-  }, [evalLevel, selectedEscolaId, anoLetivo, bimestre, tabValue]);
+  }, [evalLevel, selectedEscolaId, anoLetivo, bimestre, disciplinaId, escolaId, turmaId, tabValue]);
+
+  const loadDisciplinas = async () => {
+    try {
+      const { disciplinasAPI } = await import('../services/api');
+      const response = await disciplinasAPI.list();
+      setDisciplinas(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar disciplinas:', error);
+    }
+  };
+
+  const loadEscolas = async () => {
+    try {
+      const { escolasAPI } = await import('../services/api');
+      const response = await escolasAPI.list();
+      setEscolas(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar escolas:', error);
+    }
+  };
+
+  const loadTurmas = async (escolaIdParam: number) => {
+    try {
+      const { turmasAPI } = await import('../services/api');
+      const response = await turmasAPI.list({ escola_id: escolaIdParam });
+      setTurmas(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar turmas:', error);
+      setTurmas([]);
+    }
+  };
 
   const resetToGeral = () => {
     setEvalLevel('geral');
@@ -161,40 +288,132 @@ const RelatoriosPage: React.FC = () => {
   };
 
   const handleDrillDown = (item: DrillDownData) => {
+    console.log('handleDrillDown called:', { evalLevel, item });
+
     if (evalLevel === 'geral') {
       // Drill down to schools
+      console.log('Drilling down to escolas');
       setEvalLevel('escolas');
-    } else if (evalLevel === 'escolas' && item.escola_id) {
+    } else if (evalLevel === 'escolas') {
       // Drill down to classes
-      setSelectedEscolaId(item.escola_id);
-      setEvalLevel('turmas');
+      console.log('Drilling down to turmas, escola_id:', item.escola_id);
+      if (item.escola_id) {
+        setSelectedEscolaId(item.escola_id);
+        setEvalLevel('turmas');
+      } else {
+        console.error('escola_id not found in item:', item);
+      }
+    } else if (evalLevel === 'turmas') {
+      // Open detailed modal for this turma
+      console.log('Opening detalhamento modal for turma:', item.turma_id);
+      if (item.turma_id) {
+        setSelectedTurmaId(item.turma_id);
+        setSelectedTurmaNome(item.label);
+        setDetalhamentoModalOpen(true);
+      }
     }
   };
 
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Relatórios - EDUCA+ Curionópolis
-          </Typography>
-          <Button color="inherit" onClick={() => navigate('/dashboard')}>
-            Voltar
-          </Button>
-          <Button color="inherit" onClick={logout}>
-            Sair
-          </Button>
-        </Toolbar>
-      </AppBar>
-
+      
+    <AppBarWithUserMenu title="Relatórios e Métricas" showBackButton />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Relatórios e Métricas
-        </Typography>
+
+        {/* Action Buttons */}
+        <Box
+          className="no-print"
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 2,
+            mb: 3,
+            '@media print': {
+              display: 'none'
+            }
+          }}
+        >
+          <Button
+            variant="outlined"
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+          >
+            Imprimir
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={handleGeneratePDF}
+          >
+            Gerar PDF
+          </Button>
+        </Box>
+
+        <Box id="relatorios-content">
+
+        {/* Print-only Filters Summary */}
+        <Box
+          className="print-only"
+          sx={{
+            display: 'none',
+            '@media print': {
+              display: 'block',
+              mb: 3,
+              p: 2,
+              border: '1px solid #ddd',
+              borderRadius: 1,
+              backgroundColor: '#f5f5f5'
+            }
+          }}
+        >
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+            Filtros Aplicados
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body2">
+                <strong>Ano Letivo:</strong> {anoLetivo}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body2">
+                <strong>Bimestre:</strong> {bimestre ? `${bimestre}º Bimestre` : 'Todos'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body2">
+                <strong>Escola:</strong> {escolaId ? escolas.find(e => e.id === escolaId)?.nome : 'Todas'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Typography variant="body2">
+                <strong>Turma:</strong> {turmaId ? turmas.find(t => t.id === turmaId)?.nome : 'Todas'}
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body2">
+                <strong>Disciplina:</strong> {disciplinaId ? disciplinas.find(d => d.id === disciplinaId)?.nome : 'Todas'}
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
 
         {/* Filters */}
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Paper
+          className="no-print"
+          sx={{
+            p: 2,
+            mb: 3,
+            '@media print': {
+              display: 'none'
+            }
+          }}
+        >
+          <Typography variant="subtitle2" gutterBottom>
+            Filtros de Busca
+          </Typography>
           <Grid container spacing={2}>
+            {/* First Row */}
             <Grid item xs={12} sm={6} md={3}>
               <FormControl fullWidth>
                 <InputLabel>Ano Letivo</InputLabel>
@@ -225,11 +444,89 @@ const RelatoriosPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Escola</InputLabel>
+                <Select
+                  value={escolaId}
+                  label="Escola"
+                  onChange={(e) => setEscolaId(e.target.value as number | '')}
+                >
+                  <MenuItem value="">Todas</MenuItem>
+                  {escolas.map((escola) => (
+                    <MenuItem key={escola.id} value={escola.id}>
+                      {escola.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth disabled={!escolaId}>
+                <InputLabel>Turma</InputLabel>
+                <Select
+                  value={turmaId}
+                  label="Turma"
+                  onChange={(e) => setTurmaId(e.target.value as number | '')}
+                >
+                  <MenuItem value="">Todas</MenuItem>
+                  {turmas.map((turma) => (
+                    <MenuItem key={turma.id} value={turma.id}>
+                      {turma.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Second Row */}
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Disciplina</InputLabel>
+                <Select
+                  value={disciplinaId}
+                  label="Disciplina"
+                  onChange={(e) => setDisciplinaId(e.target.value as number | '')}
+                >
+                  <MenuItem value="">Todas</MenuItem>
+                  {disciplinas.map((disc) => (
+                    <MenuItem key={disc.id} value={disc.id}>
+                      {disc.nome}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
         </Paper>
 
+        {/* Print-only Tab Title */}
+        <Box
+          className="print-only"
+          sx={{
+            display: 'none',
+            '@media print': {
+              display: 'block',
+              mb: 2
+            }
+          }}
+        >
+          <Typography variant="h5" gutterBottom>
+            {tabValue === 0 ? 'Avaliações' : tabValue === 1 ? 'Diagnósticos' : 'SAEB'}
+          </Typography>
+        </Box>
+
         {/* Tabs for different report types */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Box
+          className="no-print"
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            '@media print': {
+              display: 'none'
+            }
+          }}
+        >
           <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
             <Tab label="Avaliações" />
             <Tab label="Diagnósticos" />
@@ -290,7 +587,7 @@ const RelatoriosPage: React.FC = () => {
             data={evalData}
             loading={evalLoading}
             error={evalError}
-            onDrillDown={evalLevel !== 'turmas' ? handleDrillDown : undefined}
+            onDrillDown={handleDrillDown}
             breadcrumbs={breadcrumbs}
             colors={
               evalLevel === 'geral'
@@ -301,7 +598,10 @@ const RelatoriosPage: React.FC = () => {
 
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary">
-              Clique nas barras para explorar os dados em mais detalhes
+              {evalLevel === 'turmas'
+                ? 'Clique nas barras para ver detalhes dos alunos avaliados'
+                : 'Clique nas barras para explorar os dados em mais detalhes'
+              }
             </Typography>
           </Box>
         </TabPanel>
@@ -319,6 +619,18 @@ const RelatoriosPage: React.FC = () => {
             Relatórios SAEB (a implementar)
           </Typography>
         </TabPanel>
+
+        {/* Modal de Detalhamento */}
+        <DetalhamentoAvaliacaoModal
+          open={detalhamentoModalOpen}
+          onClose={() => setDetalhamentoModalOpen(false)}
+          turmaId={selectedTurmaId}
+          turmaNome={selectedTurmaNome}
+          anoLetivo={anoLetivo}
+          bimestre={bimestre as number || 1}
+          disciplinaId={disciplinaId as number || undefined}
+        />
+        </Box>
       </Container>
     </Box>
   );

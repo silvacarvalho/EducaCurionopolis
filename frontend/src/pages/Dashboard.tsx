@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
@@ -10,7 +10,11 @@ import {
   Paper,
   Card,
   CardContent,
+  IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
+import { AccountCircle as AccountCircleIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PerfilUsuario } from '../types';
@@ -18,8 +22,33 @@ import { PerfilUsuario } from '../types';
 const Dashboard: React.FC = () => {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handlePerfil = () => {
+    handleMenuClose();
+    navigate('/perfil');
+  };
 
   const menuItems = [
+    {
+      title: 'Meu Perfil',
+      description: 'Visualizar e editar dados pessoais',
+      path: '/perfil',
+      roles: [
+        PerfilUsuario.GESTAO_MUNICIPAL,
+        PerfilUsuario.DIRETOR_COORDENADOR,
+        PerfilUsuario.PROFESSOR,
+        PerfilUsuario.COMUNIDADE,
+      ],
+    },
     {
       title: 'Relatórios',
       description: 'Visualizar relatórios e métricas educacionais',
@@ -101,11 +130,31 @@ const Dashboard: React.FC = () => {
             EDUCA+ Curionópolis
           </Typography>
           <Typography variant="body2" sx={{ mr: 2 }}>
-            {user?.nome_completo} ({user?.perfil})
+            {user?.nome_completo}
           </Typography>
-          <Button color="inherit" onClick={logout}>
-            Sair
-          </Button>
+          <IconButton
+            color="inherit"
+            onClick={handleMenuOpen}
+            aria-label="menu do usuário"
+          >
+            <AccountCircleIcon />
+          </IconButton>
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem onClick={handlePerfil}>Meu Perfil</MenuItem>
+            <MenuItem onClick={logout}>Sair</MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 

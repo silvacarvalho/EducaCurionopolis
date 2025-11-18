@@ -1,11 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python:*)",
-      "Bash(venvScriptspip install -r requirements.txt)",
-      "Bash(\"./venv/Scripts/pip\" install -r requirements.txt)",
-      "Bash(venv/Scripts/python:*)",
-      "Bash(\"./venv/Scripts/pip\" install requests)"
+      "Bash(./backend/venv/Scripts/python.exe:*)",
+      "Bash(curl:*)",
+      "Bash(../backend/venv/Scripts/python.exe:*)",
+      "Bash(timeout /t 3)",
+      "Bash(ping:*)",
+      "Bash(nul)",
+      "Bash(find:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

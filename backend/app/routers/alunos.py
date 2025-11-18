@@ -2,11 +2,11 @@
 Students Router
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from ..database import get_db
-from ..models import Aluno, Usuario, PerfilUsuario
+from ..models import Aluno, Usuario, PerfilUsuario, Turma, Escola
 from ..schemas import AlunoCreate, AlunoUpdate, AlunoResponse
 from ..auth import get_current_active_user, require_diretor_or_gestao
 from ..dependencies import verify_turma_access
@@ -57,20 +57,20 @@ async def list_alunos(
     current_user: Usuario = Depends(get_current_active_user)
 ):
     """List students with optional filters"""
-    query = db.query(Aluno)
+    query = db.query(Aluno).options(
+        joinedload(Aluno.turma).joinedload(Turma.escola)
+    )
 
     # DIRETOR sees only students from their school
     if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
         if current_user.escola_dirigida:
-            from ..models import Turma
-            query = query.join(Turma).filter(Turma.escola_id == current_user.escola_dirigida.id)
+            query = query.filter(Aluno.turma.has(Turma.escola_id == current_user.escola_dirigida.id))
 
     if turma_id:
         query = query.filter(Aluno.turma_id == turma_id)
 
     if escola_id:
-        from ..models import Turma
-        query = query.join(Turma).filter(Turma.escola_id == escola_id)
+        query = query.filter(Aluno.turma.has(Turma.escola_id == escola_id))
 
     alunos = query.filter(Aluno.ativo == True).offset(skip).limit(limit).all()
     return alunos
@@ -83,7 +83,9 @@ async def get_aluno(
     current_user: Usuario = Depends(get_current_active_user)
 ):
     """Get student by ID"""
-    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+    aluno = db.query(Aluno).options(
+        joinedload(Aluno.turma).joinedload(Turma.escola)
+    ).filter(Aluno.id == aluno_id).first()
 
     if not aluno:
         raise HTTPException(
