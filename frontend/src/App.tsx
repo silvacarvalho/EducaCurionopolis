@@ -12,6 +12,8 @@ import ProfessoresPage from './pages/ProfessoresPage';
 import TurmasAlunosPage from './pages/TurmasAlunosPage';
 import AvaliacoesPage from './pages/AvaliacoesPage';
 import DiagnosticosPage from './pages/DiagnosticosPage';
+import DiagnosticoItens from './pages/DiagnosticoItens';
+import DiagnosticoAvaliar from './pages/DiagnosticoAvaliar';
 import SAEBPage from './pages/SAEBPage';
 import MensagensPage from './pages/MensagensPage';
 import PerfilPage from './pages/PerfilPage';
@@ -88,6 +90,22 @@ function App() {
         element={
           <ProtectedRoute>
             <DiagnosticosPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/diagnostico-itens"
+        element={
+          <ProtectedRoute>
+            <DiagnosticoItens />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/diagnostico-avaliar"
+        element={
+          <ProtectedRoute>
+            <DiagnosticoAvaliar />
           </ProtectedRoute>
         }
       />

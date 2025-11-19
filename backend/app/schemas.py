@@ -6,7 +6,7 @@ from typing import Optional, List
 from datetime import datetime
 from .models import (
     PerfilUsuario, NivelDesempenho, NivelEvolucao,
-    Bimestre, TipoDiagnostico
+    Bimestre, TipoDiagnostico, ModalidadeDiagnostico, HipoteseEscrita
 )
 
 
@@ -314,6 +314,47 @@ class AvaliacaoAgregadaResponse(AvaliacaoAgregadaBase):
 
 
 # ============================================
+# ITEM DIAGNÓSTICO SCHEMAS
+# ============================================
+
+class ItemDiagnosticoBase(BaseSchema):
+    descricao: str = Field(..., min_length=5)
+    modalidade: ModalidadeDiagnostico
+    anos_aplicaveis: str = Field(..., pattern=r"^[1-5](,[1-5])*$")  # Ex: "1,2,3"
+
+    @validator('anos_aplicaveis')
+    def validate_anos(cls, v):
+        anos = [int(a) for a in v.split(',')]
+        if not all(1 <= ano <= 5 for ano in anos):
+            raise ValueError('Anos devem estar entre 1 e 5')
+        if len(anos) != len(set(anos)):
+            raise ValueError('Anos duplicados não são permitidos')
+        return ','.join(map(str, sorted(anos)))
+
+
+class ItemDiagnosticoCreate(ItemDiagnosticoBase):
+    pass
+
+
+class ItemDiagnosticoUpdate(BaseSchema):
+    descricao: Optional[str] = None
+    modalidade: Optional[ModalidadeDiagnostico] = None
+    anos_aplicaveis: Optional[str] = None
+    ativo: Optional[bool] = None
+
+
+class ItemDiagnosticoResponse(ItemDiagnosticoBase):
+    id: int
+    ativo: bool
+    created_at: datetime
+
+    @property
+    def anos_lista(self) -> List[int]:
+        """Retorna lista de anos aplicáveis"""
+        return [int(a) for a in self.anos_aplicaveis.split(',')]
+
+
+# ============================================
 # DIAGNÓSTICO SCHEMAS
 # ============================================
 
@@ -327,6 +368,8 @@ class DiagnosticoBase(BaseSchema):
     genero_textual: str = Field(..., min_length=2, max_length=200)
     aplicavel_ano_inicial: int = Field(default=1, ge=1, le=5)
     aplicavel_ano_final: int = Field(default=5, ge=1, le=5)
+    data_disponivel: Optional[datetime] = None
+    data_limite: Optional[datetime] = None
 
 
 class DiagnosticoCreate(DiagnosticoBase):
@@ -338,6 +381,8 @@ class DiagnosticoUpdate(BaseSchema):
     descricao: Optional[str] = None
     objetivo_avaliacao: Optional[str] = None
     genero_textual: Optional[str] = None
+    data_disponivel: Optional[datetime] = None
+    data_limite: Optional[datetime] = None
     ativo: Optional[bool] = None
 
 
@@ -346,6 +391,7 @@ class DiagnosticoResponse(DiagnosticoBase):
     ativo: bool
     substituido_por_id: Optional[int] = None
     created_at: datetime
+    itens: List[ItemDiagnosticoResponse] = []
 
 
 class DiagnosticoSubstituir(BaseSchema):
@@ -354,23 +400,55 @@ class DiagnosticoSubstituir(BaseSchema):
     novo_diagnostico: DiagnosticoCreate
 
 
+class DiagnosticoVincularItens(BaseSchema):
+    """Vincular itens a um diagnóstico"""
+    item_ids: List[int]
+
+
+# ============================================
+# AVALIAÇÃO ITEM DIAGNÓSTICO SCHEMAS
+# ============================================
+
+class AvaliacaoItemBase(BaseSchema):
+    item_diagnostico_id: int
+    resposta: NivelEvolucao  # SIM, NAO, EM_PARTE
+
+
+class AvaliacaoItemCreate(AvaliacaoItemBase):
+    pass
+
+
+class AvaliacaoItemResponse(AvaliacaoItemBase):
+    id: int
+    created_at: datetime
+
+
 # ============================================
 # DIAGNÓSTICO RESULTADO SCHEMAS
 # ============================================
 
 class DiagnosticoResultadoBase(BaseSchema):
-    nivel_evolucao: NivelEvolucao
+    hipotese_escrita: HipoteseEscrita
     observacoes: Optional[str] = None
 
 
 class DiagnosticoResultadoCreate(DiagnosticoResultadoBase):
+    """Criar resultado com hipótese de escrita e avaliações de itens"""
     diagnostico_id: int
     aluno_id: int
+    avaliacoes_itens: List[AvaliacaoItemCreate]
+
+    @validator('avaliacoes_itens')
+    def validate_avaliacoes(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('É obrigatório avaliar pelo menos um item')
+        return v
 
 
 class DiagnosticoResultadoUpdate(BaseSchema):
-    nivel_evolucao: Optional[NivelEvolucao] = None
+    hipotese_escrita: Optional[HipoteseEscrita] = None
     observacoes: Optional[str] = None
+    avaliacoes_itens: Optional[List[AvaliacaoItemCreate]] = None
 
 
 class DiagnosticoResultadoResponse(DiagnosticoResultadoBase):
@@ -380,6 +458,7 @@ class DiagnosticoResultadoResponse(DiagnosticoResultadoBase):
     professor_id: int
     data_aplicacao: datetime
     created_at: datetime
+    avaliacoes_itens: List[AvaliacaoItemResponse] = []
 
 
 class DiagnosticoResultadoBulk(BaseSchema):
@@ -523,6 +602,25 @@ class RelatorioDiagnosticoGeral(BaseSchema):
     percentual_nao: float
     percentual_sim: float
     percentual_em_partes: float
+
+
+class EstatisticaEixo(BaseSchema):
+    """Estatística por hipótese de escrita (eixo)"""
+    eixo: HipoteseEscrita
+    quantidade: int
+    percentual: float
+
+
+class RelatorioDiagnosticoPorEixo(BaseSchema):
+    """Relatório de diagnóstico agrupado por hipótese de escrita"""
+    diagnostico_id: int
+    diagnostico_nome: str
+    total_alunos_turma: int
+    total_alunos_avaliados: int
+    total_nao_avaliados: int
+    percentual_avaliados: float
+    percentual_nao_avaliados: float
+    estatisticas_por_eixo: List[EstatisticaEixo]
 
 
 class RelatorioSAEBGeral(BaseSchema):

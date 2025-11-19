@@ -39,6 +39,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { professoresAPI, escolasAPI } from '../services/api';
 import { Professor, Escola } from '../types';
+import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
 
 interface ProfessorComUsuario extends Professor {
   usuario?: {
@@ -237,27 +238,7 @@ const ProfessoresPage: React.FC = () => {
 
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => navigate('/dashboard')}
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Gerenciamento de Professores
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {user?.nome_completo}
-          </Typography>
-          <Button color="inherit" onClick={logout}>
-            Sair
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <AppBarWithUserMenu title="Gestão de Itens de Diagnóstico" showBackButton />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Paper sx={{ p: 3 }}>

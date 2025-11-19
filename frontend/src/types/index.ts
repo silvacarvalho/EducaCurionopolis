@@ -18,7 +18,26 @@ export enum NivelDesempenho {
 export enum NivelEvolucao {
   NAO = 'nao',
   SIM = 'sim',
-  EM_PARTES = 'em_partes',
+  EM_PARTE = 'em_parte',
+}
+
+export enum ModalidadeDiagnostico {
+  LEITURA = 'leitura',
+  ESCRITA = 'escrita',
+}
+
+export enum HipoteseEscrita {
+  NAO_AVALIADO = 'nao_avaliado',
+  PRE_SILABICO = 'pre_silabico',
+  SILABICO_SEM_VALOR_SONORO = 'silabico_sem_valor_sonoro',
+  SILABICO_COM_VALOR_SONORO = 'silabico_com_valor_sonoro',
+  SILABICO_ALFABETICO = 'silabico_alfabetico',
+  ALFABETICO = 'alfabetico',
+}
+
+export enum TipoDiagnostico {
+  INICIAL = 'inicial',
+  FINAL_BIMESTRE = 'final_bimestre',
 }
 
 export enum Bimestre {
@@ -132,19 +151,61 @@ export interface AvaliacaoAgregada {
   created_at: string;
 }
 
+export interface ItemDiagnostico {
+  id: number;
+  descricao: string;
+  modalidade: ModalidadeDiagnostico;
+  anos_aplicaveis: string; // Ex: "1,2,3"
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface ItemDiagnosticoCreate {
+  descricao: string;
+  modalidade: ModalidadeDiagnostico;
+  anos_aplicaveis: string;
+}
+
 export interface Diagnostico {
   id: number;
   nome: string;
   descricao?: string;
   ano_letivo: number;
-  tipo: string;
+  tipo: TipoDiagnostico;
   bimestre_referencia?: Bimestre;
   objetivo_avaliacao: string;
   genero_textual: string;
   aplicavel_ano_inicial: number;
   aplicavel_ano_final: number;
+  data_disponivel?: string;
+  data_limite?: string;
   ativo: boolean;
   substituido_por_id?: number;
+  created_at: string;
+  itens?: ItemDiagnostico[];
+}
+
+export interface DiagnosticoCreate {
+  nome: string;
+  descricao?: string;
+  ano_letivo: number;
+  tipo: TipoDiagnostico;
+  bimestre_referencia?: Bimestre;
+  objetivo_avaliacao: string;
+  genero_textual: string;
+  aplicavel_ano_inicial: number;
+  aplicavel_ano_final: number;
+  data_disponivel?: string;
+  data_limite?: string;
+}
+
+export interface AvaliacaoItem {
+  item_diagnostico_id: number;
+  resposta: NivelEvolucao; // SIM, NAO, EM_PARTE
+}
+
+export interface AvaliacaoItemResponse extends AvaliacaoItem {
+  id: number;
   created_at: string;
 }
 
@@ -153,10 +214,36 @@ export interface DiagnosticoResultado {
   diagnostico_id: number;
   aluno_id: number;
   professor_id: number;
-  nivel_evolucao: NivelEvolucao;
+  hipotese_escrita: HipoteseEscrita;
   observacoes?: string;
   data_aplicacao: string;
   created_at: string;
+  avaliacoes_itens: AvaliacaoItemResponse[];
+}
+
+export interface DiagnosticoResultadoCreate {
+  diagnostico_id: number;
+  aluno_id: number;
+  hipotese_escrita: HipoteseEscrita;
+  avaliacoes_itens: AvaliacaoItem[];
+  observacoes?: string;
+}
+
+export interface EstatisticaEixo {
+  eixo: HipoteseEscrita;
+  quantidade: number;
+  percentual: number;
+}
+
+export interface RelatorioDiagnosticoPorEixo {
+  diagnostico_id: number;
+  diagnostico_nome: string;
+  total_alunos_turma: number;
+  total_alunos_avaliados: number;
+  total_nao_avaliados: number;
+  percentual_avaliados: number;
+  percentual_nao_avaliados: number;
+  estatisticas_por_eixo: EstatisticaEixo[];
 }
 
 export interface ProvaSimuladoSAEB {

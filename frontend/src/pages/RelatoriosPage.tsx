@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DrillDownChart from '../components/DrillDownChart';
 import DetalhamentoAvaliacaoModal from '../components/DetalhamentoAvaliacaoModal';
+import RelatorioDiagnosticoPorEixo from '../components/RelatorioDiagnosticoPorEixo';
 import { relatoriosAPI } from '../services/api';
 import { DrillDownData, Bimestre } from '../types';
 import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
@@ -608,9 +609,7 @@ const RelatoriosPage: React.FC = () => {
 
         {/* Diagnósticos Tab */}
         <TabPanel value={tabValue} index={1}>
-          <Typography variant="body1">
-            Relatórios de Diagnósticos (a implementar)
-          </Typography>
+          <RelatorioDiagnosticoPorEixo />
         </TabPanel>
 
         {/* SAEB Tab */}

@@ -68,8 +68,9 @@ app = FastAPI(
 
 # Configure CORS for frontend access
 origins = [
-    "http://localhost:3000",  # React development server
-    "http://localhost:5173",  # Vite development server
+    "http://localhost:3000",  # Vite development server (current)
+    "http://localhost:3002",  # React development server
+    "http://localhost:5173",  # Vite development server (alternative)
     os.getenv("FRONTEND_URL", "http://localhost:3000")
 ]
 

@@ -153,22 +153,35 @@ export const avaliacoesAgregadasAPI = {
 };
 
 export const diagnosticosAPI = {
+  // Itens de diagnóstico
+  listItens: (params?: any) => api.get('/diagnosticos/itens', { params }),
+  getItem: (id: number) => api.get(`/diagnosticos/itens/${id}`),
+  createItem: (data: any) => api.post('/diagnosticos/itens', data),
+  updateItem: (id: number, data: any) => api.put(`/diagnosticos/itens/${id}`, data),
+  deleteItem: (id: number) => api.delete(`/diagnosticos/itens/${id}`),
+
+  // Diagnósticos
   list: (params?: any) => api.get('/diagnosticos', { params }),
   get: (id: number) => api.get(`/diagnosticos/${id}`),
   create: (data: any) => api.post('/diagnosticos', data),
   update: (id: number, data: any) => api.put(`/diagnosticos/${id}`, data),
+  vincularItens: (diagnosticoId: number, itemIds: number[]) =>
+    api.post(`/diagnosticos/${diagnosticoId}/vincular-itens`, { item_ids: itemIds }),
   substituir: (antigoId: number, novoDiagnostico: any) =>
     api.post('/diagnosticos/substituir', {
       diagnostico_antigo_id: antigoId,
       novo_diagnostico: novoDiagnostico,
     }),
+
   // Resultados
   listResultados: (params?: any) => api.get('/diagnosticos/resultados', { params }),
   createResultado: (data: any) => api.post('/diagnosticos/resultados', data),
-  createResultadosBulk: (resultados: any[]) =>
-    api.post('/diagnosticos/resultados/bulk', { resultados }),
   updateResultado: (id: number, data: any) =>
     api.put(`/diagnosticos/resultados/${id}`, data),
+
+  // Relatórios
+  relatorioPorEixo: (diagnosticoId: number, params?: any) =>
+    api.get(`/diagnosticos/relatorios/por-eixo/${diagnosticoId}`, { params }),
 };
 
 export const saebAPI = {

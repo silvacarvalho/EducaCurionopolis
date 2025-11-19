@@ -38,17 +38,7 @@ const Dashboard: React.FC = () => {
   };
 
   const menuItems = [
-    {
-      title: 'Meu Perfil',
-      description: 'Visualizar e editar dados pessoais',
-      path: '/perfil',
-      roles: [
-        PerfilUsuario.GESTAO_MUNICIPAL,
-        PerfilUsuario.DIRETOR_COORDENADOR,
-        PerfilUsuario.PROFESSOR,
-        PerfilUsuario.COMUNIDADE,
-      ],
-    },
+
     {
       title: 'Relatórios',
       description: 'Visualizar relatórios e métricas educacionais',
@@ -70,22 +60,20 @@ const Dashboard: React.FC = () => {
       title: 'Professores',
       description: 'Gerenciar professores e disciplinas',
       path: '/professores',
-      roles: [PerfilUsuario.GESTAO_MUNICIPAL, PerfilUsuario.DIRETOR_COORDENADOR],
+      roles: [PerfilUsuario.DIRETOR_COORDENADOR],
     },
     {
       title: 'Turmas e Alunos',
       description: 'Gerenciar turmas e alunos',
       path: '/turmas',
-      roles: [PerfilUsuario.GESTAO_MUNICIPAL, PerfilUsuario.DIRETOR_COORDENADOR],
+      roles: [PerfilUsuario.DIRETOR_COORDENADOR],
     },
     {
       title: 'Avaliações',
       description: 'Registrar e consultar avaliações bimestrais',
       path: '/avaliacoes',
       roles: [
-        PerfilUsuario.GESTAO_MUNICIPAL,
         PerfilUsuario.DIRETOR_COORDENADOR,
-        PerfilUsuario.PROFESSOR,
       ],
     },
     {
@@ -95,8 +83,19 @@ const Dashboard: React.FC = () => {
       roles: [
         PerfilUsuario.GESTAO_MUNICIPAL,
         PerfilUsuario.DIRETOR_COORDENADOR,
-        PerfilUsuario.PROFESSOR,
       ],
+    },
+    {
+      title: 'Itens de Diagnóstico',
+      description: 'Gerenciar itens de diagnóstico (Leitura/Escrita)',
+      path: '/diagnostico-itens',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
+    },
+    {
+      title: 'Aplicar Diagnóstico',
+      description: 'Aplicar Diagnóstico a alunos e definir hipótese de escrita',
+      path: '/diagnostico-avaliar',
+      roles: [PerfilUsuario.PROFESSOR],
     },
     {
       title: 'SAEB',

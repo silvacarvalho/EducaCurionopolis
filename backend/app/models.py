@@ -37,7 +37,23 @@ class NivelEvolucao(str, enum.Enum):
     """Student evolution levels for diagnostics"""
     NAO = "nao"
     SIM = "sim"
-    EM_PARTES = "em_partes"
+    EM_PARTE = "em_parte"
+
+
+class ModalidadeDiagnostico(str, enum.Enum):
+    """Diagnostic modality types"""
+    LEITURA = "leitura"
+    ESCRITA = "escrita"
+
+
+class HipoteseEscrita(str, enum.Enum):
+    """Writing hypothesis levels (Eixo de Escrita)"""
+    NAO_AVALIADO = "nao_avaliado"
+    PRE_SILABICO = "pre_silabico"
+    SILABICO_SEM_VALOR_SONORO = "silabico_sem_valor_sonoro"
+    SILABICO_COM_VALOR_SONORO = "silabico_com_valor_sonoro"
+    SILABICO_ALFABETICO = "silabico_alfabetico"
+    ALFABETICO = "alfabetico"
 
 
 class Bimestre(int, enum.Enum):
@@ -63,6 +79,14 @@ professor_disciplina = Table(
     Base.metadata,
     Column('professor_id', Integer, ForeignKey('professores.id', ondelete='CASCADE'), primary_key=True),
     Column('disciplina_id', Integer, ForeignKey('disciplinas.id', ondelete='CASCADE'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
+
+diagnostico_item = Table(
+    'diagnostico_item',
+    Base.metadata,
+    Column('diagnostico_id', Integer, ForeignKey('diagnosticos.id', ondelete='CASCADE'), primary_key=True),
+    Column('item_diagnostico_id', Integer, ForeignKey('itens_diagnostico.id', ondelete='CASCADE'), primary_key=True),
     Column('created_at', DateTime(timezone=True), server_default=func.now())
 )
 
@@ -326,6 +350,35 @@ class AvaliacaoAgregada(Base):
 # MODULE: DIAGNÓSTICO
 # ============================================
 
+class ItemDiagnostico(Base):
+    """
+    Diagnostic assessment item
+    Reusable items created by Municipal Management
+    Can be applied to multiple grades (1-5)
+    """
+    __tablename__ = "itens_diagnostico"
+
+    id = Column(Integer, primary_key=True, index=True)
+    descricao = Column(Text, nullable=False)  # O que será avaliado (ex: "Reconhece letras do alfabeto")
+    modalidade = Column(SQLEnum(ModalidadeDiagnostico), nullable=False)  # LEITURA ou ESCRITA
+
+    # Anos escolares aplicáveis (array representation)
+    # Ex: "1,2,3" significa aplicável ao 1º, 2º e 3º anos
+    anos_aplicaveis = Column(String(50), nullable=False)  # Stored as comma-separated: "1,2,3,4,5"
+
+    ativo = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    diagnosticos = relationship("Diagnostico", secondary="diagnostico_item", back_populates="itens")
+    avaliacoes_itens = relationship("AvaliacaoItemDiagnostico", back_populates="item", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<ItemDiagnostico(id={self.id}, modalidade={self.modalidade}, descricao={self.descricao[:50]})>"
+
+
 class Diagnostico(Base):
     """
     Diagnostic template
@@ -349,6 +402,10 @@ class Diagnostico(Base):
     aplicavel_ano_inicial = Column(Integer, default=1)
     aplicavel_ano_final = Column(Integer, default=5)
 
+    # Scheduling
+    data_disponivel = Column(DateTime(timezone=True), nullable=True)  # When diagnostic becomes available for teachers
+    data_limite = Column(DateTime(timezone=True), nullable=True)  # Deadline for applying diagnostic
+
     ativo = Column(Boolean, default=True)
     substituido_por_id = Column(Integer, ForeignKey('diagnosticos.id'), nullable=True)
 
@@ -358,6 +415,7 @@ class Diagnostico(Base):
     # Relationships
     resultados = relationship("DiagnosticoResultado", back_populates="diagnostico", cascade="all, delete-orphan")
     substituto = relationship("Diagnostico", remote_side=[id], backref="diagnostico_substituido")
+    itens = relationship("ItemDiagnostico", secondary="diagnostico_item", back_populates="diagnosticos")
 
     def __repr__(self):
         return f"<Diagnostico(nome={self.nome}, tipo={self.tipo}, ano_letivo={self.ano_letivo})>"
@@ -366,7 +424,7 @@ class Diagnostico(Base):
 class DiagnosticoResultado(Base):
     """
     Diagnostic result for each student
-    Teacher applies diagnostic and classifies evolution
+    Contains the writing hypothesis (eixo) and individual item assessments
     """
     __tablename__ = "diagnostico_resultados"
 
@@ -374,7 +432,13 @@ class DiagnosticoResultado(Base):
     diagnostico_id = Column(Integer, ForeignKey('diagnosticos.id'), nullable=False)
     aluno_id = Column(Integer, ForeignKey('alunos.id'), nullable=False)
     professor_id = Column(Integer, ForeignKey('professores.id'), nullable=False)
-    nivel_evolucao = Column(SQLEnum(NivelEvolucao), nullable=False)
+
+    # Hipótese de Escrita (Eixo) - OBRIGATÓRIO se houver itens avaliados
+    hipotese_escrita = Column(SQLEnum(HipoteseEscrita), nullable=False)
+
+    # Flag para indicar se o aluno não foi avaliado (professor marcou como "Não Avaliado")
+    nao_avaliado = Column(Boolean, default=False, nullable=False)
+
     observacoes = Column(Text)
     data_aplicacao = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -390,9 +454,38 @@ class DiagnosticoResultado(Base):
     diagnostico = relationship("Diagnostico", back_populates="resultados")
     aluno = relationship("Aluno", back_populates="diagnosticos")
     professor = relationship("Professor", back_populates="diagnosticos_aplicados")
+    avaliacoes_itens = relationship("AvaliacaoItemDiagnostico", back_populates="diagnostico_resultado", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<DiagnosticoResultado(diagnostico_id={self.diagnostico_id}, aluno_id={self.aluno_id}, nivel={self.nivel_evolucao})>"
+        return f"<DiagnosticoResultado(diagnostico_id={self.diagnostico_id}, aluno_id={self.aluno_id}, hipotese={self.hipotese_escrita})>"
+
+
+class AvaliacaoItemDiagnostico(Base):
+    """
+    Individual item assessment within a diagnostic result
+    Teacher evaluates each item as: SIM, NAO, EM_PARTE
+    """
+    __tablename__ = "avaliacoes_itens_diagnostico"
+
+    id = Column(Integer, primary_key=True, index=True)
+    diagnostico_resultado_id = Column(Integer, ForeignKey('diagnostico_resultados.id'), nullable=False)
+    item_diagnostico_id = Column(Integer, ForeignKey('itens_diagnostico.id'), nullable=False)
+    resposta = Column(SQLEnum(NivelEvolucao), nullable=False)  # SIM, NAO, EM_PARTE
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Unique constraint: one assessment per item per diagnostic result
+    __table_args__ = (
+        UniqueConstraint('diagnostico_resultado_id', 'item_diagnostico_id', name='uq_avaliacao_item'),
+    )
+
+    # Relationships
+    diagnostico_resultado = relationship("DiagnosticoResultado", back_populates="avaliacoes_itens")
+    item = relationship("ItemDiagnostico", back_populates="avaliacoes_itens")
+
+    def __repr__(self):
+        return f"<AvaliacaoItemDiagnostico(item_id={self.item_diagnostico_id}, resposta={self.resposta})>"
 
 
 # ============================================

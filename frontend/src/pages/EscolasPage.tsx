@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import EscolasTab from '../components/escolas/EscolasTab';
 import DiretoresTab from '../components/escolas/DiretoresTab';
+import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -50,27 +51,7 @@ const EscolasPage: React.FC = () => {
 
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => navigate('/dashboard')}
-            sx={{ mr: 2 }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Gerenciamento de Escolas e Diretores
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {user?.nome_completo}
-          </Typography>
-          <Button color="inherit" onClick={logout}>
-            Sair
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <AppBarWithUserMenu title="Gestão de Escolas e Diretores" showBackButton />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Paper>

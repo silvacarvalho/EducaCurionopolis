@@ -221,7 +221,7 @@ const AvaliacoesPage: React.FC = () => {
 
   return (
     <Box>
-      <AppBarWithUserMenu title="Avaliações Bimestrais Agregadas" showBackButton />
+      <AppBarWithUserMenu title="Gestão de Avaliações Bimestrais" showBackButton />
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         {/* Summary Cards */}
@@ -285,7 +285,7 @@ const AvaliacoesPage: React.FC = () => {
             Selecione Turma, Disciplina e Bimestre
           </Typography>
           <Alert severity="info" sx={{ mb: 2 }}>
-            O ano letivo é automaticamente definido como <strong>{anoLetivo}</strong>.
+            O ano letivo é automaticamente definido como ano corrente (<strong>{anoLetivo}</strong>).
             Informe a quantidade de alunos em cada nível de desempenho.
           </Alert>
           <Grid container spacing={2}>
