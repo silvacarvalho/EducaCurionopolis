@@ -2,6 +2,8 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { PerfilUsuario } from './types';
 
 // Pages
 import Login from './pages/Login';
@@ -18,8 +20,8 @@ import SAEBPage from './pages/SAEBPage';
 import MensagensPage from './pages/MensagensPage';
 import PerfilPage from './pages/PerfilPage';
 
-// Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Simple Protected Route for authenticated users only
+const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -40,15 +42,21 @@ function App() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <Dashboard />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route
         path="/relatorios"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute
+            allowedProfiles={[
+              PerfilUsuario.GESTAO_MUNICIPAL,
+              PerfilUsuario.DIRETOR_COORDENADOR,
+              PerfilUsuario.PROFESSOR
+            ]}
+          >
             <RelatoriosPage />
           </ProtectedRoute>
         }
@@ -56,7 +64,7 @@ function App() {
       <Route
         path="/escolas"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
             <EscolasPage />
           </ProtectedRoute>
         }
@@ -64,7 +72,7 @@ function App() {
       <Route
         path="/professores"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
             <ProfessoresPage />
           </ProtectedRoute>
         }
@@ -72,31 +80,31 @@ function App() {
       <Route
         path="/turmas"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <TurmasAlunosPage />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route
         path="/avaliacoes"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <AvaliacoesPage />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route
         path="/diagnosticos"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <DiagnosticosPage />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route
         path="/diagnostico-itens"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
             <DiagnosticoItens />
           </ProtectedRoute>
         }
@@ -104,7 +112,7 @@ function App() {
       <Route
         path="/diagnostico-avaliar"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedProfiles={[PerfilUsuario.PROFESSOR]}>
             <DiagnosticoAvaliar />
           </ProtectedRoute>
         }
@@ -112,25 +120,25 @@ function App() {
       <Route
         path="/saeb"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <SAEBPage />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route
         path="/mensagens"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <MensagensPage />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route
         path="/perfil"
         element={
-          <ProtectedRoute>
+          <AuthenticatedRoute>
             <PerfilPage />
-          </ProtectedRoute>
+          </AuthenticatedRoute>
         }
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

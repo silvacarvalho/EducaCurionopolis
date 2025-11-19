@@ -57,8 +57,10 @@ import {
   Bimestre,
   ItemDiagnostico,
   ModalidadeDiagnostico,
+  PerfilUsuario,
 } from '../types';
 import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import { PermissionGate } from '../hooks/usePermissions';
 
 const DiagnosticosPage: React.FC = () => {
   const navigate = useNavigate();
@@ -320,9 +322,11 @@ const DiagnosticosPage: React.FC = () => {
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h4">Diagnósticos</Typography>
-          <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreateDialog}>
-            Novo Diagnóstico
-          </Button>
+          <PermissionGate allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
+            <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreateDialog}>
+              Novo Diagnóstico
+            </Button>
+          </PermissionGate>
         </Box>
 
         {error && (
@@ -398,9 +402,11 @@ const DiagnosticosPage: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton size="small" onClick={() => handleOpenVincularDialog(diag)}>
-                      <LinkIcon />
-                    </IconButton>
+                    <PermissionGate allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
+                      <IconButton size="small" onClick={() => handleOpenVincularDialog(diag)}>
+                        <LinkIcon />
+                      </IconButton>
+                    </PermissionGate>
                   </TableCell>
                 </TableRow>
               ))}
