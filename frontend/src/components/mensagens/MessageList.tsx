@@ -23,6 +23,7 @@ import {
   ArrowUpward as HighIcon,
   ArrowDownward as LowIcon,
   Delete as DeleteIcon,
+  Reply as ReplyIcon,
 } from '@mui/icons-material';
 import { Mensagem, PrioridadeMensagem } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
@@ -119,6 +120,16 @@ export const MessageList: React.FC<MessageListProps> = ({
             onClick={() => onSelect(message)}
             secondaryAction={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {message.tem_respostas && (
+                  <Tooltip title="Mensagem respondida">
+                    <ReplyIcon fontSize="small" color="primary" />
+                  </Tooltip>
+                )}
+                {message.mensagem_pai_id && (
+                  <Tooltip title="Esta é uma resposta">
+                    <ReplyIcon fontSize="small" color="action" sx={{ transform: 'scaleX(-1)' }} />
+                  </Tooltip>
+                )}
                 {prioridadeIcons[message.prioridade]}
                 {onDelete && (
                   <Tooltip title="Excluir">

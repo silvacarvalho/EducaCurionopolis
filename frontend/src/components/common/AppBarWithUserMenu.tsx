@@ -9,6 +9,8 @@ import {
   MenuItem,
   Badge,
   Tooltip,
+  Stack,
+  Box,
 } from '@mui/material';
 import {
   AccountCircle as AccountCircleIcon,
@@ -63,9 +65,12 @@ const AppBarWithUserMenu: React.FC<AppBarWithUserMenuProps> = ({
             Voltar
           </Button>
         )}
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {title}
-        </Typography>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexGrow: 1 }}>
+          <Box component="img" src="/favicon.svg" alt="Educa Curionópolis" sx={{ width: 40, height: 40 }} />
+          <Typography variant="h6" component="div">
+            {title}
+          </Typography>
+        </Stack>
         
         {/* Message Badge */}
         <Tooltip title={unreadCount > 0 ? `${unreadCount} mensagens não lidas` : 'Mensagens'}>

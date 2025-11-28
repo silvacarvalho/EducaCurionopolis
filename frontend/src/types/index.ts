@@ -284,6 +284,7 @@ export interface Mensagem {
   remetente?: UsuarioSimples;
   destinatario?: UsuarioSimples;
   respostas?: Mensagem[];
+  tem_respostas?: boolean;
 }
 
 export enum PrioridadeMensagem {

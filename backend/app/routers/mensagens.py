@@ -42,8 +42,13 @@ def usuario_to_simples(usuario: Usuario) -> dict:
     }
 
 
-def mensagem_to_response(mensagem: Mensagem) -> dict:
+def mensagem_to_response(mensagem: Mensagem, db: Session = None, tem_respostas: bool = None) -> dict:
     """Convert Mensagem model to response dict with user info"""
+    # Check if message has replies if db is provided and tem_respostas not explicitly set
+    has_replies = tem_respostas
+    if has_replies is None and db:
+        has_replies = db.query(Mensagem).filter(Mensagem.mensagem_pai_id == mensagem.id).first() is not None
+    
     return {
         "id": mensagem.id,
         "remetente_id": mensagem.remetente_id,
@@ -52,12 +57,13 @@ def mensagem_to_response(mensagem: Mensagem) -> dict:
         "corpo": mensagem.corpo,
         "lida": mensagem.lida,
         "broadcast": mensagem.broadcast,
-        "prioridade": mensagem.prioridade.value if mensagem.prioridade else "normal",
+        "prioridade": mensagem.prioridade.value if mensagem.prioridade else "NORMAL",
         "mensagem_pai_id": mensagem.mensagem_pai_id,
         "created_at": mensagem.created_at,
         "lida_em": mensagem.lida_em,
         "remetente": usuario_to_simples(mensagem.remetente) if mensagem.remetente else None,
-        "destinatario": usuario_to_simples(mensagem.destinatario) if mensagem.destinatario else None
+        "destinatario": usuario_to_simples(mensagem.destinatario) if mensagem.destinatario else None,
+        "tem_respostas": has_replies or False
     }
 
 
@@ -215,7 +221,7 @@ async def send_mensagem(
                     mensagem_id=0,
                     remetente_nome=current_user.nome_completo,
                     assunto=mensagem_data.assunto,
-                    prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "normal"
+                    prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "NORMAL"
                 )
             except Exception as e:
                 print(f"[WebSocket] Error notifying user {dest_id}: {e}")
@@ -229,12 +235,13 @@ async def send_mensagem(
             "corpo": mensagem_data.corpo,
             "lida": False,
             "broadcast": False,
-            "prioridade": mensagem_data.prioridade.value if mensagem_data.prioridade else "normal",
+            "prioridade": mensagem_data.prioridade.value if mensagem_data.prioridade else "NORMAL",
             "mensagem_pai_id": None,
             "created_at": datetime.utcnow(),
             "lida_em": None,
             "remetente": usuario_to_simples(current_user),
-            "destinatario": None
+            "destinatario": None,
+            "tem_respostas": False
         }
     
     # Single recipient
@@ -278,7 +285,7 @@ async def send_mensagem(
             mensagem_id=db_mensagem.id,
             remetente_nome=current_user.nome_completo,
             assunto=mensagem_data.assunto,
-            prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "normal"
+            prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "NORMAL"
         )
     except Exception as e:
         print(f"[WebSocket] Error notifying user: {e}")
@@ -322,7 +329,7 @@ async def send_broadcast_todos(
                 mensagem_id=0,
                 remetente_nome=current_user.nome_completo,
                 assunto=mensagem_data.assunto,
-                prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "normal"
+                prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "NORMAL"
             )
         except Exception as e:
             print(f"[WebSocket] Error notifying user {usuario_id}: {e}")
@@ -369,7 +376,7 @@ async def send_broadcast_diretores(
                 mensagem_id=0,
                 remetente_nome=current_user.nome_completo,
                 assunto=mensagem_data.assunto,
-                prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "normal"
+                prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "NORMAL"
             )
         except Exception as e:
             print(f"[WebSocket] Error notifying director {diretor_id}: {e}")
@@ -427,7 +434,7 @@ async def send_broadcast_professores(
                 mensagem_id=0,
                 remetente_nome=current_user.nome_completo,
                 assunto=mensagem_data.assunto,
-                prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "normal"
+                prioridade=mensagem_data.prioridade.value if mensagem_data.prioridade else "NORMAL"
             )
         except Exception as e:
             print(f"[WebSocket] Error notifying professor {professor_id}: {e}")
@@ -460,7 +467,7 @@ async def get_inbox(
         query = query.filter(Mensagem.prioridade == get_model_prioridade(prioridade))
 
     mensagens = query.order_by(Mensagem.created_at.desc()).offset(skip).limit(limit).all()
-    return [mensagem_to_response(m) for m in mensagens]
+    return [mensagem_to_response(m, db) for m in mensagens]
 
 
 @router.get("/sent", response_model=List[MensagemResponse])
@@ -478,7 +485,7 @@ async def get_sent(
         Mensagem.remetente_id == current_user.id
     ).order_by(Mensagem.created_at.desc()).offset(skip).limit(limit).all()
 
-    return [mensagem_to_response(m) for m in mensagens]
+    return [mensagem_to_response(m, db) for m in mensagens]
 
 
 @router.get("/thread/{mensagem_id}", response_model=MensagemComRespostas)

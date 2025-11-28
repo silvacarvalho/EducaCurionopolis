@@ -573,6 +573,7 @@ class MensagemResponse(MensagemBase):
     lida_em: Optional[datetime]
     remetente: Optional[UsuarioSimples] = None
     destinatario: Optional[UsuarioSimples] = None
+    tem_respostas: bool = False
 
 
 class MensagemComRespostas(MensagemResponse):

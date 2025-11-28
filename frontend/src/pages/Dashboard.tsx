@@ -1,41 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Container,
-  AppBar,
-  Toolbar,
   Typography,
-  Button,
   Grid,
-  Paper,
   Card,
   CardContent,
-  IconButton,
-  Menu,
-  MenuItem,
 } from '@mui/material';
-import { AccountCircle as AccountCircleIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PerfilUsuario } from '../types';
+import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
 
 const Dashboard: React.FC = () => {
-  const { user, logout, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handlePerfil = () => {
-    handleMenuClose();
-    navigate('/perfil');
-  };
 
   const menuItems = [
 
@@ -135,39 +114,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            EDUCA+ Curionópolis
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {user?.nome_completo}
-          </Typography>
-          <IconButton
-            color="inherit"
-            onClick={handleMenuOpen}
-            aria-label="menu do usuário"
-          >
-            <AccountCircleIcon />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <MenuItem onClick={handlePerfil}>Meu Perfil</MenuItem>
-            <MenuItem onClick={logout}>Sair</MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+      <AppBarWithUserMenu title="EDUCA+ Curionópolis" />
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" gutterBottom>

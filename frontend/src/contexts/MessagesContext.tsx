@@ -6,6 +6,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { mensagensAPI } from '../services/api';
 import { useAuth } from './AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useNotification } from './NotificationContext';
 import { Mensagem, WebSocketMessage, ContadorMensagens } from '../types';
 
 interface MessagesContextData {
@@ -31,6 +32,7 @@ interface MessagesProviderProps {
 
 export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
+  const { showNotification } = useNotification();
   const [unreadCount, setUnreadCount] = useState(0);
   const [inbox, setInbox] = useState<Mensagem[]>([]);
   const [sent, setSent] = useState<Mensagem[]>([]);
@@ -39,6 +41,12 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children }) 
   
   // Use refs for functions that need to be called in WebSocket handler
   const refreshInboxRef = useRef<() => Promise<void>>();
+  const showNotificationRef = useRef(showNotification);
+  
+  // Keep notification ref updated
+  useEffect(() => {
+    showNotificationRef.current = showNotification;
+  }, [showNotification]);
 
   // Get token when authenticated
   useEffect(() => {
@@ -102,6 +110,14 @@ export const MessagesProvider: React.FC<MessagesProviderProps> = ({ children }) 
         // Use ref to get current function
         if (refreshInboxRef.current) {
           refreshInboxRef.current();
+        }
+        // Show notification
+        const data = message.data;
+        if (data && showNotificationRef.current) {
+          const notifMessage = data.remetente_nome 
+            ? `Nova mensagem de ${data.remetente_nome}: ${data.assunto || 'Sem assunto'}`
+            : 'Você recebeu uma nova mensagem';
+          showNotificationRef.current(notifMessage, 'info');
         }
         break;
       case 'message_read':
