@@ -5,6 +5,7 @@ import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ChartConfigProvider } from './contexts/ChartConfigContext';
+import { MessagesProvider } from './contexts/MessagesContext';
 import App from './App';
 import './print.css';
 
@@ -30,7 +31,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <NotificationProvider>
             <ChartConfigProvider>
-              <App />
+              <MessagesProvider>
+                <App />
+              </MessagesProvider>
             </ChartConfigProvider>
           </NotificationProvider>
         </AuthProvider>

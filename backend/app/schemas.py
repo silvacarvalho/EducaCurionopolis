@@ -4,6 +4,7 @@ Pydantic Schemas for Request/Response Validation
 from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List
 from datetime import datetime, date
+import enum
 from .models import (
     PerfilUsuario, NivelDesempenho, NivelEvolucao,
     Bimestre, TipoDiagnostico, ModalidadeDiagnostico, HipoteseEscrita
@@ -531,6 +532,14 @@ class ResultadoSAEBBulk(BaseSchema):
 # MENSAGEM SCHEMAS
 # ============================================
 
+class PrioridadeMensagem(str, enum.Enum):
+    """Message priority levels"""
+    BAIXA = "BAIXA"
+    NORMAL = "NORMAL"
+    ALTA = "ALTA"
+    URGENTE = "URGENTE"
+
+
 class MensagemBase(BaseSchema):
     assunto: str = Field(..., min_length=1, max_length=300)
     corpo: str = Field(..., min_length=1)
@@ -538,7 +547,18 @@ class MensagemBase(BaseSchema):
 
 class MensagemCreate(MensagemBase):
     destinatario_id: Optional[int] = None
+    destinatario_ids: Optional[List[int]] = None  # For multiple recipients
     broadcast: bool = False
+    prioridade: PrioridadeMensagem = PrioridadeMensagem.NORMAL
+    mensagem_pai_id: Optional[int] = None  # For replies/threads
+
+
+class UsuarioSimples(BaseSchema):
+    """Simplified user info for messages"""
+    id: int
+    nome_completo: str
+    email: str
+    perfil: str
 
 
 class MensagemResponse(MensagemBase):
@@ -547,8 +567,32 @@ class MensagemResponse(MensagemBase):
     destinatario_id: Optional[int]
     lida: bool
     broadcast: bool
+    prioridade: PrioridadeMensagem
+    mensagem_pai_id: Optional[int] = None
     created_at: datetime
     lida_em: Optional[datetime]
+    remetente: Optional[UsuarioSimples] = None
+    destinatario: Optional[UsuarioSimples] = None
+
+
+class MensagemComRespostas(MensagemResponse):
+    """Message with thread replies"""
+    respostas: List['MensagemResponse'] = []
+
+
+class DestinatarioResponse(BaseSchema):
+    """Available recipient for messaging"""
+    id: int
+    nome_completo: str
+    email: str
+    perfil: str
+    escola_nome: Optional[str] = None
+
+
+class ContadorMensagens(BaseSchema):
+    """Unread messages counter"""
+    nao_lidas: int
+    total: int
 
 
 # ============================================

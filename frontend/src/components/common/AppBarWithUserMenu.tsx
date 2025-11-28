@@ -7,13 +7,17 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Badge,
+  Tooltip,
 } from '@mui/material';
 import {
   AccountCircle as AccountCircleIcon,
   ArrowBack as ArrowBackIcon,
+  Mail as MailIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMessages } from '../../contexts/MessagesContext';
 
 interface AppBarWithUserMenuProps {
   title: string;
@@ -25,6 +29,7 @@ const AppBarWithUserMenu: React.FC<AppBarWithUserMenuProps> = ({
   showBackButton = false,
 }) => {
   const { user, logout } = useAuth();
+  const { unreadCount } = useMessages();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -39,6 +44,10 @@ const AppBarWithUserMenu: React.FC<AppBarWithUserMenuProps> = ({
   const handlePerfil = () => {
     handleMenuClose();
     navigate('/perfil');
+  };
+
+  const handleMensagens = () => {
+    navigate('/mensagens');
   };
 
   return (
@@ -57,6 +66,20 @@ const AppBarWithUserMenu: React.FC<AppBarWithUserMenuProps> = ({
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           {title}
         </Typography>
+        
+        {/* Message Badge */}
+        <Tooltip title={unreadCount > 0 ? `${unreadCount} mensagens não lidas` : 'Mensagens'}>
+          <IconButton
+            color="inherit"
+            onClick={handleMensagens}
+            sx={{ mr: 1 }}
+          >
+            <Badge badgeContent={unreadCount} color="error">
+              <MailIcon />
+            </Badge>
+          </IconButton>
+        </Tooltip>
+
         <Typography variant="body2" sx={{ mr: 2 }}>
           {user?.nome_completo}
         </Typography>
@@ -81,6 +104,7 @@ const AppBarWithUserMenu: React.FC<AppBarWithUserMenuProps> = ({
           }}
         >
           <MenuItem onClick={handlePerfil}>Meu Perfil</MenuItem>
+          <MenuItem onClick={handleMensagens}>Mensagens {unreadCount > 0 && `(${unreadCount})`}</MenuItem>
           <MenuItem onClick={logout}>Sair</MenuItem>
         </Menu>
       </Toolbar>

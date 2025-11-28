@@ -204,12 +204,26 @@ export const mensagensAPI = {
   getInbox: (params?: any) => api.get('/mensagens/inbox', { params }),
   getSent: (params?: any) => api.get('/mensagens/sent', { params }),
   get: (id: number) => api.get(`/mensagens/${id}`),
+  getThread: (id: number) => api.get(`/mensagens/thread/${id}`),
+  getDestinatarios: () => api.get('/mensagens/destinatarios'),
+  getContador: () => api.get('/mensagens/contador'),
   send: (data: any) => api.post('/mensagens', data),
+  broadcastTodos: (data: any) => api.post('/mensagens/broadcast-todos', data),
   broadcastDiretores: (data: any) =>
     api.post('/mensagens/broadcast-diretores', data),
   broadcastProfessores: (data: any) =>
     api.post('/mensagens/broadcast-professores', data),
   markAsRead: (id: number) => api.post(`/mensagens/${id}/mark-read`),
+  markAllAsRead: () => api.post('/mensagens/mark-all-read'),
+  delete: (id: number) => api.delete(`/mensagens/${id}`),
+};
+
+// Get WebSocket URL
+export const getWebSocketUrl = (userId: number, token: string): string => {
+  const wsBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+    .replace('http://', 'ws://')
+    .replace('https://', 'wss://');
+  return `${wsBaseUrl}/ws/${userId}?token=${token}`;
 };
 
 export const relatoriosAPI = {

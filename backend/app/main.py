@@ -2,13 +2,16 @@
 EDUCA+ Curionópolis - Main FastAPI Application
 Sistema Modular para Gestão e Demonstração de Métricas Educacionais
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 
-from .database import init_db, engine, Base
+from .database import init_db, engine, Base, get_db
+from .websocket import manager
+from .models import Usuario
 
 # Import routers
 from .routers import (
@@ -256,6 +259,77 @@ async def health_check():
                 "error": str(e)
             }
         )
+
+
+# ============================================
+# WEBSOCKET ENDPOINT
+# ============================================
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    user_id: int,
+    token: str = Query(...)
+):
+    """
+    WebSocket endpoint for real-time notifications
+    Connect with: ws://host/ws/{user_id}?token={jwt_token}
+    """
+    from jose import jwt, JWTError
+    from .database import SessionLocal
+    from .models import Usuario
+    
+    SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
+    ALGORITHM = "HS256"
+    
+    try:
+        # Validate token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_email = payload.get("sub")  # sub contains email, not user_id
+        
+        if not token_email:
+            await websocket.close(code=4001)
+            return
+        
+        # Get user from database to verify the user_id matches
+        db = SessionLocal()
+        try:
+            db_user = db.query(Usuario).filter(Usuario.email == token_email).first()
+            if not db_user or db_user.id != user_id:
+                await websocket.close(code=4001)
+                return
+        finally:
+            db.close()
+        
+        # Connect user
+        await manager.connect(websocket, user_id)
+        
+        try:
+            while True:
+                # Keep connection alive and handle messages
+                data = await websocket.receive_text()
+                
+                if data == "ping":
+                    await websocket.send_text("pong")
+                elif data == "get_online_users":
+                    online_users = manager.get_online_users()
+                    await websocket.send_json({
+                        "type": "online_users",
+                        "data": {"users": online_users}
+                    })
+                    
+        except WebSocketDisconnect:
+            manager.disconnect(user_id)
+            
+    except JWTError as e:
+        print(f"WebSocket JWT error: {e}")
+        await websocket.close(code=4001)
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+        try:
+            await websocket.close(code=4000)
+        except:
+            pass
 
 
 # ============================================

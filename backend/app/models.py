@@ -551,11 +551,20 @@ class ResultadoSAEB(Base):
 # MESSAGING SYSTEM
 # ============================================
 
+class PrioridadeMensagem(str, enum.Enum):
+    """Message priority levels"""
+    BAIXA = "BAIXA"
+    NORMAL = "NORMAL"
+    ALTA = "ALTA"
+    URGENTE = "URGENTE"
+
+
 class Mensagem(Base):
     """
     Internal messaging system
     Municipal management can send to directors
     Directors can send to teachers
+    Supports threads/replies and priority levels
     """
     __tablename__ = "mensagens"
 
@@ -566,6 +575,8 @@ class Mensagem(Base):
     corpo = Column(Text, nullable=False)
     lida = Column(Boolean, default=False)
     broadcast = Column(Boolean, default=False)  # True if sent to all users of a type
+    prioridade = Column(SQLEnum(PrioridadeMensagem), default=PrioridadeMensagem.NORMAL, nullable=False)
+    mensagem_pai_id = Column(Integer, ForeignKey('mensagens.id'), nullable=True)  # For threads/replies
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     lida_em = Column(DateTime(timezone=True))
@@ -573,9 +584,10 @@ class Mensagem(Base):
     # Relationships
     remetente = relationship("Usuario", foreign_keys=[remetente_id], back_populates="mensagens_enviadas")
     destinatario = relationship("Usuario", foreign_keys=[destinatario_id], back_populates="mensagens_recebidas")
+    mensagem_pai = relationship("Mensagem", remote_side=[id], backref="respostas")
 
     def __repr__(self):
-        return f"<Mensagem(assunto={self.assunto}, remetente_id={self.remetente_id})>"
+        return f"<Mensagem(assunto={self.assunto}, remetente_id={self.remetente_id}, prioridade={self.prioridade})>"
 
 
 # ============================================

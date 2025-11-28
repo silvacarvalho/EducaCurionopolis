@@ -277,8 +277,54 @@ export interface Mensagem {
   corpo: string;
   lida: boolean;
   broadcast: boolean;
+  prioridade: PrioridadeMensagem;
+  mensagem_pai_id?: number;
   created_at: string;
   lida_em?: string;
+  remetente?: UsuarioSimples;
+  destinatario?: UsuarioSimples;
+  respostas?: Mensagem[];
+}
+
+export enum PrioridadeMensagem {
+  BAIXA = 'BAIXA',
+  NORMAL = 'NORMAL',
+  ALTA = 'ALTA',
+  URGENTE = 'URGENTE',
+}
+
+export interface UsuarioSimples {
+  id: number;
+  nome_completo: string;
+  email: string;
+  perfil: string;
+}
+
+export interface Destinatario {
+  id: number;
+  nome_completo: string;
+  email: string;
+  perfil: string;
+  escola_nome?: string;
+}
+
+export interface ContadorMensagens {
+  nao_lidas: number;
+  total: number;
+}
+
+export interface MensagemCreate {
+  destinatario_id?: number;
+  destinatario_ids?: number[];
+  assunto: string;
+  corpo: string;
+  prioridade?: PrioridadeMensagem;
+  mensagem_pai_id?: number;
+}
+
+export interface WebSocketMessage {
+  type: 'new_message' | 'message_read' | 'unread_count' | 'online_users';
+  data: any;
 }
 
 // Report Types
