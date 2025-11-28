@@ -18,7 +18,9 @@
       "Bash(powershell -Command:*)",
       "Bash(powershell.exe -Command \"& {Stop-Process -Id 13640 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 12760 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 16876 -Force -ErrorAction SilentlyContinue}\")",
       "Bash(tasklist:*)",
-      "Bash(del check_and_fix_enum.py fix_enum_nao_avaliado.py check_enum.py 2)"
+      "Bash(del check_and_fix_enum.py fix_enum_nao_avaliado.py check_enum.py 2)",
+      "Bash(move usePermissions.ts usePermissions.tsx)",
+      "Bash(cmd.exe /c \"taskkill /F /IM node.exe & taskkill /F /IM python.exe\")"
     ],
     "deny": [],
     "ask": []
