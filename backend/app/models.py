@@ -576,3 +576,47 @@ class Mensagem(Base):
 
     def __repr__(self):
         return f"<Mensagem(assunto={self.assunto}, remetente_id={self.remetente_id})>"
+
+
+# ============================================
+# CHART CONFIGURATION
+# ============================================
+
+class ConfiguracaoGrafico(Base):
+    """
+    Chart configuration settings
+    Only editable by GESTAO_MUNICIPAL
+    Stores global chart settings for the system
+    """
+    __tablename__ = "configuracoes_grafico"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Chart dimensions
+    bar_width = Column(Integer, default=40)  # 20-100 pixels
+    chart_height = Column(Integer, default=400)  # 300-800 pixels
+
+    # Colors (stored as comma-separated hex values)
+    colors = Column(Text, default="#8884d8,#82ca9d,#ffc658,#ff8042,#0088FE,#00C49F,#FFBB28,#FF8042")
+
+    # Default chart type
+    default_chart_type = Column(String(10), default="bar")  # 'bar' or 'pie'
+
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_by_id = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
+
+    # Relationship
+    updated_by = relationship("Usuario", foreign_keys=[updated_by_id])
+
+    def __repr__(self):
+        return f"<ConfiguracaoGrafico(id={self.id}, bar_width={self.bar_width})>"
+
+    def get_colors_list(self):
+        """Convert comma-separated colors to list"""
+        return self.colors.split(',') if self.colors else []
+
+    def set_colors_list(self, colors_list):
+        """Convert list of colors to comma-separated string"""
+        self.colors = ','.join(colors_list)

@@ -21,30 +21,43 @@ async def create_aluno(
     current_user: Usuario = Depends(require_diretor_or_gestao)
 ):
     """Create a new student"""
-    # Verify turma access
-    verify_turma_access(aluno_data.turma_id, current_user, db)
+    try:
+        # Verify turma access
+        verify_turma_access(aluno_data.turma_id, current_user, db)
 
-    # Check matricula uniqueness
-    if db.query(Aluno).filter(Aluno.matricula == aluno_data.matricula).first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Matrícula já cadastrada"
-        )
-
-    # Check CPF uniqueness if provided
-    if aluno_data.cpf:
-        if db.query(Aluno).filter(Aluno.cpf == aluno_data.cpf).first():
+        # Check matricula uniqueness
+        if db.query(Aluno).filter(Aluno.matricula == aluno_data.matricula).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="CPF já cadastrado"
+                detail="Matrícula já cadastrada"
             )
 
-    db_aluno = Aluno(**aluno_data.dict())
-    db.add(db_aluno)
-    db.commit()
-    db.refresh(db_aluno)
+        # Check CPF uniqueness if provided
+        if aluno_data.cpf:
+            if db.query(Aluno).filter(Aluno.cpf == aluno_data.cpf).first():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CPF já cadastrado"
+                )
 
-    return db_aluno
+        db_aluno = Aluno(**aluno_data.dict())
+        db.add(db_aluno)
+        db.commit()
+        db.refresh(db_aluno)
+
+        return db_aluno
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        db.rollback()
+        # Log the error for debugging
+        print(f"Erro ao criar aluno: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao criar aluno: {str(e)}"
+        )
 
 
 @router.get("/", response_model=List[AlunoResponse])

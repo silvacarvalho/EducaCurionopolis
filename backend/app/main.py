@@ -26,7 +26,9 @@ from .routers import (
     diagnosticos,
     saeb,
     mensagens,
-    relatorios
+    relatorios,
+    importacao,
+    configuracoes_grafico
 )
 
 load_dotenv()
@@ -205,6 +207,20 @@ app.include_router(
     relatorios.router,
     prefix="/api/v1/relatorios",
     tags=["Relatórios"]
+)
+
+# Importação
+app.include_router(
+    importacao.router,
+    prefix="/api/v1/importacao",
+    tags=["Importação"]
+)
+
+# Chart Configuration
+app.include_router(
+    configuracoes_grafico.router,
+    prefix="/api/v1/configuracoes-grafico",
+    tags=["Configurações de Gráficos"]
 )
 
 # ============================================

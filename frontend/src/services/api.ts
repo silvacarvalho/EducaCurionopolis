@@ -244,3 +244,10 @@ export const relatoriosAPI = {
   publicoDiagnosticos: (params?: any) =>
     api.get('/relatorios/publico/diagnosticos', { params }),
 };
+
+export const configuracoesGraficoAPI = {
+  get: () => api.get('/configuracoes-grafico'),
+  create: (data: any) => api.post('/configuracoes-grafico', data),
+  update: (data: any) => api.put('/configuracoes-grafico', data),
+  reset: () => api.post('/configuracoes-grafico/reset'),
+};

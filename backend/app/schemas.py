@@ -3,7 +3,7 @@ Pydantic Schemas for Request/Response Validation
 """
 from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 from .models import (
     PerfilUsuario, NivelDesempenho, NivelEvolucao,
     Bimestre, TipoDiagnostico, ModalidadeDiagnostico, HipoteseEscrita
@@ -215,7 +215,7 @@ class VincularProfessorDisciplina(BaseSchema):
 
 class AlunoBase(BaseSchema):
     nome_completo: str = Field(..., min_length=3, max_length=200)
-    data_nascimento: Optional[datetime] = None
+    data_nascimento: Optional[date] = None
     cpf: Optional[str] = None
     matricula: str = Field(..., min_length=1, max_length=50)
     nome_responsavel: Optional[str] = None
@@ -670,3 +670,55 @@ class AvaliacaoAgregadaResponse(AvaliacaoAgregadaBase):
     turma_id: int
     disciplina_id: int
     created_at: datetime
+
+
+
+# ============================================
+# CHART CONFIGURATION SCHEMAS
+# ============================================
+
+class ConfiguracaoGraficoBase(BaseSchema):
+    bar_width: int = Field(40, ge=20, le=100, description="Width of bars in pixels")
+    chart_height: int = Field(400, ge=300, le=800, description="Height of chart in pixels")
+    colors: List[str] = Field(
+        default=["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE", "#00C49F", "#FFBB28", "#FF8042"],
+        description="List of hex color codes"
+    )
+    default_chart_type: str = Field("bar", pattern="^(bar|pie)$", description="Default chart type")
+
+    @validator('colors')
+    def validate_colors(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('At least one color is required')
+        for color in v:
+            if not color.startswith('#') or len(color) not in [4, 7]:
+                raise ValueError(f'Invalid hex color: {color}')
+        return v
+
+
+class ConfiguracaoGraficoCreate(ConfiguracaoGraficoBase):
+    pass
+
+
+class ConfiguracaoGraficoUpdate(BaseSchema):
+    bar_width: Optional[int] = Field(None, ge=20, le=100)
+    chart_height: Optional[int] = Field(None, ge=300, le=800)
+    colors: Optional[List[str]] = None
+    default_chart_type: Optional[str] = Field(None, pattern="^(bar|pie)$")
+
+    @validator('colors')
+    def validate_colors(cls, v):
+        if v is not None:
+            if len(v) == 0:
+                raise ValueError('At least one color is required')
+            for color in v:
+                if not color.startswith('#') or len(color) not in [4, 7]:
+                    raise ValueError(f'Invalid hex color: {color}')
+        return v
+
+
+class ConfiguracaoGraficoResponse(ConfiguracaoGraficoBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+

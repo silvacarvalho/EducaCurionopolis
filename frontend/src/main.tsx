@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { ChartConfigProvider } from './contexts/ChartConfigContext';
 import App from './App';
 import './print.css';
 
@@ -28,7 +29,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <CssBaseline />
         <AuthProvider>
           <NotificationProvider>
-            <App />
+            <ChartConfigProvider>
+              <App />
+            </ChartConfigProvider>
           </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>

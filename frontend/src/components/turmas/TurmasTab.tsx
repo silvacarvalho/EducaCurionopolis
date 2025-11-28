@@ -32,6 +32,8 @@ import {
   School as SchoolIcon,
   People as PeopleIcon,
   Person as PersonIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
 } from '@mui/icons-material';
 import { turmasAPI, escolasAPI, professoresAPI } from '../../services/api';
 import { Turma, Escola, Professor } from '../../types';
@@ -47,9 +49,7 @@ interface TurmaComDetalhes extends Turma {
       nome_completo: string;
     };
   };
-  _count?: {
-    alunos: number;
-  };
+  total_alunos?: number;
 }
 
 interface TurmasTabProps {
@@ -68,6 +68,8 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
   const [filterEscola, setFilterEscola] = useState<string>('');
   const [filterAno, setFilterAno] = useState<string>('');
   const [selectedTurmaId, setSelectedTurmaId] = useState<number | null>(null);
+  const [orderBy, setOrderBy] = useState<'nome' | 'ano_escolar' | 'escola' | 'alunos'>('nome');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -240,11 +242,46 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
     );
   };
 
-  const filteredTurmas = turmas.filter((turma) => {
-    const escolaMatch = !filterEscola || turma.escola_id.toString() === filterEscola;
-    const anoMatch = !filterAno || turma.ano_escolar.toString() === filterAno;
-    return escolaMatch && anoMatch;
-  });
+  const handleSort = (column: 'nome' | 'ano_escolar' | 'escola' | 'alunos') => {
+    if (orderBy === column) {
+      setOrderDirection(orderDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderBy(column);
+      setOrderDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: 'nome' | 'ano_escolar' | 'escola' | 'alunos') => {
+    if (orderBy !== column) return null;
+    return orderDirection === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
+  };
+
+  const filteredTurmas = turmas
+    .filter((turma) => {
+      const escolaMatch = !filterEscola || turma.escola_id.toString() === filterEscola;
+      const anoMatch = !filterAno || turma.ano_escolar.toString() === filterAno;
+      return escolaMatch && anoMatch;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+
+      switch (orderBy) {
+        case 'nome':
+          comparison = a.nome.localeCompare(b.nome);
+          break;
+        case 'ano_escolar':
+          comparison = a.ano_escolar - b.ano_escolar;
+          break;
+        case 'escola':
+          comparison = (a.escola?.nome || '').localeCompare(b.escola?.nome || '');
+          break;
+        case 'alunos':
+          comparison = (a.total_alunos || 0) - (b.total_alunos || 0);
+          break;
+      }
+
+      return orderDirection === 'asc' ? comparison : -comparison;
+    });
 
   return (
     <Box>
@@ -315,13 +352,45 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell>Ano Escolar</TableCell>
+                <TableCell
+                  onClick={() => handleSort('nome')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Nome
+                    {getSortIcon('nome')}
+                  </Box>
+                </TableCell>
+                <TableCell
+                  onClick={() => handleSort('ano_escolar')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Ano Escolar
+                    {getSortIcon('ano_escolar')}
+                  </Box>
+                </TableCell>
                 <TableCell>Ano Letivo</TableCell>
                 <TableCell>Turno</TableCell>
-                <TableCell>Escola</TableCell>
+                <TableCell
+                  onClick={() => handleSort('escola')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Escola
+                    {getSortIcon('escola')}
+                  </Box>
+                </TableCell>
                 <TableCell>Professor</TableCell>
-                <TableCell>Alunos</TableCell>
+                <TableCell
+                  onClick={() => handleSort('alunos')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Alunos
+                    {getSortIcon('alunos')}
+                  </Box>
+                </TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
@@ -376,7 +445,7 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <PeopleIcon fontSize="small" color="action" />
                         <Typography variant="body2">
-                          {turma._count?.alunos || 0}
+                          {turma.total_alunos || 0}
                         </Typography>
                       </Box>
                     </TableCell>

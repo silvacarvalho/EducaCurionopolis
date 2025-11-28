@@ -69,6 +69,12 @@ const Dashboard: React.FC = () => {
       roles: [PerfilUsuario.DIRETOR_COORDENADOR],
     },
     {
+      title: 'Importar Alunos',
+      description: 'Importar alunos via planilha Excel',
+      path: '/importacao-alunos',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL, PerfilUsuario.DIRETOR_COORDENADOR],
+    },
+    {
       title: 'Avaliações',
       description: 'Registrar e consultar avaliações bimestrais',
       path: '/avaliacoes',
@@ -116,6 +122,12 @@ const Dashboard: React.FC = () => {
         PerfilUsuario.DIRETOR_COORDENADOR,
         PerfilUsuario.PROFESSOR,
       ],
+    },
+    {
+      title: 'Configurações de Gráficos',
+      description: 'Personalizar cores e tamanhos dos gráficos',
+      path: '/configuracoes-grafico',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
     },
   ];
 

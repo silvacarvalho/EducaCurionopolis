@@ -31,6 +31,7 @@ import {
 } from '@mui/material';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import { DrillDownData } from '../types';
+import { useChartConfig } from '../contexts/ChartConfigContext';
 
 interface DrillDownChartProps {
   title: string;
@@ -43,17 +44,6 @@ interface DrillDownChartProps {
   colors?: string[];
 }
 
-const DEFAULT_COLORS = [
-  '#8884d8',
-  '#82ca9d',
-  '#ffc658',
-  '#ff8042',
-  '#0088FE',
-  '#00C49F',
-  '#FFBB28',
-  '#FF8042',
-];
-
 const DrillDownChart: React.FC<DrillDownChartProps> = ({
   title,
   data,
@@ -61,9 +51,17 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
   error,
   onDrillDown,
   breadcrumbs = [],
-  chartType: initialChartType = 'bar',
-  colors = DEFAULT_COLORS,
+  chartType: propChartType,
+  colors: propColors,
 }) => {
+  const { config } = useChartConfig();
+
+  // Use config values if props are not provided
+  const colors = propColors || config.colors;
+  const initialChartType = propChartType || config.default_chart_type;
+  const barWidth = config.bar_width;
+  const chartHeight = config.chart_height;
+
   const [chartType, setChartType] = useState<'bar' | 'pie'>(initialChartType);
 
   const handleBarClick = (data: any) => {
@@ -206,7 +204,7 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
       </Box>
 
       {/* Chart */}
-      <Box sx={{ width: '100%', height: 400 }}>
+      <Box sx={{ width: '100%', height: chartHeight }}>
         {chartType === 'bar' ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -279,6 +277,7 @@ const DrillDownChart: React.FC<DrillDownChartProps> = ({
                 label={renderCustomBarLabel}
                 onClick={handleBarClick}
                 cursor={onDrillDown ? 'pointer' : 'default'}
+                barSize={barWidth}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />

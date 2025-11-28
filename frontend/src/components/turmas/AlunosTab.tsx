@@ -23,6 +23,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -32,6 +33,9 @@ import {
   School as SchoolIcon,
   Class as ClassIcon,
   SwapHoriz as TransferIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { alunosAPI, turmasAPI, escolasAPI } from '../../services/api';
 import { Aluno, Turma, Escola } from '../../types';
@@ -63,6 +67,9 @@ const AlunosTab: React.FC = () => {
   const [filterEscola, setFilterEscola] = useState<string>('');
   const [filterTurma, setFilterTurma] = useState<string>('');
   const [newTurmaId, setNewTurmaId] = useState<string>('');
+  const [searchNome, setSearchNome] = useState<string>('');
+  const [orderBy, setOrderBy] = useState<'nome' | 'matricula' | 'turma' | 'escola'>('nome');
+  const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -242,12 +249,49 @@ const AlunosTab: React.FC = () => {
     return formData.nome_completo && formData.matricula && formData.turma_id;
   };
 
-  const filteredAlunos = alunos.filter((aluno) => {
-    const escolaMatch =
-      !filterEscola || aluno.turma?.escola_id?.toString() === filterEscola;
-    const turmaMatch = !filterTurma || aluno.turma_id.toString() === filterTurma;
-    return escolaMatch && turmaMatch;
-  });
+  const handleSort = (column: 'nome' | 'matricula' | 'turma' | 'escola') => {
+    if (orderBy === column) {
+      setOrderDirection(orderDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setOrderBy(column);
+      setOrderDirection('asc');
+    }
+  };
+
+  const getSortIcon = (column: 'nome' | 'matricula' | 'turma' | 'escola') => {
+    if (orderBy !== column) return null;
+    return orderDirection === 'asc' ? <ArrowUpwardIcon fontSize="small" /> : <ArrowDownwardIcon fontSize="small" />;
+  };
+
+  const filteredAlunos = alunos
+    .filter((aluno) => {
+      const escolaMatch =
+        !filterEscola || aluno.turma?.escola_id?.toString() === filterEscola;
+      const turmaMatch = !filterTurma || aluno.turma_id.toString() === filterTurma;
+      const nomeMatch = !searchNome ||
+        aluno.nome_completo.toLowerCase().includes(searchNome.toLowerCase());
+      return escolaMatch && turmaMatch && nomeMatch;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+
+      switch (orderBy) {
+        case 'nome':
+          comparison = a.nome_completo.localeCompare(b.nome_completo);
+          break;
+        case 'matricula':
+          comparison = a.matricula.localeCompare(b.matricula);
+          break;
+        case 'turma':
+          comparison = (a.turma?.nome || '').localeCompare(b.turma?.nome || '');
+          break;
+        case 'escola':
+          comparison = (a.turma?.escola?.nome || '').localeCompare(b.turma?.escola?.nome || '');
+          break;
+      }
+
+      return orderDirection === 'asc' ? comparison : -comparison;
+    });
 
   const getTurmasForFilter = () => {
     if (filterEscola) {
@@ -268,9 +312,38 @@ const AlunosTab: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h5">Gerenciar Alunos</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h5">Gerenciar Alunos</Typography>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button startIcon={<RefreshIcon />} onClick={loadAlunos}>
+              Atualizar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenDialog()}
+            >
+              Novo Aluno
+            </Button>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            placeholder="Buscar por nome..."
+            value={searchNome}
+            onChange={(e) => setSearchNome(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ minWidth: 250 }}
+          />
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Filtrar por Escola</InputLabel>
             <Select
@@ -302,16 +375,6 @@ const AlunosTab: React.FC = () => {
               ))}
             </Select>
           </FormControl>
-          <Button startIcon={<RefreshIcon />} onClick={loadAlunos}>
-            Atualizar
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
-          >
-            Novo Aluno
-          </Button>
         </Box>
       </Box>
 
@@ -336,11 +399,43 @@ const AlunosTab: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell>Matrícula</TableCell>
+                <TableCell
+                  onClick={() => handleSort('nome')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Nome
+                    {getSortIcon('nome')}
+                  </Box>
+                </TableCell>
+                <TableCell
+                  onClick={() => handleSort('matricula')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Matrícula
+                    {getSortIcon('matricula')}
+                  </Box>
+                </TableCell>
                 <TableCell>Data Nasc.</TableCell>
-                <TableCell>Turma</TableCell>
-                <TableCell>Escola</TableCell>
+                <TableCell
+                  onClick={() => handleSort('turma')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Turma
+                    {getSortIcon('turma')}
+                  </Box>
+                </TableCell>
+                <TableCell
+                  onClick={() => handleSort('escola')}
+                  sx={{ cursor: 'pointer', userSelect: 'none' }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    Escola
+                    {getSortIcon('escola')}
+                  </Box>
+                </TableCell>
                 <TableCell>Responsável</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell align="right">Ações</TableCell>

@@ -19,6 +19,8 @@ import DiagnosticoAvaliar from './pages/DiagnosticoAvaliar';
 import SAEBPage from './pages/SAEBPage';
 import MensagensPage from './pages/MensagensPage';
 import PerfilPage from './pages/PerfilPage';
+import ImportacaoAlunosPage from './pages/ImportacaoAlunosPage';
+import ConfiguracoesGraficoPage from './pages/ConfiguracoesGraficoPage';
 
 // Simple Protected Route for authenticated users only
 const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -72,7 +74,12 @@ function App() {
       <Route
         path="/professores"
         element={
-          <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
+          <ProtectedRoute
+            allowedProfiles={[
+              PerfilUsuario.GESTAO_MUNICIPAL,
+              PerfilUsuario.DIRETOR_COORDENADOR
+            ]}
+          >
             <ProfessoresPage />
           </ProtectedRoute>
         }
@@ -139,6 +146,27 @@ function App() {
           <AuthenticatedRoute>
             <PerfilPage />
           </AuthenticatedRoute>
+        }
+      />
+      <Route
+        path="/importacao-alunos"
+        element={
+          <ProtectedRoute
+            allowedProfiles={[
+              PerfilUsuario.GESTAO_MUNICIPAL,
+              PerfilUsuario.DIRETOR_COORDENADOR
+            ]}
+          >
+            <ImportacaoAlunosPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracoes-grafico"
+        element={
+          <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
+            <ConfiguracoesGraficoPage />
+          </ProtectedRoute>
         }
       />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
