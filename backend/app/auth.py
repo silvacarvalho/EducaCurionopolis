@@ -21,7 +21,7 @@ load_dotenv()
 # Configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))  # 8 hours default
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours default
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -44,9 +44,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """Hash a password"""
-    # Bcrypt has a 72 byte limit, truncate if necessary
-    if len(password.encode('utf-8')) > 72:
-        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+    # Bcrypt has a maximum password length of 72 bytes
+    # Validate byte length to handle UTF-8 characters properly
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        raise ValueError(
+            f"Password is too long ({len(password_bytes)} bytes). "
+            "Maximum length is 72 bytes (approximately 72 characters)."
+        )
     return pwd_context.hash(password)
 
 

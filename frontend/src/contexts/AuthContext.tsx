@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
+  updateUser: (updatedUser: Usuario) => void;
   isAuthenticated: boolean;
   hasRole: (roles: PerfilUsuario[]) => boolean;
 }
@@ -81,6 +82,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     window.location.href = '/login';
   };
 
+  const updateUser = (updatedUser: Usuario) => {
+    setUser(updatedUser);
+  };
+
   const hasRole = (roles: PerfilUsuario[]): boolean => {
     if (!user) return false;
     return roles.includes(user.perfil);
@@ -91,6 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     login,
     logout,
+    updateUser,
     isAuthenticated: !!user,
     hasRole,
   };

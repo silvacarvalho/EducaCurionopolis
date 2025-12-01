@@ -3,10 +3,11 @@ Pydantic Schemas for Request/Response Validation
 """
 from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
+import enum
 from .models import (
     PerfilUsuario, NivelDesempenho, NivelEvolucao,
-    Bimestre, TipoDiagnostico
+    Bimestre, TipoDiagnostico, ModalidadeDiagnostico, HipoteseEscrita
 )
 
 
@@ -118,6 +119,10 @@ class ProfessorCreate(BaseSchema):
 
 
 class ProfessorUpdate(BaseSchema):
+    nome_completo: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefone: Optional[str] = None
+    senha: Optional[str] = Field(None, min_length=6, max_length=72)
     formacao: Optional[str] = None
     ativo: Optional[bool] = None
 
@@ -128,6 +133,11 @@ class ProfessorResponse(ProfessorBase):
     escola_id: int
     ativo: bool
     created_at: datetime
+    usuario: Optional['UsuarioResponse'] = None
+    escola: Optional['EscolaResponse'] = None
+
+    class Config:
+        from_attributes = True
 
 
 # ============================================
@@ -137,25 +147,35 @@ class ProfessorResponse(ProfessorBase):
 class TurmaBase(BaseSchema):
     nome: str = Field(..., min_length=1, max_length=100)
     ano_escolar: int = Field(..., ge=1, le=9)
-    ano_letivo: int = Field(..., ge=2020, le=2100)
     turno: Optional[str] = None
 
 
 class TurmaCreate(TurmaBase):
     escola_id: int
+    professor_id: Optional[int] = None
+    ano_letivo: Optional[int] = Field(None, ge=2020, le=2100)  # Auto-filled if not provided
 
 
 class TurmaUpdate(BaseSchema):
     nome: Optional[str] = None
     turno: Optional[str] = None
+    professor_id: Optional[int] = None
     ativo: Optional[bool] = None
 
 
 class TurmaResponse(TurmaBase):
     id: int
     escola_id: int
+    professor_id: Optional[int] = None
+    ano_letivo: int
     ativo: bool
     created_at: datetime
+    professor: Optional['ProfessorResponse'] = None
+    escola: Optional['EscolaResponse'] = None
+    total_alunos: int = 0  # Número de alunos ativos na turma
+
+    class Config:
+        from_attributes = True
 
 
 # ============================================
@@ -196,7 +216,7 @@ class VincularProfessorDisciplina(BaseSchema):
 
 class AlunoBase(BaseSchema):
     nome_completo: str = Field(..., min_length=3, max_length=200)
-    data_nascimento: Optional[datetime] = None
+    data_nascimento: Optional[date] = None
     cpf: Optional[str] = None
     matricula: str = Field(..., min_length=1, max_length=50)
     nome_responsavel: Optional[str] = None
@@ -220,6 +240,10 @@ class AlunoResponse(AlunoBase):
     turma_id: int
     ativo: bool
     created_at: datetime
+    turma: Optional['TurmaResponse'] = None
+
+    class Config:
+        from_attributes = True
 
 
 # ============================================
@@ -256,6 +280,81 @@ class AvaliacaoBimestralBulk(BaseSchema):
     avaliacoes: List[AvaliacaoBimestralCreate]
 
 
+
+
+# ============================================
+# AVALIAÇÃO AGREGADA SCHEMAS
+# ============================================
+
+class AvaliacaoAgregadaBase(BaseSchema):
+    bimestre: int = Field(..., ge=1, le=4)
+    ano_letivo: int = Field(..., ge=2020, le=2100)
+    qtd_abaixo_media: int = Field(default=0, ge=0)
+    qtd_na_media: int = Field(default=0, ge=0)
+    qtd_acima_media: int = Field(default=0, ge=0)
+    observacoes: Optional[str] = None
+
+
+class AvaliacaoAgregadaCreate(AvaliacaoAgregadaBase):
+    turma_id: int
+    disciplina_id: int
+
+
+class AvaliacaoAgregadaUpdate(BaseSchema):
+    qtd_abaixo_media: Optional[int] = Field(None, ge=0)
+    qtd_na_media: Optional[int] = Field(None, ge=0)
+    qtd_acima_media: Optional[int] = Field(None, ge=0)
+    observacoes: Optional[str] = None
+
+
+class AvaliacaoAgregadaResponse(AvaliacaoAgregadaBase):
+    id: int
+    turma_id: int
+    disciplina_id: int
+    created_at: datetime
+
+
+# ============================================
+# ITEM DIAGNÓSTICO SCHEMAS
+# ============================================
+
+class ItemDiagnosticoBase(BaseSchema):
+    descricao: str = Field(..., min_length=5)
+    modalidade: ModalidadeDiagnostico
+    anos_aplicaveis: str = Field(..., pattern=r"^[1-5](,[1-5])*$")  # Ex: "1,2,3"
+
+    @validator('anos_aplicaveis')
+    def validate_anos(cls, v):
+        anos = [int(a) for a in v.split(',')]
+        if not all(1 <= ano <= 5 for ano in anos):
+            raise ValueError('Anos devem estar entre 1 e 5')
+        if len(anos) != len(set(anos)):
+            raise ValueError('Anos duplicados não são permitidos')
+        return ','.join(map(str, sorted(anos)))
+
+
+class ItemDiagnosticoCreate(ItemDiagnosticoBase):
+    pass
+
+
+class ItemDiagnosticoUpdate(BaseSchema):
+    descricao: Optional[str] = None
+    modalidade: Optional[ModalidadeDiagnostico] = None
+    anos_aplicaveis: Optional[str] = None
+    ativo: Optional[bool] = None
+
+
+class ItemDiagnosticoResponse(ItemDiagnosticoBase):
+    id: int
+    ativo: bool
+    created_at: datetime
+
+    @property
+    def anos_lista(self) -> List[int]:
+        """Retorna lista de anos aplicáveis"""
+        return [int(a) for a in self.anos_aplicaveis.split(',')]
+
+
 # ============================================
 # DIAGNÓSTICO SCHEMAS
 # ============================================
@@ -270,6 +369,8 @@ class DiagnosticoBase(BaseSchema):
     genero_textual: str = Field(..., min_length=2, max_length=200)
     aplicavel_ano_inicial: int = Field(default=1, ge=1, le=5)
     aplicavel_ano_final: int = Field(default=5, ge=1, le=5)
+    data_disponivel: Optional[datetime] = None
+    data_limite: Optional[datetime] = None
 
 
 class DiagnosticoCreate(DiagnosticoBase):
@@ -281,6 +382,8 @@ class DiagnosticoUpdate(BaseSchema):
     descricao: Optional[str] = None
     objetivo_avaliacao: Optional[str] = None
     genero_textual: Optional[str] = None
+    data_disponivel: Optional[datetime] = None
+    data_limite: Optional[datetime] = None
     ativo: Optional[bool] = None
 
 
@@ -289,6 +392,7 @@ class DiagnosticoResponse(DiagnosticoBase):
     ativo: bool
     substituido_por_id: Optional[int] = None
     created_at: datetime
+    itens: List[ItemDiagnosticoResponse] = []
 
 
 class DiagnosticoSubstituir(BaseSchema):
@@ -297,23 +401,55 @@ class DiagnosticoSubstituir(BaseSchema):
     novo_diagnostico: DiagnosticoCreate
 
 
+class DiagnosticoVincularItens(BaseSchema):
+    """Vincular itens a um diagnóstico"""
+    item_ids: List[int]
+
+
+# ============================================
+# AVALIAÇÃO ITEM DIAGNÓSTICO SCHEMAS
+# ============================================
+
+class AvaliacaoItemBase(BaseSchema):
+    item_diagnostico_id: int
+    resposta: NivelEvolucao  # SIM, NAO, EM_PARTE
+
+
+class AvaliacaoItemCreate(AvaliacaoItemBase):
+    pass
+
+
+class AvaliacaoItemResponse(AvaliacaoItemBase):
+    id: int
+    created_at: datetime
+
+
 # ============================================
 # DIAGNÓSTICO RESULTADO SCHEMAS
 # ============================================
 
 class DiagnosticoResultadoBase(BaseSchema):
-    nivel_evolucao: NivelEvolucao
+    hipotese_escrita: HipoteseEscrita
     observacoes: Optional[str] = None
 
 
 class DiagnosticoResultadoCreate(DiagnosticoResultadoBase):
+    """Criar resultado com hipótese de escrita e avaliações de itens"""
     diagnostico_id: int
     aluno_id: int
+    avaliacoes_itens: List[AvaliacaoItemCreate]
+
+    @validator('avaliacoes_itens')
+    def validate_avaliacoes(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('É obrigatório avaliar pelo menos um item')
+        return v
 
 
 class DiagnosticoResultadoUpdate(BaseSchema):
-    nivel_evolucao: Optional[NivelEvolucao] = None
+    hipotese_escrita: Optional[HipoteseEscrita] = None
     observacoes: Optional[str] = None
+    avaliacoes_itens: Optional[List[AvaliacaoItemCreate]] = None
 
 
 class DiagnosticoResultadoResponse(DiagnosticoResultadoBase):
@@ -323,6 +459,7 @@ class DiagnosticoResultadoResponse(DiagnosticoResultadoBase):
     professor_id: int
     data_aplicacao: datetime
     created_at: datetime
+    avaliacoes_itens: List[AvaliacaoItemResponse] = []
 
 
 class DiagnosticoResultadoBulk(BaseSchema):
@@ -395,6 +532,14 @@ class ResultadoSAEBBulk(BaseSchema):
 # MENSAGEM SCHEMAS
 # ============================================
 
+class PrioridadeMensagem(str, enum.Enum):
+    """Message priority levels"""
+    BAIXA = "BAIXA"
+    NORMAL = "NORMAL"
+    ALTA = "ALTA"
+    URGENTE = "URGENTE"
+
+
 class MensagemBase(BaseSchema):
     assunto: str = Field(..., min_length=1, max_length=300)
     corpo: str = Field(..., min_length=1)
@@ -402,7 +547,18 @@ class MensagemBase(BaseSchema):
 
 class MensagemCreate(MensagemBase):
     destinatario_id: Optional[int] = None
+    destinatario_ids: Optional[List[int]] = None  # For multiple recipients
     broadcast: bool = False
+    prioridade: PrioridadeMensagem = PrioridadeMensagem.NORMAL
+    mensagem_pai_id: Optional[int] = None  # For replies/threads
+
+
+class UsuarioSimples(BaseSchema):
+    """Simplified user info for messages"""
+    id: int
+    nome_completo: str
+    email: str
+    perfil: str
 
 
 class MensagemResponse(MensagemBase):
@@ -411,8 +567,33 @@ class MensagemResponse(MensagemBase):
     destinatario_id: Optional[int]
     lida: bool
     broadcast: bool
+    prioridade: PrioridadeMensagem
+    mensagem_pai_id: Optional[int] = None
     created_at: datetime
     lida_em: Optional[datetime]
+    remetente: Optional[UsuarioSimples] = None
+    destinatario: Optional[UsuarioSimples] = None
+    tem_respostas: bool = False
+
+
+class MensagemComRespostas(MensagemResponse):
+    """Message with thread replies"""
+    respostas: List['MensagemResponse'] = []
+
+
+class DestinatarioResponse(BaseSchema):
+    """Available recipient for messaging"""
+    id: int
+    nome_completo: str
+    email: str
+    perfil: str
+    escola_nome: Optional[str] = None
+
+
+class ContadorMensagens(BaseSchema):
+    """Unread messages counter"""
+    nao_lidas: int
+    total: int
 
 
 # ============================================
@@ -468,6 +649,25 @@ class RelatorioDiagnosticoGeral(BaseSchema):
     percentual_em_partes: float
 
 
+class EstatisticaEixo(BaseSchema):
+    """Estatística por hipótese de escrita (eixo)"""
+    eixo: HipoteseEscrita
+    quantidade: int
+    percentual: float
+
+
+class RelatorioDiagnosticoPorEixo(BaseSchema):
+    """Relatório de diagnóstico agrupado por hipótese de escrita"""
+    diagnostico_id: int
+    diagnostico_nome: str
+    total_alunos_turma: int
+    total_alunos_avaliados: int
+    total_nao_avaliados: int
+    percentual_avaliados: float
+    percentual_nao_avaliados: float
+    estatisticas_por_eixo: List[EstatisticaEixo]
+
+
 class RelatorioSAEBGeral(BaseSchema):
     """General SAEB report response"""
     total_alunos: int
@@ -483,3 +683,87 @@ class DrillDownData(BaseSchema):
     value: int
     percentage: float
     details: Optional[List[dict]] = None
+
+
+# ============================================
+# AVALIAÇÃO AGREGADA SCHEMAS
+# ============================================
+
+class AvaliacaoAgregadaBase(BaseSchema):
+    bimestre: int = Field(..., ge=1, le=4)
+    ano_letivo: int = Field(..., ge=2020, le=2100)
+    qtd_abaixo_media: int = Field(default=0, ge=0)
+    qtd_na_media: int = Field(default=0, ge=0)
+    qtd_acima_media: int = Field(default=0, ge=0)
+    observacoes: Optional[str] = None
+
+
+class AvaliacaoAgregadaCreate(AvaliacaoAgregadaBase):
+    turma_id: int
+    disciplina_id: int
+
+
+class AvaliacaoAgregadaUpdate(BaseSchema):
+    qtd_abaixo_media: Optional[int] = Field(None, ge=0)
+    qtd_na_media: Optional[int] = Field(None, ge=0)
+    qtd_acima_media: Optional[int] = Field(None, ge=0)
+    observacoes: Optional[str] = None
+
+
+class AvaliacaoAgregadaResponse(AvaliacaoAgregadaBase):
+    id: int
+    turma_id: int
+    disciplina_id: int
+    created_at: datetime
+
+
+
+# ============================================
+# CHART CONFIGURATION SCHEMAS
+# ============================================
+
+class ConfiguracaoGraficoBase(BaseSchema):
+    bar_width: int = Field(40, ge=20, le=100, description="Width of bars in pixels")
+    chart_height: int = Field(400, ge=300, le=800, description="Height of chart in pixels")
+    colors: List[str] = Field(
+        default=["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE", "#00C49F", "#FFBB28", "#FF8042"],
+        description="List of hex color codes"
+    )
+    default_chart_type: str = Field("bar", pattern="^(bar|pie)$", description="Default chart type")
+
+    @validator('colors')
+    def validate_colors(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('At least one color is required')
+        for color in v:
+            if not color.startswith('#') or len(color) not in [4, 7]:
+                raise ValueError(f'Invalid hex color: {color}')
+        return v
+
+
+class ConfiguracaoGraficoCreate(ConfiguracaoGraficoBase):
+    pass
+
+
+class ConfiguracaoGraficoUpdate(BaseSchema):
+    bar_width: Optional[int] = Field(None, ge=20, le=100)
+    chart_height: Optional[int] = Field(None, ge=300, le=800)
+    colors: Optional[List[str]] = None
+    default_chart_type: Optional[str] = Field(None, pattern="^(bar|pie)$")
+
+    @validator('colors')
+    def validate_colors(cls, v):
+        if v is not None:
+            if len(v) == 0:
+                raise ValueError('At least one color is required')
+            for color in v:
+                if not color.startswith('#') or len(color) not in [4, 7]:
+                    raise ValueError(f'Invalid hex color: {color}')
+        return v
+
+
+class ConfiguracaoGraficoResponse(ConfiguracaoGraficoBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+

@@ -85,6 +85,15 @@ export const escolasAPI = {
   },
 };
 
+export const diretoresAPI = {
+  list: (params?: any) => api.get('/diretores', { params }),
+  get: (id: number) => api.get(`/diretores/${id}`),
+  create: (data: any) => api.post('/diretores', data),
+  update: (id: number, data: any) => api.put(`/diretores/${id}`, data),
+  delete: (id: number) => api.delete(`/diretores/${id}`),
+  getEscola: (id: number) => api.get(`/diretores/${id}/escola`),
+};
+
 export const professoresAPI = {
   list: (params?: any) => api.get('/professores', { params }),
   get: (id: number) => api.get(`/professores/${id}`),
@@ -104,6 +113,8 @@ export const turmasAPI = {
 export const disciplinasAPI = {
   list: (params?: any) => api.get('/disciplinas', { params }),
   create: (data: any) => api.post('/disciplinas', data),
+  update: (id: number, data: any) => api.put(`/disciplinas/${id}`, data),
+  delete: (id: number) => api.delete(`/disciplinas/${id}`),
   vincularProfessor: (professorId: number, disciplinaId: number) =>
     api.post('/disciplinas/vincular-professor', {
       professor_id: professorId,
@@ -133,23 +144,44 @@ export const avaliacoesAPI = {
   delete: (id: number) => api.delete(`/avaliacoes/${id}`),
 };
 
+export const avaliacoesAgregadasAPI = {
+  list: (params?: any) => api.get('/avaliacoes-agregadas', { params }),
+  get: (id: number) => api.get(`/avaliacoes-agregadas/${id}`),
+  create: (data: any) => api.post('/avaliacoes-agregadas', data),
+  update: (id: number, data: any) => api.put(`/avaliacoes-agregadas/${id}`, data),
+  delete: (id: number) => api.delete(`/avaliacoes-agregadas/${id}`),
+};
+
 export const diagnosticosAPI = {
+  // Itens de diagnóstico
+  listItens: (params?: any) => api.get('/diagnosticos/itens', { params }),
+  getItem: (id: number) => api.get(`/diagnosticos/itens/${id}`),
+  createItem: (data: any) => api.post('/diagnosticos/itens', data),
+  updateItem: (id: number, data: any) => api.put(`/diagnosticos/itens/${id}`, data),
+  deleteItem: (id: number) => api.delete(`/diagnosticos/itens/${id}`),
+
+  // Diagnósticos
   list: (params?: any) => api.get('/diagnosticos', { params }),
   get: (id: number) => api.get(`/diagnosticos/${id}`),
   create: (data: any) => api.post('/diagnosticos', data),
   update: (id: number, data: any) => api.put(`/diagnosticos/${id}`, data),
+  vincularItens: (diagnosticoId: number, itemIds: number[]) =>
+    api.post(`/diagnosticos/${diagnosticoId}/vincular-itens`, { item_ids: itemIds }),
   substituir: (antigoId: number, novoDiagnostico: any) =>
     api.post('/diagnosticos/substituir', {
       diagnostico_antigo_id: antigoId,
       novo_diagnostico: novoDiagnostico,
     }),
+
   // Resultados
   listResultados: (params?: any) => api.get('/diagnosticos/resultados', { params }),
   createResultado: (data: any) => api.post('/diagnosticos/resultados', data),
-  createResultadosBulk: (resultados: any[]) =>
-    api.post('/diagnosticos/resultados/bulk', { resultados }),
   updateResultado: (id: number, data: any) =>
     api.put(`/diagnosticos/resultados/${id}`, data),
+
+  // Relatórios
+  relatorioPorEixo: (diagnosticoId: number, params?: any) =>
+    api.get(`/diagnosticos/relatorios/por-eixo/${diagnosticoId}`, { params }),
 };
 
 export const saebAPI = {
@@ -172,22 +204,46 @@ export const mensagensAPI = {
   getInbox: (params?: any) => api.get('/mensagens/inbox', { params }),
   getSent: (params?: any) => api.get('/mensagens/sent', { params }),
   get: (id: number) => api.get(`/mensagens/${id}`),
+  getThread: (id: number) => api.get(`/mensagens/thread/${id}`),
+  getDestinatarios: () => api.get('/mensagens/destinatarios'),
+  getContador: () => api.get('/mensagens/contador'),
   send: (data: any) => api.post('/mensagens', data),
+  broadcastTodos: (data: any) => api.post('/mensagens/broadcast-todos', data),
   broadcastDiretores: (data: any) =>
     api.post('/mensagens/broadcast-diretores', data),
   broadcastProfessores: (data: any) =>
     api.post('/mensagens/broadcast-professores', data),
   markAsRead: (id: number) => api.post(`/mensagens/${id}/mark-read`),
+  markAllAsRead: () => api.post('/mensagens/mark-all-read'),
+  delete: (id: number) => api.delete(`/mensagens/${id}`),
+};
+
+// Get WebSocket URL
+export const getWebSocketUrl = (userId: number, token: string): string => {
+  const wsBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+    .replace('http://', 'ws://')
+    .replace('https://', 'wss://');
+  return `${wsBaseUrl}/ws/${userId}?token=${token}`;
 };
 
 export const relatoriosAPI = {
-  // Avaliações
+  // Avaliações (Individual - Professor)
   avaliacaoGeral: (params?: any) =>
     api.get('/relatorios/avaliacoes/geral', { params }),
   avaliacaoDrillDownEscolas: (params?: any) =>
     api.get('/relatorios/avaliacoes/drill-down/escolas', { params }),
   avaliacaoDrillDownTurmas: (escolaId: number, params?: any) =>
     api.get(`/relatorios/avaliacoes/drill-down/turmas/${escolaId}`, { params }),
+
+  // Avaliações Agregadas (Diretor/Coordenador)
+  avaliacaoAgregadaGeral: (params?: any) =>
+    api.get('/relatorios/avaliacoes-agregadas/geral', { params }),
+  avaliacaoAgregadaDrillDownEscolas: (params?: any) =>
+    api.get('/relatorios/avaliacoes-agregadas/drill-down/escolas', { params }),
+  avaliacaoAgregadaDrillDownTurmas: (escolaId: number, params?: any) =>
+    api.get(`/relatorios/avaliacoes-agregadas/drill-down/turmas/${escolaId}`, { params }),
+  avaliacaoAgregadaDetalhamento: (turmaId: number, params?: any) =>
+    api.get(`/relatorios/avaliacoes-agregadas/detalhamento/${turmaId}`, { params }),
 
   // Diagnósticos
   diagnosticoGeral: (params?: any) =>
@@ -201,4 +257,11 @@ export const relatoriosAPI = {
     api.get('/relatorios/publico/avaliacoes', { params }),
   publicoDiagnosticos: (params?: any) =>
     api.get('/relatorios/publico/diagnosticos', { params }),
+};
+
+export const configuracoesGraficoAPI = {
+  get: () => api.get('/configuracoes-grafico'),
+  create: (data: any) => api.post('/configuracoes-grafico', data),
+  update: (data: any) => api.put('/configuracoes-grafico', data),
+  reset: () => api.post('/configuracoes-grafico/reset'),
 };

@@ -3,7 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { ChartConfigProvider } from './contexts/ChartConfigContext';
+import { MessagesProvider } from './contexts/MessagesContext';
 import App from './App';
+import './print.css';
 
 const theme = createTheme({
   palette: {
@@ -25,7 +29,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <App />
+          <NotificationProvider>
+            <ChartConfigProvider>
+              <MessagesProvider>
+                <App />
+              </MessagesProvider>
+            </ChartConfigProvider>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

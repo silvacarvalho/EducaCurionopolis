@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./backend/venv/Scripts/python.exe:*)",
+      "Bash(curl:*)",
+      "Bash(../backend/venv/Scripts/python.exe:*)",
+      "Bash(timeout /t 3)",
+      "Bash(ping:*)",
+      "Bash(nul)",
+      "Bash(find:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(..backendvenvScriptspython.exe -m uvicorn app.main:app --reload --port 8000)",
+      "Bash(cmd.exe /c \"taskkill /PID 13640 /F & taskkill /PID 12760 /F & taskkill /PID 16876 /F & taskkill /PID 12040 /F & taskkill /PID 1892 /F\")",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell.exe -Command \"& {Stop-Process -Id 13640 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 12760 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 16876 -Force -ErrorAction SilentlyContinue}\")",
+      "Bash(tasklist:*)",
+      "Bash(del check_and_fix_enum.py fix_enum_nao_avaliado.py check_enum.py 2)",
+      "Bash(move usePermissions.ts usePermissions.tsx)",
+      "Bash(cmd.exe /c \"taskkill /F /IM node.exe & taskkill /F /IM python.exe\")",
+      "Bash(../backend/venv/Scripts/pip install:*)",
+      "Bash(./venv/Scripts/python.exe -m uvicorn:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 7996\")",
+      "Bash(powershell.exe:*)",
+      "Bash(echo:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

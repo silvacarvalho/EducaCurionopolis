@@ -2,11 +2,11 @@
 Students Router
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from ..database import get_db
-from ..models import Aluno, Usuario, PerfilUsuario
+from ..models import Aluno, Usuario, PerfilUsuario, Turma, Escola
 from ..schemas import AlunoCreate, AlunoUpdate, AlunoResponse
 from ..auth import get_current_active_user, require_diretor_or_gestao
 from ..dependencies import verify_turma_access
@@ -21,30 +21,43 @@ async def create_aluno(
     current_user: Usuario = Depends(require_diretor_or_gestao)
 ):
     """Create a new student"""
-    # Verify turma access
-    verify_turma_access(aluno_data.turma_id, current_user, db)
+    try:
+        # Verify turma access
+        verify_turma_access(aluno_data.turma_id, current_user, db)
 
-    # Check matricula uniqueness
-    if db.query(Aluno).filter(Aluno.matricula == aluno_data.matricula).first():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Matrícula já cadastrada"
-        )
-
-    # Check CPF uniqueness if provided
-    if aluno_data.cpf:
-        if db.query(Aluno).filter(Aluno.cpf == aluno_data.cpf).first():
+        # Check matricula uniqueness
+        if db.query(Aluno).filter(Aluno.matricula == aluno_data.matricula).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="CPF já cadastrado"
+                detail="Matrícula já cadastrada"
             )
 
-    db_aluno = Aluno(**aluno_data.dict())
-    db.add(db_aluno)
-    db.commit()
-    db.refresh(db_aluno)
+        # Check CPF uniqueness if provided
+        if aluno_data.cpf:
+            if db.query(Aluno).filter(Aluno.cpf == aluno_data.cpf).first():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="CPF já cadastrado"
+                )
 
-    return db_aluno
+        db_aluno = Aluno(**aluno_data.dict())
+        db.add(db_aluno)
+        db.commit()
+        db.refresh(db_aluno)
+
+        return db_aluno
+
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
+    except Exception as e:
+        db.rollback()
+        # Log the error for debugging
+        print(f"Erro ao criar aluno: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Erro ao criar aluno: {str(e)}"
+        )
 
 
 @router.get("/", response_model=List[AlunoResponse])
@@ -57,20 +70,20 @@ async def list_alunos(
     current_user: Usuario = Depends(get_current_active_user)
 ):
     """List students with optional filters"""
-    query = db.query(Aluno)
+    query = db.query(Aluno).options(
+        joinedload(Aluno.turma).joinedload(Turma.escola)
+    )
 
     # DIRETOR sees only students from their school
     if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
         if current_user.escola_dirigida:
-            from ..models import Turma
-            query = query.join(Turma).filter(Turma.escola_id == current_user.escola_dirigida.id)
+            query = query.filter(Aluno.turma.has(Turma.escola_id == current_user.escola_dirigida.id))
 
     if turma_id:
         query = query.filter(Aluno.turma_id == turma_id)
 
     if escola_id:
-        from ..models import Turma
-        query = query.join(Turma).filter(Turma.escola_id == escola_id)
+        query = query.filter(Aluno.turma.has(Turma.escola_id == escola_id))
 
     alunos = query.filter(Aluno.ativo == True).offset(skip).limit(limit).all()
     return alunos
@@ -83,7 +96,9 @@ async def get_aluno(
     current_user: Usuario = Depends(get_current_active_user)
 ):
     """Get student by ID"""
-    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+    aluno = db.query(Aluno).options(
+        joinedload(Aluno.turma).joinedload(Turma.escola)
+    ).filter(Aluno.id == aluno_id).first()
 
     if not aluno:
         raise HTTPException(

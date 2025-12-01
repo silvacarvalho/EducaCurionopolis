@@ -2,24 +2,22 @@ import React from 'react';
 import {
   Box,
   Container,
-  AppBar,
-  Toolbar,
   Typography,
-  Button,
   Grid,
-  Paper,
   Card,
   CardContent,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { PerfilUsuario } from '../types';
+import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
 
 const Dashboard: React.FC = () => {
-  const { user, logout, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const navigate = useNavigate();
 
   const menuItems = [
+
     {
       title: 'Relatórios',
       description: 'Visualizar relatórios e métricas educacionais',
@@ -41,12 +39,18 @@ const Dashboard: React.FC = () => {
       title: 'Professores',
       description: 'Gerenciar professores e disciplinas',
       path: '/professores',
-      roles: [PerfilUsuario.GESTAO_MUNICIPAL, PerfilUsuario.DIRETOR_COORDENADOR],
+      roles: [PerfilUsuario.DIRETOR_COORDENADOR],
     },
     {
       title: 'Turmas e Alunos',
       description: 'Gerenciar turmas e alunos',
       path: '/turmas',
+      roles: [PerfilUsuario.DIRETOR_COORDENADOR],
+    },
+    {
+      title: 'Importar Alunos',
+      description: 'Importar alunos via planilha Excel',
+      path: '/importacao-alunos',
       roles: [PerfilUsuario.GESTAO_MUNICIPAL, PerfilUsuario.DIRETOR_COORDENADOR],
     },
     {
@@ -54,9 +58,7 @@ const Dashboard: React.FC = () => {
       description: 'Registrar e consultar avaliações bimestrais',
       path: '/avaliacoes',
       roles: [
-        PerfilUsuario.GESTAO_MUNICIPAL,
         PerfilUsuario.DIRETOR_COORDENADOR,
-        PerfilUsuario.PROFESSOR,
       ],
     },
     {
@@ -66,8 +68,19 @@ const Dashboard: React.FC = () => {
       roles: [
         PerfilUsuario.GESTAO_MUNICIPAL,
         PerfilUsuario.DIRETOR_COORDENADOR,
-        PerfilUsuario.PROFESSOR,
       ],
+    },
+    {
+      title: 'Itens de Diagnóstico',
+      description: 'Gerenciar itens de diagnóstico (Leitura/Escrita)',
+      path: '/diagnostico-itens',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
+    },
+    {
+      title: 'Aplicar Diagnóstico',
+      description: 'Aplicar Diagnóstico a alunos e definir hipótese de escrita',
+      path: '/diagnostico-avaliar',
+      roles: [PerfilUsuario.PROFESSOR],
     },
     {
       title: 'SAEB',
@@ -89,25 +102,19 @@ const Dashboard: React.FC = () => {
         PerfilUsuario.PROFESSOR,
       ],
     },
+    {
+      title: 'Configurações de Gráficos',
+      description: 'Personalizar cores e tamanhos dos gráficos',
+      path: '/configuracoes-grafico',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
+    },
   ];
 
   const availableItems = menuItems.filter((item) => hasRole(item.roles));
 
   return (
     <Box>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            EDUCA+ Curionópolis
-          </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {user?.nome_completo} ({user?.perfil})
-          </Typography>
-          <Button color="inherit" onClick={logout}>
-            Sair
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <AppBarWithUserMenu title="EDUCA+ Curionópolis" />
 
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" gutterBottom>

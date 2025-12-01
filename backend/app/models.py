@@ -37,7 +37,23 @@ class NivelEvolucao(str, enum.Enum):
     """Student evolution levels for diagnostics"""
     NAO = "nao"
     SIM = "sim"
-    EM_PARTES = "em_partes"
+    EM_PARTE = "em_parte"
+
+
+class ModalidadeDiagnostico(str, enum.Enum):
+    """Diagnostic modality types"""
+    LEITURA = "leitura"
+    ESCRITA = "escrita"
+
+
+class HipoteseEscrita(str, enum.Enum):
+    """Writing hypothesis levels (Eixo de Escrita)"""
+    NAO_AVALIADO = "nao_avaliado"
+    PRE_SILABICO = "pre_silabico"
+    SILABICO_SEM_VALOR_SONORO = "silabico_sem_valor_sonoro"
+    SILABICO_COM_VALOR_SONORO = "silabico_com_valor_sonoro"
+    SILABICO_ALFABETICO = "silabico_alfabetico"
+    ALFABETICO = "alfabetico"
 
 
 class Bimestre(int, enum.Enum):
@@ -63,6 +79,14 @@ professor_disciplina = Table(
     Base.metadata,
     Column('professor_id', Integer, ForeignKey('professores.id', ondelete='CASCADE'), primary_key=True),
     Column('disciplina_id', Integer, ForeignKey('disciplinas.id', ondelete='CASCADE'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
+
+diagnostico_item = Table(
+    'diagnostico_item',
+    Base.metadata,
+    Column('diagnostico_id', Integer, ForeignKey('diagnosticos.id', ondelete='CASCADE'), primary_key=True),
+    Column('item_diagnostico_id', Integer, ForeignKey('itens_diagnostico.id', ondelete='CASCADE'), primary_key=True),
     Column('created_at', DateTime(timezone=True), server_default=func.now())
 )
 
@@ -149,6 +173,7 @@ class Professor(Base):
     # Relationships
     usuario = relationship("Usuario", back_populates="professor")
     escola = relationship("Escola", back_populates="professores")
+    turmas = relationship("Turma", back_populates="professor")
     disciplinas = relationship("Disciplina", secondary=professor_disciplina, back_populates="professores")
     avaliacoes = relationship("AvaliacaoBimestral", back_populates="professor")
     diagnosticos_aplicados = relationship("DiagnosticoResultado", back_populates="professor")
@@ -160,7 +185,7 @@ class Professor(Base):
 class Turma(Base):
     """
     Class/Grade entity
-    Belongs to a school
+    Belongs to a school and can be assigned to a teacher
     """
     __tablename__ = "turmas"
 
@@ -170,6 +195,7 @@ class Turma(Base):
     ano_letivo = Column(Integer, nullable=False)  # Ex: 2024, 2025
     turno = Column(String(20))  # "Matutino", "Vespertino", "Noturno"
     escola_id = Column(Integer, ForeignKey('escolas.id'), nullable=False)
+    professor_id = Column(Integer, ForeignKey('professores.id'))  # Class teacher
     ativo = Column(Boolean, default=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -182,6 +208,7 @@ class Turma(Base):
 
     # Relationships
     escola = relationship("Escola", back_populates="turmas")
+    professor = relationship("Professor", back_populates="turmas")
     alunos = relationship("Aluno", back_populates="turma", cascade="all, delete-orphan")
     disciplinas = relationship("Disciplina", back_populates="turma", cascade="all, delete-orphan")
 
@@ -282,9 +309,75 @@ class AvaliacaoBimestral(Base):
         return f"<AvaliacaoBimestral(aluno_id={self.aluno_id}, bimestre={self.bimestre}, nivel={self.nivel_desempenho})>"
 
 
+class AvaliacaoAgregada(Base):
+    """
+    Aggregated evaluation by class/subject/bimester
+    Director/Coordinator registers quantities of students in each performance level
+    """
+    __tablename__ = "avaliacoes_agregadas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    turma_id = Column(Integer, ForeignKey('turmas.id'), nullable=False)
+    disciplina_id = Column(Integer, ForeignKey('disciplinas.id'), nullable=False)
+    bimestre = Column(Integer, nullable=False)  # 1, 2, 3, or 4
+    ano_letivo = Column(Integer, nullable=False)
+
+    # Quantities for each performance level
+    qtd_abaixo_media = Column(Integer, default=0, nullable=False)
+    qtd_na_media = Column(Integer, default=0, nullable=False)
+    qtd_acima_media = Column(Integer, default=0, nullable=False)
+
+    observacoes = Column(Text)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Unique constraint: one aggregated evaluation per class per subject per bimester per year
+    __table_args__ = (
+        UniqueConstraint('turma_id', 'disciplina_id', 'bimestre', 'ano_letivo',
+                        name='uq_avaliacao_agregada_turma_disciplina_bimestre'),
+    )
+
+    # Relationships
+    turma = relationship("Turma")
+    disciplina = relationship("Disciplina")
+
+    def __repr__(self):
+        return f"<AvaliacaoAgregada(turma_id={self.turma_id}, disciplina_id={self.disciplina_id}, bimestre={self.bimestre})>"
+
+
 # ============================================
 # MODULE: DIAGNÓSTICO
 # ============================================
+
+class ItemDiagnostico(Base):
+    """
+    Diagnostic assessment item
+    Reusable items created by Municipal Management
+    Can be applied to multiple grades (1-5)
+    """
+    __tablename__ = "itens_diagnostico"
+
+    id = Column(Integer, primary_key=True, index=True)
+    descricao = Column(Text, nullable=False)  # O que será avaliado (ex: "Reconhece letras do alfabeto")
+    modalidade = Column(SQLEnum(ModalidadeDiagnostico), nullable=False)  # LEITURA ou ESCRITA
+
+    # Anos escolares aplicáveis (array representation)
+    # Ex: "1,2,3" significa aplicável ao 1º, 2º e 3º anos
+    anos_aplicaveis = Column(String(50), nullable=False)  # Stored as comma-separated: "1,2,3,4,5"
+
+    ativo = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    diagnosticos = relationship("Diagnostico", secondary="diagnostico_item", back_populates="itens")
+    avaliacoes_itens = relationship("AvaliacaoItemDiagnostico", back_populates="item", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<ItemDiagnostico(id={self.id}, modalidade={self.modalidade}, descricao={self.descricao[:50]})>"
+
 
 class Diagnostico(Base):
     """
@@ -309,6 +402,10 @@ class Diagnostico(Base):
     aplicavel_ano_inicial = Column(Integer, default=1)
     aplicavel_ano_final = Column(Integer, default=5)
 
+    # Scheduling
+    data_disponivel = Column(DateTime(timezone=True), nullable=True)  # When diagnostic becomes available for teachers
+    data_limite = Column(DateTime(timezone=True), nullable=True)  # Deadline for applying diagnostic
+
     ativo = Column(Boolean, default=True)
     substituido_por_id = Column(Integer, ForeignKey('diagnosticos.id'), nullable=True)
 
@@ -318,6 +415,7 @@ class Diagnostico(Base):
     # Relationships
     resultados = relationship("DiagnosticoResultado", back_populates="diagnostico", cascade="all, delete-orphan")
     substituto = relationship("Diagnostico", remote_side=[id], backref="diagnostico_substituido")
+    itens = relationship("ItemDiagnostico", secondary="diagnostico_item", back_populates="diagnosticos")
 
     def __repr__(self):
         return f"<Diagnostico(nome={self.nome}, tipo={self.tipo}, ano_letivo={self.ano_letivo})>"
@@ -326,7 +424,7 @@ class Diagnostico(Base):
 class DiagnosticoResultado(Base):
     """
     Diagnostic result for each student
-    Teacher applies diagnostic and classifies evolution
+    Contains the writing hypothesis (eixo) and individual item assessments
     """
     __tablename__ = "diagnostico_resultados"
 
@@ -334,7 +432,13 @@ class DiagnosticoResultado(Base):
     diagnostico_id = Column(Integer, ForeignKey('diagnosticos.id'), nullable=False)
     aluno_id = Column(Integer, ForeignKey('alunos.id'), nullable=False)
     professor_id = Column(Integer, ForeignKey('professores.id'), nullable=False)
-    nivel_evolucao = Column(SQLEnum(NivelEvolucao), nullable=False)
+
+    # Hipótese de Escrita (Eixo) - OBRIGATÓRIO se houver itens avaliados
+    hipotese_escrita = Column(SQLEnum(HipoteseEscrita), nullable=False)
+
+    # Flag para indicar se o aluno não foi avaliado (professor marcou como "Não Avaliado")
+    nao_avaliado = Column(Boolean, default=False, nullable=False)
+
     observacoes = Column(Text)
     data_aplicacao = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -350,9 +454,38 @@ class DiagnosticoResultado(Base):
     diagnostico = relationship("Diagnostico", back_populates="resultados")
     aluno = relationship("Aluno", back_populates="diagnosticos")
     professor = relationship("Professor", back_populates="diagnosticos_aplicados")
+    avaliacoes_itens = relationship("AvaliacaoItemDiagnostico", back_populates="diagnostico_resultado", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<DiagnosticoResultado(diagnostico_id={self.diagnostico_id}, aluno_id={self.aluno_id}, nivel={self.nivel_evolucao})>"
+        return f"<DiagnosticoResultado(diagnostico_id={self.diagnostico_id}, aluno_id={self.aluno_id}, hipotese={self.hipotese_escrita})>"
+
+
+class AvaliacaoItemDiagnostico(Base):
+    """
+    Individual item assessment within a diagnostic result
+    Teacher evaluates each item as: SIM, NAO, EM_PARTE
+    """
+    __tablename__ = "avaliacoes_itens_diagnostico"
+
+    id = Column(Integer, primary_key=True, index=True)
+    diagnostico_resultado_id = Column(Integer, ForeignKey('diagnostico_resultados.id'), nullable=False)
+    item_diagnostico_id = Column(Integer, ForeignKey('itens_diagnostico.id'), nullable=False)
+    resposta = Column(SQLEnum(NivelEvolucao), nullable=False)  # SIM, NAO, EM_PARTE
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Unique constraint: one assessment per item per diagnostic result
+    __table_args__ = (
+        UniqueConstraint('diagnostico_resultado_id', 'item_diagnostico_id', name='uq_avaliacao_item'),
+    )
+
+    # Relationships
+    diagnostico_resultado = relationship("DiagnosticoResultado", back_populates="avaliacoes_itens")
+    item = relationship("ItemDiagnostico", back_populates="avaliacoes_itens")
+
+    def __repr__(self):
+        return f"<AvaliacaoItemDiagnostico(item_id={self.item_diagnostico_id}, resposta={self.resposta})>"
 
 
 # ============================================
@@ -418,11 +551,20 @@ class ResultadoSAEB(Base):
 # MESSAGING SYSTEM
 # ============================================
 
+class PrioridadeMensagem(str, enum.Enum):
+    """Message priority levels"""
+    BAIXA = "BAIXA"
+    NORMAL = "NORMAL"
+    ALTA = "ALTA"
+    URGENTE = "URGENTE"
+
+
 class Mensagem(Base):
     """
     Internal messaging system
     Municipal management can send to directors
     Directors can send to teachers
+    Supports threads/replies and priority levels
     """
     __tablename__ = "mensagens"
 
@@ -433,6 +575,8 @@ class Mensagem(Base):
     corpo = Column(Text, nullable=False)
     lida = Column(Boolean, default=False)
     broadcast = Column(Boolean, default=False)  # True if sent to all users of a type
+    prioridade = Column(SQLEnum(PrioridadeMensagem), default=PrioridadeMensagem.NORMAL, nullable=False)
+    mensagem_pai_id = Column(Integer, ForeignKey('mensagens.id'), nullable=True)  # For threads/replies
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     lida_em = Column(DateTime(timezone=True))
@@ -440,6 +584,51 @@ class Mensagem(Base):
     # Relationships
     remetente = relationship("Usuario", foreign_keys=[remetente_id], back_populates="mensagens_enviadas")
     destinatario = relationship("Usuario", foreign_keys=[destinatario_id], back_populates="mensagens_recebidas")
+    mensagem_pai = relationship("Mensagem", remote_side=[id], backref="respostas")
 
     def __repr__(self):
-        return f"<Mensagem(assunto={self.assunto}, remetente_id={self.remetente_id})>"
+        return f"<Mensagem(assunto={self.assunto}, remetente_id={self.remetente_id}, prioridade={self.prioridade})>"
+
+
+# ============================================
+# CHART CONFIGURATION
+# ============================================
+
+class ConfiguracaoGrafico(Base):
+    """
+    Chart configuration settings
+    Only editable by GESTAO_MUNICIPAL
+    Stores global chart settings for the system
+    """
+    __tablename__ = "configuracoes_grafico"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Chart dimensions
+    bar_width = Column(Integer, default=40)  # 20-100 pixels
+    chart_height = Column(Integer, default=400)  # 300-800 pixels
+
+    # Colors (stored as comma-separated hex values)
+    colors = Column(Text, default="#8884d8,#82ca9d,#ffc658,#ff8042,#0088FE,#00C49F,#FFBB28,#FF8042")
+
+    # Default chart type
+    default_chart_type = Column(String(10), default="bar")  # 'bar' or 'pie'
+
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_by_id = Column(Integer, ForeignKey('usuarios.id'), nullable=True)
+
+    # Relationship
+    updated_by = relationship("Usuario", foreign_keys=[updated_by_id])
+
+    def __repr__(self):
+        return f"<ConfiguracaoGrafico(id={self.id}, bar_width={self.bar_width})>"
+
+    def get_colors_list(self):
+        """Convert comma-separated colors to list"""
+        return self.colors.split(',') if self.colors else []
+
+    def set_colors_list(self, colors_list):
+        """Convert list of colors to comma-separated string"""
+        self.colors = ','.join(colors_list)

@@ -18,7 +18,26 @@ export enum NivelDesempenho {
 export enum NivelEvolucao {
   NAO = 'nao',
   SIM = 'sim',
-  EM_PARTES = 'em_partes',
+  EM_PARTE = 'em_parte',
+}
+
+export enum ModalidadeDiagnostico {
+  LEITURA = 'leitura',
+  ESCRITA = 'escrita',
+}
+
+export enum HipoteseEscrita {
+  NAO_AVALIADO = 'nao_avaliado',
+  PRE_SILABICO = 'pre_silabico',
+  SILABICO_SEM_VALOR_SONORO = 'silabico_sem_valor_sonoro',
+  SILABICO_COM_VALOR_SONORO = 'silabico_com_valor_sonoro',
+  SILABICO_ALFABETICO = 'silabico_alfabetico',
+  ALFABETICO = 'alfabetico',
+}
+
+export enum TipoDiagnostico {
+  INICIAL = 'inicial',
+  FINAL_BIMESTRE = 'final_bimestre',
 }
 
 export enum Bimestre {
@@ -69,6 +88,7 @@ export interface Professor {
   formacao?: string;
   ativo: boolean;
   created_at: string;
+  usuario?: Usuario;
 }
 
 export interface Turma {
@@ -78,8 +98,10 @@ export interface Turma {
   ano_letivo: number;
   turno?: string;
   escola_id: number;
+  professor_id?: number;
   ativo: boolean;
   created_at: string;
+  total_alunos?: number;  // Número de alunos ativos na turma
 }
 
 export interface Disciplina {
@@ -116,19 +138,74 @@ export interface AvaliacaoBimestral {
   created_at: string;
 }
 
+export interface AvaliacaoAgregada {
+  id: number;
+  turma_id: number;
+  disciplina_id: number;
+  bimestre: Bimestre;
+  ano_letivo: number;
+  qtd_abaixo_media: number;
+  qtd_na_media: number;
+  qtd_acima_media: number;
+  observacoes?: string;
+  created_at: string;
+}
+
+export interface ItemDiagnostico {
+  id: number;
+  descricao: string;
+  modalidade: ModalidadeDiagnostico;
+  anos_aplicaveis: string; // Ex: "1,2,3"
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface ItemDiagnosticoCreate {
+  descricao: string;
+  modalidade: ModalidadeDiagnostico;
+  anos_aplicaveis: string;
+}
+
 export interface Diagnostico {
   id: number;
   nome: string;
   descricao?: string;
   ano_letivo: number;
-  tipo: string;
+  tipo: TipoDiagnostico;
   bimestre_referencia?: Bimestre;
   objetivo_avaliacao: string;
   genero_textual: string;
   aplicavel_ano_inicial: number;
   aplicavel_ano_final: number;
+  data_disponivel?: string;
+  data_limite?: string;
   ativo: boolean;
   substituido_por_id?: number;
+  created_at: string;
+  itens?: ItemDiagnostico[];
+}
+
+export interface DiagnosticoCreate {
+  nome: string;
+  descricao?: string;
+  ano_letivo: number;
+  tipo: TipoDiagnostico;
+  bimestre_referencia?: Bimestre;
+  objetivo_avaliacao: string;
+  genero_textual: string;
+  aplicavel_ano_inicial: number;
+  aplicavel_ano_final: number;
+  data_disponivel?: string;
+  data_limite?: string;
+}
+
+export interface AvaliacaoItem {
+  item_diagnostico_id: number;
+  resposta: NivelEvolucao; // SIM, NAO, EM_PARTE
+}
+
+export interface AvaliacaoItemResponse extends AvaliacaoItem {
+  id: number;
   created_at: string;
 }
 
@@ -137,10 +214,36 @@ export interface DiagnosticoResultado {
   diagnostico_id: number;
   aluno_id: number;
   professor_id: number;
-  nivel_evolucao: NivelEvolucao;
+  hipotese_escrita: HipoteseEscrita;
   observacoes?: string;
   data_aplicacao: string;
   created_at: string;
+  avaliacoes_itens: AvaliacaoItemResponse[];
+}
+
+export interface DiagnosticoResultadoCreate {
+  diagnostico_id: number;
+  aluno_id: number;
+  hipotese_escrita: HipoteseEscrita;
+  avaliacoes_itens: AvaliacaoItem[];
+  observacoes?: string;
+}
+
+export interface EstatisticaEixo {
+  eixo: HipoteseEscrita;
+  quantidade: number;
+  percentual: number;
+}
+
+export interface RelatorioDiagnosticoPorEixo {
+  diagnostico_id: number;
+  diagnostico_nome: string;
+  total_alunos_turma: number;
+  total_alunos_avaliados: number;
+  total_nao_avaliados: number;
+  percentual_avaliados: number;
+  percentual_nao_avaliados: number;
+  estatisticas_por_eixo: EstatisticaEixo[];
 }
 
 export interface ProvaSimuladoSAEB {
@@ -174,8 +277,55 @@ export interface Mensagem {
   corpo: string;
   lida: boolean;
   broadcast: boolean;
+  prioridade: PrioridadeMensagem;
+  mensagem_pai_id?: number;
   created_at: string;
   lida_em?: string;
+  remetente?: UsuarioSimples;
+  destinatario?: UsuarioSimples;
+  respostas?: Mensagem[];
+  tem_respostas?: boolean;
+}
+
+export enum PrioridadeMensagem {
+  BAIXA = 'BAIXA',
+  NORMAL = 'NORMAL',
+  ALTA = 'ALTA',
+  URGENTE = 'URGENTE',
+}
+
+export interface UsuarioSimples {
+  id: number;
+  nome_completo: string;
+  email: string;
+  perfil: string;
+}
+
+export interface Destinatario {
+  id: number;
+  nome_completo: string;
+  email: string;
+  perfil: string;
+  escola_nome?: string;
+}
+
+export interface ContadorMensagens {
+  nao_lidas: number;
+  total: number;
+}
+
+export interface MensagemCreate {
+  destinatario_id?: number;
+  destinatario_ids?: number[];
+  assunto: string;
+  corpo: string;
+  prioridade?: PrioridadeMensagem;
+  mensagem_pai_id?: number;
+}
+
+export interface WebSocketMessage {
+  type: 'new_message' | 'message_read' | 'unread_count' | 'online_users';
+  data: any;
 }
 
 // Report Types
@@ -221,4 +371,8 @@ export interface DrillDownData {
   percentual_acima?: number;
   escola_id?: number;
   turma_id?: number;
+  // Transfer indicators
+  tem_transferencias?: boolean;
+  total_transferidos?: number;
+  total_alunos_atuais?: number;
 }
