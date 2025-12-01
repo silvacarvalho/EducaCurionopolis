@@ -4,9 +4,11 @@ Sistema Modular para Gestão e Demonstração de Métricas Educacionais
 """
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 from .database import init_db, engine, Base, get_db
@@ -333,17 +335,47 @@ async def websocket_endpoint(
 
 
 # ============================================
+# STATIC FILES & SPA SUPPORT
+# ============================================
+
+# Get frontend build directory
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_BUILD_DIR = BASE_DIR.parent / "frontend" / "dist"
+
+# Mount static files (CSS, JS, assets) if build exists
+if FRONTEND_BUILD_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "assets")), name="assets")
+
+
+# ============================================
 # ERROR HANDLERS
 # ============================================
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
-    """Custom 404 handler"""
+    """Custom 404 handler with SPA fallback"""
+    # For API routes, return JSON error
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(
+            status_code=404,
+            content={
+                "detail": "Recurso não encontrado",
+                "path": str(request.url)
+            }
+        )
+    
+    # For other routes, serve index.html (SPA fallback)
+    index_file = FRONTEND_BUILD_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    
+    # Fallback if frontend not built
     return JSONResponse(
         status_code=404,
         content={
             "detail": "Recurso não encontrado",
-            "path": str(request.url)
+            "path": str(request.url),
+            "hint": "Frontend não encontrado. Execute 'npm run build' no diretório frontend."
         }
     )
 

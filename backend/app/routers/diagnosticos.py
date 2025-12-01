@@ -398,6 +398,13 @@ async def create_resultado_diagnostico(
             detail="Aluno não encontrado"
         )
 
+        # Verificar se o aluno pertence a uma turma do professor logado
+        if aluno.turma.professor_id != current_professor.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para aplicar diagnóstico neste aluno. O aluno deve pertencer a uma de suas turmas."
+            )
+
     # Verificar se aluno está no ano aplicável
     if aluno.turma.ano_escolar < diagnostico.aplicavel_ano_inicial or \
        aluno.turma.ano_escolar > diagnostico.aplicavel_ano_final:

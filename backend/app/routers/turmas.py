@@ -75,6 +75,15 @@ async def list_turmas(
         if current_user.escola_dirigida:
             query = query.filter(Turma.escola_id == current_user.escola_dirigida.id)
 
+        # PROFESSOR sees only their own classes
+        if current_user.perfil == PerfilUsuario.PROFESSOR:
+            professor = db.query(Professor).filter(Professor.usuario_id == current_user.id).first()
+            if professor:
+                query = query.filter(Turma.professor_id == professor.id)
+            else:
+                # Se não encontrou professor associado, retorna lista vazia
+                return []
+
     if escola_id:
         query = query.filter(Turma.escola_id == escola_id)
     if ano_letivo:

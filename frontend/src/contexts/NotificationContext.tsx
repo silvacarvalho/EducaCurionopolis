@@ -44,7 +44,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     const allowedLabels = allowedProfiles.map(p => profileLabels[p] || p).join(', ');
 
     showNotification(
-      `⛔ Acesso Negado! Esta funcionalidade está disponível apenas para: ${allowedLabels}`,
+      `⛔ Acesso negado! Esta funcionalidade está disponível apenas para: ${allowedLabels}. Você será redirecionado para o Dashboard.`,
       'error',
       8000
     );

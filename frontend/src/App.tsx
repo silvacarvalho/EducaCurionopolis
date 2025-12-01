@@ -87,9 +87,14 @@ function App() {
       <Route
         path="/turmas"
         element={
-          <AuthenticatedRoute>
+          <ProtectedRoute
+            allowedProfiles={[
+              PerfilUsuario.GESTAO_MUNICIPAL,
+              PerfilUsuario.DIRETOR_COORDENADOR
+            ]}
+          >
             <TurmasAlunosPage />
-          </AuthenticatedRoute>
+          </ProtectedRoute>
         }
       />
       <Route

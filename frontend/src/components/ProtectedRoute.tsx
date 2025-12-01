@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -15,25 +15,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedProfiles,
   redirectTo = '/dashboard'
 }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { showPermissionDenied } = useNotification();
+  const notificationShownRef = useRef(false);
 
-  const hasPermission = user && allowedProfiles.includes(user.perfil);
+  const isAuthenticated = !!user;
+  const hasPermission = isAuthenticated && allowedProfiles.includes(user.perfil);
 
+  // Importante: chamar o hook em todas as renderizações para manter a ordem estável
   useEffect(() => {
-    if (user && !hasPermission) {
-      // Mostrar notificação quando acesso é negado
+    if (isAuthenticated && !hasPermission && !notificationShownRef.current) {
+      notificationShownRef.current = true;
       showPermissionDenied(allowedProfiles);
     }
-  }, [user, hasPermission, allowedProfiles, showPermissionDenied]);
+  }, [isAuthenticated, hasPermission, allowedProfiles, showPermissionDenied]);
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (!hasPermission) {
-    return <Navigate to={redirectTo} replace />;
-  }
+  // Decisões de navegação após os hooks, para não quebrar a ordem
+  if (loading) return <></>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!hasPermission) return <Navigate to={redirectTo} replace />;
 
   return <>{children}</>;
 };

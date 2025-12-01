@@ -79,6 +79,16 @@ async def list_alunos(
         if current_user.escola_dirigida:
             query = query.filter(Aluno.turma.has(Turma.escola_id == current_user.escola_dirigida.id))
 
+    # PROFESSOR sees only students from their classes
+    if current_user.perfil == PerfilUsuario.PROFESSOR:
+        from ..models import Professor
+        professor = db.query(Professor).filter(Professor.usuario_id == current_user.id).first()
+        if professor:
+            query = query.filter(Aluno.turma.has(Turma.professor_id == professor.id))
+        else:
+            # Sem vínculo de professor, não retorna alunos
+            return []
+
     if turma_id:
         query = query.filter(Aluno.turma_id == turma_id)
 
