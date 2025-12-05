@@ -25,7 +25,17 @@
       "Bash(./venv/Scripts/python.exe -m uvicorn:*)",
       "Bash(cmd.exe /c \"taskkill /F /PID 7996\")",
       "Bash(powershell.exe:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(dir:*)",
+      "Bash(./venv/Scripts/python.exe -m alembic:*)",
+      "Bash(./venv/Scripts/python.exe:*)",
+      "Bash(timeout /t 5)",
+      "Bash(move:*)",
+      "Bash(del \"frontend\\src\\pages\\SAEBPage.tsx\")",
+      "Bash(cat:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 452\")",
+      "Bash(./venv/Scripts/pip install:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 13072\")"
     ],
     "deny": [],
     "ask": []

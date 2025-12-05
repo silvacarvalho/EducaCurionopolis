@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedProfiles,
-  redirectTo = '/dashboard'
+  redirectTo = '/'
 }) => {
   const { user, loading } = useAuth();
   const { showPermissionDenied } = useNotification();

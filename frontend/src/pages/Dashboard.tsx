@@ -83,9 +83,45 @@ const Dashboard: React.FC = () => {
       roles: [PerfilUsuario.PROFESSOR],
     },
     {
-      title: 'SAEB',
-      description: 'Simulados e resultados SAEB',
-      path: '/saeb',
+      title: 'SAEB - Configurações',
+      description: 'Configurar quantidades de questões por ano escolar',
+      path: '/saeb-v2/configuracoes',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
+    },
+    {
+      title: 'SAEB - Descritores e Questões',
+      description: 'Gerenciar descritores e questões SAEB',
+      path: '/saeb-v2/descritores',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
+    },
+    {
+      title: 'SAEB - Simulados',
+      description: 'Criar e gerenciar simulados SAEB online',
+      path: '/saeb-v2/simulados',
+      roles: [PerfilUsuario.GESTAO_MUNICIPAL],
+    },
+    {
+      title: 'SAEB - Gestão de Simulados',
+      description: 'Liberar simulados, gerar tokens e imprimir provas',
+      path: '/saeb-v2/professor',
+      roles: [PerfilUsuario.PROFESSOR],
+    },
+    {
+      title: 'SAEB - Lançamento Manual',
+      description: 'Lançar resultados de provas aplicadas em papel',
+      path: '/saeb-v2/lancamento-manual',
+      roles: [PerfilUsuario.PROFESSOR],
+    },
+    {
+      title: 'SAEB - Meus Simulados',
+      description: 'Realizar simulados SAEB online',
+      path: '/saeb-v2/aluno',
+      roles: [PerfilUsuario.ALUNO],
+    },
+    {
+      title: 'SAEB - Relatórios',
+      description: 'Relatórios completos de desempenho SAEB',
+      path: '/saeb-v2/relatorios',
       roles: [
         PerfilUsuario.GESTAO_MUNICIPAL,
         PerfilUsuario.DIRETOR_COORDENADOR,

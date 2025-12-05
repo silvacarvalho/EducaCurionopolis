@@ -29,7 +29,7 @@ from .routers import (
     avaliacoes,
     avaliacoes_agregadas,
     diagnosticos,
-    saeb,
+    saeb_v2,
     mensagens,
     relatorios,
     importacao,
@@ -193,11 +193,11 @@ app.include_router(
     tags=["Módulo: Diagnóstico"]
 )
 
-# SAEB Module
+# SAEB V2 - Complete System with Online Exams
 app.include_router(
-    saeb.router,
-    prefix="/api/v1/saeb",
-    tags=["Módulo: SAEB"]
+    saeb_v2.router,
+    prefix="/api/v2/saeb",
+    tags=["Módulo: SAEB V2"]
 )
 
 # Messages

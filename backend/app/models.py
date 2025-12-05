@@ -492,16 +492,288 @@ class AvaliacaoItemDiagnostico(Base):
 # MODULE: SAEB
 # ============================================
 
+class DisciplinaSAEB(str, enum.Enum):
+    """SAEB disciplines"""
+    PORTUGUES = "portugues"
+    MATEMATICA = "matematica"
+
+
+class BlocoSAEB(int, enum.Enum):
+    """SAEB blocks (2 per discipline)"""
+    BLOCO_1 = 1
+    BLOCO_2 = 2
+
+
+class SituacaoSAEB(str, enum.Enum):
+    """Student performance level in SAEB"""
+    ADEQUADO = "adequado"  # > 89%
+    INTERMEDIARIO_I = "intermediario_i"  # > 74%
+    INTERMEDIARIO_II = "intermediario_ii"  # > 50%
+    CRITICO = "critico"  # > 25%
+    MUITO_CRITICO = "muito_critico"  # >= 0%
+
+
+class StatusSimulado(str, enum.Enum):
+    """Simulado status"""
+    RASCUNHO = "rascunho"
+    PUBLICADO = "publicado"
+    EM_ANDAMENTO = "em_andamento"
+    ENCERRADO = "encerrado"
+
+
+class DescritorSAEB(Base):
+    """
+    SAEB descriptor (competency to be evaluated)
+    Created and managed by Municipal Management
+    Includes: discipline, school year, code, and description
+    """
+    __tablename__ = "descritores_saeb"
+    __table_args__ = (
+        UniqueConstraint('codigo', 'disciplina', 'ano_escolar', name='uq_descritor_codigo_disciplina_ano'),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    disciplina = Column(SQLEnum(DisciplinaSAEB), nullable=False)  # PORTUGUES ou MATEMATICA
+    ano_escolar = Column(Integer, nullable=False)  # 5 ou 9
+    codigo = Column(String(20), nullable=False)  # Ex: D01, D02, etc.
+    descricao = Column(Text, nullable=False)
+    ativo = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    questoes = relationship("QuestaoSAEB", back_populates="descritor", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<DescritorSAEB(codigo={self.codigo})>"
+
+
+class QuestaoSAEB(Base):
+    """
+    SAEB question linked to a descriptor
+    Contains the question text, answer options, and specific attributes
+    Now includes discipline, block, and school year (moved from descriptor)
+    """
+    __tablename__ = "questoes_saeb"
+
+    id = Column(Integer, primary_key=True, index=True)
+    descritor_id = Column(Integer, ForeignKey('descritores_saeb.id'), nullable=False)
+    enunciado = Column(Text, nullable=False)
+
+    # Specific attributes (moved from descriptor)
+    disciplina = Column(SQLEnum(DisciplinaSAEB), nullable=False)
+    bloco = Column(SQLEnum(BlocoSAEB), nullable=False)
+    ano_escolar = Column(Integer, nullable=False)  # 5 or 9
+
+    # Answer options
+    alternativa_a = Column(Text, nullable=False)
+    alternativa_b = Column(Text, nullable=False)
+    alternativa_c = Column(Text, nullable=False)
+    alternativa_d = Column(Text, nullable=False)
+    alternativa_e = Column(Text, nullable=False)
+
+    # Correct answer (A, B, C, D, or E)
+    gabarito = Column(String(1), nullable=False)
+
+    ativo = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    descritor = relationship("DescritorSAEB", back_populates="questoes")
+    simulados = relationship("SimuladoQuestao", back_populates="questao", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<QuestaoSAEB(id={self.id}, descritor_id={self.descritor_id}, disciplina={self.disciplina})>"
+
+
+class ConfiguracaoSAEB(Base):
+    """
+    SAEB Configuration for question quantities per block
+    Allows flexible configuration by Municipal Management
+    """
+    __tablename__ = "configuracoes_saeb"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ano_escolar = Column(Integer, nullable=False, unique=True)  # 5 or 9
+    questoes_por_bloco = Column(Integer, nullable=False)  # Default: 11 for 5th, 13 for 9th
+    descricao = Column(Text)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<ConfiguracaoSAEB(ano={self.ano_escolar}, questoes={self.questoes_por_bloco})>"
+
+
+class SimuladoSAEB(Base):
+    """
+    SAEB Simulado (Exam)
+    Collection of questions for BOTH disciplines (Português and Matemática)
+    Each discipline has 2 blocks with configurable number of questions
+    """
+    __tablename__ = "simulados_saeb"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String(200), nullable=False)
+    descricao = Column(Text)
+    ano_escolar = Column(Integer, nullable=False)  # 5 or 9
+    ano_letivo = Column(Integer, nullable=False)
+
+    status = Column(SQLEnum(StatusSimulado), default=StatusSimulado.RASCUNHO, nullable=False)
+
+    # Dates
+    data_disponivel = Column(DateTime(timezone=True))  # When it becomes available
+    data_limite = Column(DateTime(timezone=True))  # Deadline
+
+    ativo = Column(Boolean, default=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    questoes = relationship("SimuladoQuestao", back_populates="simulado", cascade="all, delete-orphan")
+    participacoes = relationship("ParticipacaoSimulado", back_populates="simulado", cascade="all, delete-orphan")
+    resultados = relationship("ResultadoSimuladoAluno", back_populates="simulado", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<SimuladoSAEB(nome={self.nome}, ano={self.ano_escolar})>"
+
+
+class SimuladoQuestao(Base):
+    """
+    Association table linking Simulado to Questions
+    Preserves question order
+    """
+    __tablename__ = "simulado_questoes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    simulado_id = Column(Integer, ForeignKey('simulados_saeb.id'), nullable=False)
+    questao_id = Column(Integer, ForeignKey('questoes_saeb.id'), nullable=False)
+    ordem = Column(Integer, nullable=False)  # Question order in exam
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('simulado_id', 'questao_id', name='uq_simulado_questao'),
+        UniqueConstraint('simulado_id', 'ordem', name='uq_simulado_ordem'),
+    )
+
+    # Relationships
+    simulado = relationship("SimuladoSAEB", back_populates="questoes")
+    questao = relationship("QuestaoSAEB", back_populates="simulados")
+    respostas = relationship("RespostaAlunoSAEB", back_populates="simulado_questao", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<SimuladoQuestao(simulado_id={self.simulado_id}, questao_id={self.questao_id}, ordem={self.ordem})>"
+
+
+class ParticipacaoSimulado(Base):
+    """
+    Controls which students can take which simulados
+    Teacher releases simulado to their class
+    """
+    __tablename__ = "participacoes_simulado"
+
+    id = Column(Integer, primary_key=True, index=True)
+    simulado_id = Column(Integer, ForeignKey('simulados_saeb.id'), nullable=False)
+    turma_id = Column(Integer, ForeignKey('turmas.id'), nullable=False)
+    professor_id = Column(Integer, ForeignKey('professores.id'), nullable=False)
+
+    liberado = Column(Boolean, default=False)
+    data_liberacao = Column(DateTime(timezone=True))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('simulado_id', 'turma_id', name='uq_participacao_simulado_turma'),
+    )
+
+    # Relationships
+    simulado = relationship("SimuladoSAEB", back_populates="participacoes")
+    turma = relationship("Turma")
+    professor = relationship("Professor")
+    tokens = relationship("TokenAcessoSimulado", back_populates="participacao", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<ParticipacaoSimulado(simulado_id={self.simulado_id}, turma_id={self.turma_id})>"
+
+
+class RespostaAlunoSAEB(Base):
+    """
+    Student's answer to a specific question in a simulado
+    """
+    __tablename__ = "respostas_aluno_saeb"
+
+    id = Column(Integer, primary_key=True, index=True)
+    simulado_questao_id = Column(Integer, ForeignKey('simulado_questoes.id'), nullable=False)
+    aluno_id = Column(Integer, ForeignKey('alunos.id'), nullable=False)
+    resposta = Column(String(1), nullable=False)  # A, B, C, D, or E
+    correta = Column(Boolean, nullable=False)  # Calculated automatically
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('simulado_questao_id', 'aluno_id', name='uq_resposta_aluno_questao'),
+    )
+
+    # Relationships
+    simulado_questao = relationship("SimuladoQuestao", back_populates="respostas")
+    aluno = relationship("Aluno")
+
+    def __repr__(self):
+        return f"<RespostaAlunoSAEB(aluno_id={self.aluno_id}, questao_id={self.simulado_questao_id})>"
+
+
+class ResultadoSimuladoAluno(Base):
+    """
+    Consolidated result for a student in a simulado
+    Automatically calculated from answers
+    """
+    __tablename__ = "resultados_simulado_aluno"
+
+    id = Column(Integer, primary_key=True, index=True)
+    simulado_id = Column(Integer, ForeignKey('simulados_saeb.id'), nullable=False)
+    aluno_id = Column(Integer, ForeignKey('alunos.id'), nullable=False)
+
+    total_questoes = Column(Integer, nullable=False)
+    total_acertos = Column(Integer, nullable=False)
+    total_erros = Column(Integer, nullable=False)
+    porcentagem = Column(Integer, nullable=False)  # 0-100
+    situacao = Column(SQLEnum(SituacaoSAEB), nullable=False)
+
+    finalizado = Column(Boolean, default=False)
+    data_finalizacao = Column(DateTime(timezone=True))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('simulado_id', 'aluno_id', name='uq_resultado_simulado_aluno'),
+    )
+
+    # Relationships
+    simulado = relationship("SimuladoSAEB", back_populates="resultados")
+    aluno = relationship("Aluno")
+
+    def __repr__(self):
+        return f"<ResultadoSimuladoAluno(simulado_id={self.simulado_id}, aluno_id={self.aluno_id}, porcentagem={self.porcentagem})>"
+
+
+# Keep old models for backward compatibility (can be deprecated later)
 class ProvaSimuladoSAEB(Base):
     """
-    SAEB simulated exam definition
+    SAEB simulated exam definition (DEPRECATED - use SimuladoSAEB instead)
     """
     __tablename__ = "provas_saeb"
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String(200), nullable=False)
     ano_letivo = Column(Integer, nullable=False)
-    ano_escolar_aplicavel = Column(Integer, nullable=False)  # 5º ano, 9º ano, etc.
+    ano_escolar_aplicavel = Column(Integer, nullable=False)
     data_aplicacao_prevista = Column(DateTime)
     descricao = Column(Text)
     ativo = Column(Boolean, default=True)
@@ -509,7 +781,6 @@ class ProvaSimuladoSAEB(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     resultados = relationship("ResultadoSAEB", back_populates="prova", cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -518,15 +789,15 @@ class ProvaSimuladoSAEB(Base):
 
 class ResultadoSAEB(Base):
     """
-    SAEB exam result for each student
+    SAEB exam result (DEPRECATED - use ResultadoSimuladoAluno instead)
     """
     __tablename__ = "resultados_saeb"
 
     id = Column(Integer, primary_key=True, index=True)
     prova_id = Column(Integer, ForeignKey('provas_saeb.id'), nullable=False)
     aluno_id = Column(Integer, ForeignKey('alunos.id'), nullable=False)
-    nota_portugues = Column(Integer)  # Score 0-100
-    nota_matematica = Column(Integer)  # Score 0-100
+    nota_portugues = Column(Integer)
+    nota_matematica = Column(Integer)
     presente = Column(Boolean, default=True)
     data_realizacao = Column(DateTime(timezone=True))
     observacoes = Column(Text)
@@ -534,12 +805,10 @@ class ResultadoSAEB(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Unique constraint: one result per student per exam
     __table_args__ = (
         UniqueConstraint('prova_id', 'aluno_id', name='uq_resultado_saeb_aluno'),
     )
 
-    # Relationships
     prova = relationship("ProvaSimuladoSAEB", back_populates="resultados")
     aluno = relationship("Aluno", back_populates="resultados_saeb")
 
@@ -588,6 +857,49 @@ class Mensagem(Base):
 
     def __repr__(self):
         return f"<Mensagem(assunto={self.assunto}, remetente_id={self.remetente_id}, prioridade={self.prioridade})>"
+
+
+# ============================================
+# SAEB V2 - TOKEN ACCESS
+# ============================================
+
+class TokenAcessoSimulado(Base):
+    """
+    Access token for students to access SAEB simulados
+    Each token is unique per student and tied to a specific participation
+    Format: 6 characters (3 letters + 3 numbers, uppercase, shuffled)
+    Example: A9K2M5, 3T7B1H, K4N9A2
+    """
+    __tablename__ = "tokens_acesso_simulado"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String(6), unique=True, nullable=False, index=True)
+    participacao_id = Column(Integer, ForeignKey('participacoes_simulado.id'), nullable=False)
+    aluno_id = Column(Integer, ForeignKey('alunos.id'), nullable=False)
+
+    # Status
+    usado = Column(Boolean, default=False)
+    data_primeiro_acesso = Column(DateTime(timezone=True), nullable=True)
+    data_expiracao = Column(DateTime(timezone=True), nullable=False)
+    ativo = Column(Boolean, default=True)
+
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    participacao = relationship("ParticipacaoSimulado", back_populates="tokens")
+    aluno = relationship("Aluno")
+
+    def __repr__(self):
+        return f"<TokenAcessoSimulado(token={self.token}, aluno_id={self.aluno_id})>"
+
+    def is_valid(self):
+        """Check if token is still valid"""
+        from datetime import datetime, timezone as tz
+        return (
+            self.ativo and
+            self.data_expiracao > datetime.now(tz.utc)
+        )
 
 
 # ============================================

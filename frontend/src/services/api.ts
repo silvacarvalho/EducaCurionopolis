@@ -265,3 +265,184 @@ export const configuracoesGraficoAPI = {
   update: (data: any) => api.put('/configuracoes-grafico', data),
   reset: () => api.post('/configuracoes-grafico/reset'),
 };
+
+// ============================================
+// SAEB V2 API
+// ============================================
+
+// Create a separate API instance for V2
+const apiV2 = axios.create({
+  baseURL: `${API_BASE_URL}/api/v2`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Copy interceptors from V1
+apiV2.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+apiV2.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const saebV2API = {
+  // Configurações SAEB
+  listConfiguracoes: () => apiV2.get('/saeb/configuracoes'),
+  getConfiguracao: (anoEscolar: number) => apiV2.get(`/saeb/configuracoes/${anoEscolar}`),
+  createConfiguracao: (data: any) => apiV2.post('/saeb/configuracoes', data),
+  updateConfiguracao: (anoEscolar: number, data: any) => apiV2.put(`/saeb/configuracoes/${anoEscolar}`, data),
+  deleteConfiguracao: (anoEscolar: number) => apiV2.delete(`/saeb/configuracoes/${anoEscolar}`),
+
+  // Descritores
+  listDescritores: (params?: any) => apiV2.get('/saeb/descritores', { params }),
+  getDescritor: (id: number) => apiV2.get(`/saeb/descritores/${id}`),
+  createDescritor: (data: any) => apiV2.post('/saeb/descritores', data),
+  updateDescritor: (id: number, data: any) => apiV2.put(`/saeb/descritores/${id}`, data),
+  deleteDescritor: (id: number) => apiV2.delete(`/saeb/descritores/${id}`),
+  downloadTemplateDescritores: () => apiV2.get('/saeb/descritores/template', {
+    responseType: 'blob'
+  }),
+  importDescritores: (formData: FormData) => apiV2.post('/saeb/descritores/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+
+  // Questões
+  listQuestoes: (params?: any) => apiV2.get('/saeb/questoes', { params }),
+  getQuestao: (id: number, includeGabarito?: boolean) =>
+    apiV2.get(`/saeb/questoes/${id}`, { params: { include_gabarito: includeGabarito } }),
+  createQuestao: (data: any) => apiV2.post('/saeb/questoes', data),
+  updateQuestao: (id: number, data: any) => apiV2.put(`/saeb/questoes/${id}`, data),
+  deleteQuestao: (id: number) => apiV2.delete(`/saeb/questoes/${id}`),
+  importQuestoes: (formData: FormData) => apiV2.post('/saeb/questoes/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+
+  // Simulados
+  listSimulados: (params?: any) => apiV2.get('/saeb/simulados', { params }),
+  getSimulado: (id: number) => apiV2.get(`/saeb/simulados/${id}`),
+  createSimulado: (data: any) => apiV2.post('/saeb/simulados', data),
+  updateSimulado: (id: number, data: any) => apiV2.put(`/saeb/simulados/${id}`, data),
+  getSimuladoQuestoes: (id: number) => apiV2.get(`/saeb/simulados/${id}/questoes`),
+
+  // Participações (Professor)
+  createParticipacao: (data: any) => apiV2.post('/saeb/participacoes', data),
+  listMinhasParticipacoes: () => apiV2.get('/saeb/participacoes/minhas-turmas'),
+
+  // Simulados Disponíveis (Aluno)
+  listSimuladosDisponiveis: () => apiV2.get('/saeb/simulados/disponiveis'),
+
+  // Respostas (Aluno)
+  submitResposta: (data: any) => apiV2.post('/saeb/respostas', data),
+  submitRespostasBulk: (data: any) => apiV2.post('/saeb/respostas/bulk', data),
+  getMinhasRespostas: (simuladoId: number) =>
+    apiV2.get(`/saeb/respostas/simulado/${simuladoId}`),
+
+  // Resultados
+  getMeuResultado: (simuladoId: number) =>
+    apiV2.get(`/saeb/resultados/simulado/${simuladoId}`),
+  getResultadosTurma: (turmaId: number, simuladoId: number) =>
+    apiV2.get(`/saeb/resultados/turma/${turmaId}/simulado/${simuladoId}`),
+
+  // Relatórios
+  getRelatorioSimulado: (simuladoId: number, escolaId?: number, turmaId?: number, disciplina?: string) =>
+    apiV2.get(`/saeb/relatorios/simulado/${simuladoId}`, {
+      params: { 
+        ...(escolaId && { escola_id: escolaId }),
+        ...(turmaId && { turma_id: turmaId }),
+        ...(disciplina && { disciplina: disciplina })
+      }
+    }),
+  getRelatorioDescritores: (simuladoId: number, escolaId?: number, turmaId?: number, disciplina?: string) =>
+    apiV2.get(`/saeb/relatorios/descritores/${simuladoId}`, {
+      params: { 
+        ...(escolaId && { escola_id: escolaId }),
+        ...(turmaId && { turma_id: turmaId }),
+        ...(disciplina && { disciplina: disciplina })
+      }
+    }),
+
+  // ============================================
+  // TOKEN ACCESS - PROFESSOR
+  // ============================================
+
+  // Gerar tokens para uma participação (um token por aluno da turma)
+  gerarTokens: (participacaoId: number) =>
+    apiV2.post(`/saeb/participacoes/${participacaoId}/gerar-tokens`),
+
+  // Listar todos os tokens de uma participação
+  listarTokens: (participacaoId: number) =>
+    apiV2.get(`/saeb/participacoes/${participacaoId}/tokens`),
+
+  // ============================================
+  // TOKEN ACCESS - ALUNO (PUBLIC ENDPOINT)
+  // ============================================
+
+  // Autenticar com token (endpoint público - não requer auth)
+  autenticarComToken: (token: string) =>
+    axios.post(`${API_BASE_URL}/api/v2/saeb/auth/token`, { token }),
+
+  // ============================================
+  // MANUAL ENTRY - PROFESSOR
+  // ============================================
+
+  // Lançamento manual de resultado de um aluno
+  lancamentoManual: (data: any) =>
+    apiV2.post('/saeb/resultados/lancamento-manual', data),
+
+  // Lançamento manual em lote (múltiplos alunos)
+  lancamentoManualLote: (data: any) =>
+    apiV2.post('/saeb/resultados/lancamento-manual/lote', data),
+
+  // ============================================
+  // EXPORT/PRINT - PROFESSOR
+  // ============================================
+
+  // Exportar simulado para impressão (todas as questões organizadas)
+  exportarSimulado: (simuladoId: number) =>
+    apiV2.get(`/saeb/simulados/${simuladoId}/exportar`),
+
+  // ============================================
+  // GESTÃO DE QUESTÕES DO SIMULADO - GESTÃO MUNICIPAL
+  // ============================================
+
+  // Adicionar uma questão ao simulado
+  adicionarQuestaoSimulado: (simuladoId: number, questaoId: number) =>
+    apiV2.post(`/saeb/simulados/${simuladoId}/questoes/${questaoId}`),
+
+  // Remover uma questão do simulado
+  removerQuestaoSimulado: (simuladoId: number, simuladoQuestaoId: number) =>
+    apiV2.delete(`/saeb/simulados/${simuladoId}/questoes/${simuladoQuestaoId}`),
+
+  // Reordenar questões do simulado
+  reordenarQuestoesSimulado: (simuladoId: number, ordemQuestoes: number[]) =>
+    apiV2.put(`/saeb/simulados/${simuladoId}/questoes/reordenar`, ordemQuestoes),
+
+  // ============================================
+  // ANÁLISE PSICOMÉTRICA E DASHBOARD - GESTÃO MUNICIPAL
+  // ============================================
+
+  // Análise psicométrica completa de um simulado
+  analisePsicometricaSimulado: (simuladoId: number) =>
+    apiV2.get(`/saeb/simulados/${simuladoId}/analise-psicometrica`),
+
+  // Dashboard com métricas consolidadas
+  dashboardMetricas: (anoLetivo?: number) =>
+    apiV2.get('/saeb/dashboard/metricas', { params: { ano_letivo: anoLetivo } }),
+};

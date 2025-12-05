@@ -529,6 +529,324 @@ class ResultadoSAEBBulk(BaseSchema):
 
 
 # ============================================
+# NEW SAEB SCHEMAS (Complete System)
+# ============================================
+
+class DisciplinaSAEB(str, enum.Enum):
+    """SAEB disciplines"""
+    PORTUGUES = "portugues"
+    MATEMATICA = "matematica"
+
+
+class BlocoSAEB(int, enum.Enum):
+    """SAEB blocks"""
+    BLOCO_1 = 1
+    BLOCO_2 = 2
+
+
+class SituacaoSAEB(str, enum.Enum):
+    """Student performance levels"""
+    ADEQUADO = "adequado"
+    INTERMEDIARIO_I = "intermediario_i"
+    INTERMEDIARIO_II = "intermediario_ii"
+    CRITICO = "critico"
+    MUITO_CRITICO = "muito_critico"
+
+
+class StatusSimulado(str, enum.Enum):
+    """Simulado status"""
+    RASCUNHO = "rascunho"
+    PUBLICADO = "publicado"
+    EM_ANDAMENTO = "em_andamento"
+    ENCERRADO = "encerrado"
+
+
+# Descritor Schemas
+class DescritorSAEBBase(BaseSchema):
+    disciplina: DisciplinaSAEB
+    ano_escolar: int = Field(..., ge=5, le=9, description="Ano escolar (5 ou 9)")
+    codigo: str = Field(..., min_length=1, max_length=20)
+    descricao: str = Field(..., min_length=1)
+
+
+class DescritorSAEBCreate(DescritorSAEBBase):
+    pass
+
+
+class DescritorSAEBUpdate(BaseSchema):
+    disciplina: Optional[DisciplinaSAEB] = None
+    ano_escolar: Optional[int] = Field(None, ge=5, le=9)
+    codigo: Optional[str] = Field(None, min_length=1, max_length=20)
+    descricao: Optional[str] = None
+    ativo: Optional[bool] = None
+
+
+class DescritorSAEBResponse(DescritorSAEBBase):
+    id: int
+    ativo: bool
+    created_at: datetime
+
+
+class DescritorSAEBBulkImport(BaseSchema):
+    descritores: List[DescritorSAEBCreate]
+
+
+class DescritorSAEBBulkImportResponse(BaseSchema):
+    total: int
+    sucesso: int
+    falha: int
+    duplicados: int = 0
+    erros: List[str]
+
+
+# Questao Schemas
+class QuestaoSAEBBase(BaseSchema):
+    descritor_id: int
+    enunciado: str = Field(..., min_length=1)
+    disciplina: DisciplinaSAEB
+    bloco: BlocoSAEB
+    ano_escolar: int = Field(..., ge=5, le=9)
+    alternativa_a: str = Field(..., min_length=1)
+    alternativa_b: str = Field(..., min_length=1)
+    alternativa_c: str = Field(..., min_length=1)
+    alternativa_d: str = Field(..., min_length=1)
+    alternativa_e: str = Field(..., min_length=1)
+    gabarito: str = Field(..., pattern="^[A-E]$")
+
+
+class QuestaoSAEBCreate(QuestaoSAEBBase):
+    pass
+
+
+class QuestaoSAEBUpdate(BaseSchema):
+    descritor_id: Optional[int] = None
+    enunciado: Optional[str] = None
+    disciplina: Optional[DisciplinaSAEB] = None
+    bloco: Optional[BlocoSAEB] = None
+    ano_escolar: Optional[int] = Field(None, ge=5, le=9)
+    alternativa_a: Optional[str] = None
+    alternativa_b: Optional[str] = None
+    alternativa_c: Optional[str] = None
+    alternativa_d: Optional[str] = None
+    alternativa_e: Optional[str] = None
+    gabarito: Optional[str] = Field(None, pattern="^[A-E]$")
+    ativo: Optional[bool] = None
+
+
+class QuestaoSAEBResponse(QuestaoSAEBBase):
+    id: int
+    ativo: bool
+    created_at: datetime
+
+
+class QuestaoSAEBComDescritor(QuestaoSAEBResponse):
+    descritor: DescritorSAEBResponse
+
+
+# Configuracao SAEB Schemas
+class ConfiguracaoSAEBBase(BaseSchema):
+    ano_escolar: int = Field(..., ge=5, le=9)
+    questoes_por_bloco: int = Field(..., ge=1, le=50)
+    descricao: Optional[str] = None
+
+
+class ConfiguracaoSAEBCreate(ConfiguracaoSAEBBase):
+    pass
+
+
+class ConfiguracaoSAEBUpdate(BaseSchema):
+    questoes_por_bloco: Optional[int] = Field(None, ge=1, le=50)
+    descricao: Optional[str] = None
+
+
+class ConfiguracaoSAEBResponse(ConfiguracaoSAEBBase):
+    id: int
+    created_at: datetime
+
+
+# Simulado Schemas
+class SimuladoSAEBBase(BaseSchema):
+    nome: str = Field(..., min_length=3, max_length=200)
+    descricao: Optional[str] = None
+    ano_escolar: int = Field(..., ge=5, le=9)
+    ano_letivo: int = Field(..., ge=2020, le=2100)
+    data_disponivel: Optional[datetime] = None
+    data_limite: Optional[datetime] = None
+
+
+class SimuladoSAEBCreate(SimuladoSAEBBase):
+    questoes_ids: List[int] = []  # List of question IDs to include
+
+
+class SimuladoSAEBUpdate(BaseSchema):
+    nome: Optional[str] = None
+    descricao: Optional[str] = None
+    status: Optional[StatusSimulado] = None
+    data_disponivel: Optional[datetime] = None
+    data_limite: Optional[datetime] = None
+    questoes_ids: Optional[List[int]] = None
+    ativo: Optional[bool] = None
+
+
+class SimuladoSAEBResponse(SimuladoSAEBBase):
+    id: int
+    status: StatusSimulado
+    ativo: bool
+    created_at: datetime
+    total_questoes: Optional[int] = 0
+
+
+class SimuladoSAEBDetalhado(SimuladoSAEBResponse):
+    questoes: List[QuestaoSAEBComDescritor]
+
+
+# Participacao Schemas
+class ParticipacaoSimuladoCreate(BaseSchema):
+    simulado_id: int
+    turma_id: int
+
+
+class ParticipacaoSimuladoResponse(BaseSchema):
+    id: int
+    simulado_id: int
+    turma_id: int
+    professor_id: int
+    liberado: bool
+    data_liberacao: Optional[datetime]
+    created_at: datetime
+
+
+# Resposta Aluno Schemas
+class RespostaAlunoSAEBCreate(BaseSchema):
+    simulado_questao_id: int
+    resposta: str = Field(..., pattern="^[A-E]$")
+
+
+class RespostaAlunoSAEBBulk(BaseSchema):
+    simulado_id: int
+    respostas: List[RespostaAlunoSAEBCreate]
+
+
+class RespostaAlunoSAEBResponse(BaseSchema):
+    id: int
+    simulado_questao_id: int
+    aluno_id: int
+    resposta: str
+    correta: bool
+    created_at: datetime
+
+
+# Resultado Simulado Schemas
+class ResultadoSimuladoAlunoResponse(BaseSchema):
+    id: int
+    simulado_id: int
+    aluno_id: int
+    total_questoes: int
+    total_acertos: int
+    total_erros: int
+    porcentagem: int
+    situacao: SituacaoSAEB
+    finalizado: bool
+    data_finalizacao: Optional[datetime]
+    created_at: datetime
+
+
+class ResultadoSimuladoDetalhado(ResultadoSimuladoAlunoResponse):
+    aluno_nome: str
+    simulado_nome: str
+    disciplina: DisciplinaSAEB
+    respostas: List[RespostaAlunoSAEBResponse]
+
+
+# Relatorios SAEB
+class RelatorioDescritor(BaseSchema):
+    """Performance report by descriptor"""
+    descritor_id: int
+    descritor_codigo: str
+    descritor_descricao: str
+    total_questoes: int
+    total_acertos: int
+    total_erros: int
+    porcentagem_acerto: float
+
+
+class RelatorioSimulado(BaseSchema):
+    """General simulado report"""
+    simulado_id: int
+    simulado_nome: str
+    total_alunos_participantes: int
+    total_alunos_finalizados: int
+    media_geral: float
+    adequado: int
+    intermediario_i: int
+    intermediario_ii: int
+    critico: int
+    muito_critico: int
+
+
+# ============================================
+# TOKEN ACESSO SCHEMAS
+# ============================================
+
+class TokenAcessoResponse(BaseSchema):
+    """Token de acesso para aluno"""
+    id: int
+    token: str
+    aluno_id: int
+    aluno_nome: str
+    aluno_matricula: str
+    usado: bool
+    data_primeiro_acesso: Optional[datetime]
+    data_expiracao: datetime
+    ativo: bool
+    created_at: datetime
+
+
+class TokenAcessoListResponse(BaseSchema):
+    """Lista de tokens gerados para uma turma"""
+    participacao_id: int
+    simulado_nome: str
+    turma_nome: str
+    tokens: List[TokenAcessoResponse]
+
+
+class TokenAuthRequest(BaseSchema):
+    """Request para autenticação via token"""
+    token: str = Field(..., min_length=6, max_length=6)
+
+
+class TokenAuthResponse(BaseSchema):
+    """Response da autenticação via token"""
+    access_token: str
+    token_type: str
+    aluno_id: int
+    aluno_nome: str
+    simulado_id: int
+    simulado_nome: str
+
+
+# Lançamento Manual de Resultados
+class RespostaManualCreate(BaseSchema):
+    """Resposta individual para lançamento manual"""
+    simulado_questao_id: int
+    resposta: str = Field(..., pattern="^[A-E]$")  # A, B, C, D ou E
+
+
+class LancamentoManualCreate(BaseSchema):
+    """Lançamento manual de resultados de um aluno"""
+    aluno_id: int
+    simulado_id: int
+    respostas: List[RespostaManualCreate]
+
+
+class LancamentoManualBulkCreate(BaseSchema):
+    """Lançamento manual em lote (múltiplos alunos)"""
+    simulado_id: int
+    turma_id: int
+    lancamentos: List[LancamentoManualCreate]
+
+
+# ============================================
 # MENSAGEM SCHEMAS
 # ============================================
 
@@ -766,4 +1084,172 @@ class ConfiguracaoGraficoResponse(ConfiguracaoGraficoBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+
+# ============================================
+# SAEB V2 - ANÁLISE PSICOMÉTRICA SCHEMAS
+# ============================================
+
+class AnalisePsicometricaQuestao(BaseSchema):
+    """Análise psicométrica de uma questão"""
+    questao_id: int
+    enunciado: str
+    descritor_codigo: str
+
+    # Índice de Dificuldade (ID)
+    total_respostas: int
+    total_acertos: int
+    indice_dificuldade: float  # Percentual de acertos (0-100)
+    classificacao_dificuldade: str  # Muito fácil, Fácil, Médio, Difícil, Muito difícil
+
+    # Índice de Discriminação (ID)
+    indice_discriminacao: float  # -1.0 a 1.0
+    classificacao_discriminacao: str  # Excelente, Bom, Regular, Fraco, Muito fraco
+
+    # Análise de Distratores
+    distribuicao_alternativas: dict  # {A: 10, B: 5, C: 15, D: 2, E: 8}
+    alternativa_correta: str
+    distratores_eficazes: List[str]  # Distratores que atraíram pelo menos 5% das respostas
+
+
+class AnalisePsicometricaDescritor(BaseSchema):
+    """Análise psicométrica agregada por descritor"""
+    descritor_id: int
+    descritor_codigo: str
+    descritor_descricao: str
+    total_questoes: int
+    media_dificuldade: float
+    media_discriminacao: float
+    questoes: List[AnalisePsicometricaQuestao]
+
+
+class AnalisePsicometricaSimulado(BaseSchema):
+    """Análise psicométrica completa do simulado"""
+    simulado_id: int
+    simulado_nome: str
+    total_participantes: int
+    total_questoes: int
+
+    # Estatísticas gerais
+    media_geral: float  # Média de acertos (%)
+    desvio_padrao: float
+    mediana: float
+    nota_minima: float
+    nota_maxima: float
+
+    # Índices de confiabilidade
+    alpha_cronbach: Optional[float] = None  # Índice de consistência interna
+
+    # Análise por disciplina
+    analise_portugues: Optional[dict] = None
+    analise_matematica: Optional[dict] = None
+
+    # Análise detalhada por questão
+    questoes: List[AnalisePsicometricaQuestao]
+
+    # Análise por descritor
+    descritores: List[AnalisePsicometricaDescritor]
+
+    # Distribuição de notas
+    distribuicao_notas: dict  # Histograma de notas
+
+
+class MetricasDesempenhoTurma(BaseSchema):
+    """Métricas de desempenho de uma turma"""
+    turma_id: int
+    turma_nome: str
+    total_alunos: int
+    alunos_participantes: int
+    taxa_participacao: float
+
+    # Desempenho geral
+    media_turma: float
+    mediana_turma: float
+    desvio_padrao_turma: float
+
+    # Distribuição por situação
+    adequado: int
+    intermediario_i: int
+    intermediario_ii: int
+    critico: int
+    muito_critico: int
+
+    # Percentuais
+    percentual_adequado: float
+    percentual_intermediario: float
+    percentual_critico: float
+
+
+class ComparativoDesempenho(BaseSchema):
+    """Comparativo de desempenho entre turmas/escolas"""
+    simulado_id: int
+    simulado_nome: str
+    entidades: List[MetricasDesempenhoTurma]
+
+    # Ranking
+    melhor_desempenho: str
+    pior_desempenho: str
+
+    # Estatísticas comparativas
+    media_geral: float
+    amplitude: float  # Diferença entre melhor e pior
+
+
+class TendenciaDesempenhoAluno(BaseSchema):
+    """Tendência de desempenho de um aluno ao longo do tempo"""
+    aluno_id: int
+    aluno_nome: str
+    simulados: List[dict]  # [{simulado_nome, nota, data, situacao}]
+    media_geral: float
+    tendencia: str  # Crescente, Estável, Decrescente
+    melhor_desempenho: dict
+    pior_desempenho: dict
+
+
+class AnaliseDescritores(BaseSchema):
+    """Análise de domínio de descritores/habilidades"""
+    descritor_id: int
+    descritor_codigo: str
+    descritor_descricao: str
+    disciplina: str
+
+    # Desempenho
+    total_alunos: int
+    alunos_dominaram: int  # >= 75% de acertos
+    alunos_parcial: int     # 50-74% de acertos
+    alunos_nao_dominaram: int  # < 50% de acertos
+
+    # Percentuais
+    percentual_dominio: float
+    percentual_parcial: float
+    percentual_nao_dominio: float
+
+    # Média de acertos
+    media_acertos: float
+
+
+class DashboardMetricas(BaseSchema):
+    """Dashboard com métricas consolidadas"""
+    periodo: str
+
+    # Visão geral
+    total_simulados: int
+    total_participacoes: int
+    total_alunos_unicos: int
+    taxa_conclusao: float
+
+    # Desempenho médio
+    media_geral_rede: float
+    melhor_escola: Optional[dict] = None
+    pior_escola: Optional[dict] = None
+
+    # Análise de dificuldade
+    questoes_muito_faceis: int
+    questoes_faceis: int
+    questoes_medias: int
+    questoes_dificeis: int
+    questoes_muito_dificeis: int
+
+    # Tendências
+    evolucao_mensal: List[dict]  # [{mes, media, total_participacoes}]
 

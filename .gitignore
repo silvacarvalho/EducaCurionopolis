@@ -49,6 +49,7 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+tests_/
 
 # Temporary files
 tmp/

@@ -376,3 +376,404 @@ export interface DrillDownData {
   total_transferidos?: number;
   total_alunos_atuais?: number;
 }
+
+// ============================================
+// SAEB V2 TYPES
+// ============================================
+
+export enum DisciplinaSAEB {
+  PORTUGUES = 'portugues',
+  MATEMATICA = 'matematica',
+}
+
+export enum BlocoSAEB {
+  BLOCO_1 = 1,
+  BLOCO_2 = 2,
+}
+
+export enum SituacaoSAEB {
+  ADEQUADO = 'adequado',
+  INTERMEDIARIO_I = 'intermediario_i',
+  INTERMEDIARIO_II = 'intermediario_ii',
+  CRITICO = 'critico',
+  MUITO_CRITICO = 'muito_critico',
+}
+
+export enum StatusSimulado {
+  RASCUNHO = 'rascunho',
+  PUBLICADO = 'publicado',
+  EM_ANDAMENTO = 'em_andamento',
+  ENCERRADO = 'encerrado',
+}
+
+export interface DescritorSAEB {
+  id: number;
+  disciplina: DisciplinaSAEB;
+  ano_escolar: number;
+  codigo: string;
+  descricao: string;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface DescritorSAEBCreate {
+  disciplina: DisciplinaSAEB;
+  ano_escolar: number;
+  codigo: string;
+  descricao: string;
+}
+
+export interface QuestaoSAEB {
+  id: number;
+  descritor_id: number;
+  enunciado: string;
+  disciplina: DisciplinaSAEB;
+  bloco: BlocoSAEB;
+  ano_escolar: number;
+  alternativa_a: string;
+  alternativa_b: string;
+  alternativa_c: string;
+  alternativa_d: string;
+  alternativa_e: string;
+  gabarito?: string; // Hidden from students
+  ativo: boolean;
+  created_at: string;
+  descritor?: DescritorSAEB;
+}
+
+export interface QuestaoSAEBCreate {
+  descritor_id: number;
+  enunciado: string;
+  disciplina: DisciplinaSAEB;
+  bloco: BlocoSAEB;
+  ano_escolar: number;
+  alternativa_a: string;
+  alternativa_b: string;
+  alternativa_c: string;
+  alternativa_d: string;
+  alternativa_e: string;
+  gabarito: string;
+}
+
+export interface ConfiguracaoSAEB {
+  id: number;
+  ano_escolar: number;
+  questoes_por_bloco: number;
+  descricao?: string;
+  created_at: string;
+}
+
+export interface ConfiguracaoSAEBCreate {
+  ano_escolar: number;
+  questoes_por_bloco: number;
+  descricao?: string;
+}
+
+export interface ConfiguracaoSAEBUpdate {
+  questoes_por_bloco?: number;
+  descricao?: string;
+}
+
+export interface SimuladoSAEB {
+  id: number;
+  nome: string;
+  descricao?: string;
+  ano_escolar: number;
+  ano_letivo: number;
+  data_disponivel?: string;
+  data_limite?: string;
+  status: StatusSimulado;
+  ativo: boolean;
+  created_at: string;
+  total_questoes?: number;
+}
+
+export interface SimuladoSAEBCreate {
+  nome: string;
+  descricao?: string;
+  ano_escolar: number;
+  ano_letivo: number;
+  data_disponivel?: string;
+  data_limite?: string;
+  questoes_ids: number[];
+  status?: StatusSimulado;
+}
+
+export interface SimuladoQuestao {
+  id: number;
+  simulado_id: number;
+  questao_id: number;
+  ordem: number;
+  questao?: QuestaoSAEB;
+}
+
+export interface ParticipacaoSimulado {
+  id: number;
+  simulado_id: number;
+  turma_id: number;
+  professor_id: number;
+  liberado: boolean;
+  data_liberacao?: string;
+  created_at: string;
+  simulado?: SimuladoSAEB;
+  turma?: Turma;
+}
+
+export interface ParticipacaoSimuladoCreate {
+  simulado_id: number;
+  turma_id: number;
+}
+
+export interface RespostaAlunoSAEB {
+  id: number;
+  simulado_questao_id: number;
+  aluno_id: number;
+  resposta: string;
+  correta: boolean;
+  created_at: string;
+}
+
+export interface RespostaAlunoSAEBCreate {
+  simulado_questao_id: number;
+  resposta: string;
+}
+
+export interface RespostaAlunoSAEBBulk {
+  simulado_id: number;
+  respostas: RespostaAlunoSAEBCreate[];
+}
+
+export interface ResultadoSimuladoAluno {
+  id: number;
+  simulado_id: number;
+  aluno_id: number;
+  total_questoes: number;
+  total_acertos: number;
+  total_erros: number;
+  porcentagem: number;
+  situacao: SituacaoSAEB;
+  finalizado: boolean;
+  created_at: string;
+  aluno?: Aluno;
+}
+
+export interface RelatorioSimulado {
+  simulado_id: number;
+  simulado_nome: string;
+  total_alunos_participantes: number;
+  total_alunos_finalizados: number;
+  media_geral: number;
+  adequado: number;
+  intermediario_i: number;
+  intermediario_ii: number;
+  critico: number;
+  muito_critico: number;
+}
+
+export interface RelatorioDescritor {
+  descritor_id: number;
+  descritor_codigo: string;
+  descritor_descricao: string;
+  total_questoes: number;
+  total_acertos: number;
+  total_erros: number;
+  porcentagem_acerto: number;
+}
+
+// ============================================
+// SAEB V2 - TOKEN ACCESS TYPES
+// ============================================
+
+export interface TokenAcessoSimulado {
+  id: number;
+  token: string;
+  aluno_id: number;
+  aluno_nome: string;
+  aluno_matricula: string;
+  usado: boolean;
+  data_primeiro_acesso?: string;
+  data_expiracao: string;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface TokenAcessoList {
+  participacao_id: number;
+  simulado_nome: string;
+  turma_nome: string;
+  total_tokens: number;
+  tokens: TokenAcessoSimulado[];
+}
+
+export interface TokenAuthRequest {
+  token: string;
+}
+
+export interface TokenAuthResponse {
+  access_token: string;
+  token_type: string;
+  aluno_id: number;
+  aluno_nome: string;
+  simulado_id: number;
+  simulado_nome: string;
+}
+
+// ============================================
+// SAEB V2 - MANUAL ENTRY TYPES
+// ============================================
+
+export interface RespostaManual {
+  simulado_questao_id: number;
+  resposta: string;
+}
+
+export interface LancamentoManual {
+  aluno_id: number;
+  simulado_id: number;
+  respostas: RespostaManual[];
+}
+
+export interface LancamentoManualBulk {
+  simulado_id: number;
+  turma_id: number;
+  lancamentos: LancamentoManual[];
+}
+
+export interface LancamentoManualResponse {
+  success: boolean;
+  resultado_id: number;
+  total_questoes: number;
+  total_acertos: number;
+  porcentagem: number;
+  situacao: SituacaoSAEB;
+}
+
+export interface LancamentoManualBulkResponse {
+  total_lancamentos: number;
+  sucesso: number;
+  falhas: number;
+  resultados: Array<{
+    aluno_id: number;
+    aluno_nome: string;
+    success: boolean;
+    error?: string;
+    resultado?: LancamentoManualResponse;
+  }>;
+}
+
+// ============================================
+// SAEB V2 - EXPORT TYPES
+// ============================================
+
+export interface QuestaoExportada {
+  ordem: number;
+  id: number;
+  enunciado: string;
+  alternativa_a: string;
+  alternativa_b: string;
+  alternativa_c: string;
+  alternativa_d: string;
+  alternativa_e: string;
+  descritor_codigo: string;
+  descritor_descricao: string;
+}
+
+export interface BlocoExportado {
+  bloco: BlocoSAEB;
+  questoes: QuestaoExportada[];
+}
+
+export interface DisciplinaExportada {
+  disciplina: DisciplinaSAEB;
+  blocos: BlocoExportado[];
+}
+
+export interface SimuladoExportado {
+  simulado_id: number;
+  simulado_nome: string;
+  ano_escolar: number;
+  ano_letivo: number;
+  total_questoes: number;
+  disciplinas: DisciplinaExportada[];
+}
+
+// ============================================
+// SAEB V2 - ANÁLISE PSICOMÉTRICA TYPES
+// ============================================
+
+export interface AnalisePsicometricaQuestao {
+  questao_id: number;
+  enunciado: string;
+  descritor_codigo: string;
+  total_respostas: number;
+  total_acertos: number;
+  indice_dificuldade: number;
+  classificacao_dificuldade: string;
+  indice_discriminacao: number;
+  classificacao_discriminacao: string;
+  distribuicao_alternativas: { [key: string]: number };
+  alternativa_correta: string;
+  distratores_eficazes: string[];
+}
+
+export interface AnalisePsicometricaDescritor {
+  descritor_id: number;
+  descritor_codigo: string;
+  descritor_descricao: string;
+  total_questoes: number;
+  media_dificuldade: number;
+  media_discriminacao: number;
+  questoes: AnalisePsicometricaQuestao[];
+}
+
+export interface AnalisePsicometricaSimulado {
+  simulado_id: number;
+  simulado_nome: string;
+  total_participantes: number;
+  total_questoes: number;
+  media_geral: number;
+  desvio_padrao: number;
+  mediana: number;
+  nota_minima: number;
+  nota_maxima: number;
+  alpha_cronbach: number;
+  classificacao_alpha: string;
+  analise_portugues?: {
+    media: number;
+    total_questoes: number;
+  };
+  analise_matematica?: {
+    media: number;
+    total_questoes: number;
+  };
+  questoes: AnalisePsicometricaQuestao[];
+  descritores: AnalisePsicometricaDescritor[];
+  distribuicao_notas: { [key: string]: number };
+}
+
+export interface DashboardMetricas {
+  periodo: string;
+  total_simulados: number;
+  total_participacoes: number;
+  total_alunos_unicos: number;
+  taxa_conclusao: number;
+  media_geral_rede: number;
+  melhor_escola?: {
+    nome: string;
+    media: number;
+  };
+  pior_escola?: {
+    nome: string;
+    media: number;
+  };
+  questoes_muito_faceis: number;
+  questoes_faceis: number;
+  questoes_medias: number;
+  questoes_dificeis: number;
+  questoes_muito_dificeis: number;
+  evolucao_mensal: Array<{
+    mes: string;
+    media: number;
+    total_participacoes: number;
+  }>;
+}
