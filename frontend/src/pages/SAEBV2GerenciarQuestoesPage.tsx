@@ -24,19 +24,16 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   MenuItem,
   Select,
   FormControl,
   InputLabel,
-  Divider,
   Grid,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
   Add as AddIcon,
   ArrowBack as BackIcon,
-  DragIndicator as DragIcon,
   Warning as WarningIcon,
   Block as BlockIcon,
 } from '@mui/icons-material';
