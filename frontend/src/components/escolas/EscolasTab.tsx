@@ -31,9 +31,14 @@ import {
 } from '@mui/icons-material';
 import { escolasAPI, diretoresAPI } from '../../services/api';
 import { Escola, Usuario } from '../../types';
+import { useFilteredData } from '../../hooks/useFilteredData';
 
 const EscolasTab: React.FC = () => {
   const [escolas, setEscolas] = useState<Escola[]>([]);
+  
+  // Aplicar filtro contextual na busca do header
+  const filteredEscolas = useFilteredData(escolas, ['nome', 'codigo_inep', 'endereco']);
+  
   const [diretores, setDiretores] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -334,16 +339,16 @@ const EscolasTab: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {escolas.length === 0 ? (
+              {filteredEscolas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} align="center">
                     <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
-                      Nenhuma escola cadastrada
+                      {escolas.length === 0 ? 'Nenhuma escola cadastrada' : 'Nenhuma escola encontrada com esse termo de busca'}
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                escolas.map((escola) => (
+                filteredEscolas.map((escola) => (
                   <TableRow key={escola.id}>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">

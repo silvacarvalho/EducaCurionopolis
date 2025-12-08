@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ChartConfigProvider } from './contexts/ChartConfigContext';
 import { MessagesProvider } from './contexts/MessagesContext';
+import { ContextualSearchProvider } from './contexts/ContextualSearchContext';
 import App from './App';
 import './index.css';
 import './print.css';
@@ -33,7 +34,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <NotificationProvider>
             <ChartConfigProvider>
               <MessagesProvider>
-                <App />
+                <ContextualSearchProvider>
+                  <App />
+                </ContextualSearchProvider>
               </MessagesProvider>
             </ChartConfigProvider>
           </NotificationProvider>

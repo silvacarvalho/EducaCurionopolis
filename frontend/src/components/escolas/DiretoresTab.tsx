@@ -31,11 +31,15 @@ import {
 } from '@mui/icons-material';
 import { diretoresAPI, escolasAPI } from '../../services/api';
 import { Usuario, Escola } from '../../types';
+import { useFilteredData } from '../../hooks/useFilteredData';
 
 const DiretoresTab: React.FC = () => {
   const [diretores, setDiretores] = useState<Usuario[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Filtro de pesquisa contextual
+  const filteredDiretores = useFilteredData(diretores, ['nome_completo', 'cpf', 'email', 'telefone']);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
@@ -336,16 +340,18 @@ const DiretoresTab: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {diretores.length === 0 ? (
+              {filteredDiretores.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align="center">
                     <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
-                      Nenhum diretor cadastrado
+                      {diretores.length === 0 
+                        ? 'Nenhum diretor cadastrado'
+                        : 'Nenhum diretor encontrado com os termos de busca'}
                     </Typography>
                   </TableCell>
                 </TableRow>
               ) : (
-                diretores.map((diretor) => (
+                filteredDiretores.map((diretor) => (
                   <TableRow key={diretor.id}>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium">

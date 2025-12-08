@@ -73,13 +73,18 @@ const ImportacaoAlunosPage: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('access_token');
 
-      const response = await axios.get('http://localhost:8000/api/v1/turmas/', {
+      const response = await axios.get('/api/v1/turmas/', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      if (response.data && response.data.length === 0) {
+        setError('Nenhuma turma cadastrada. Cadastre turmas antes de importar alunos.');
+      }
+      
       setTurmas(response.data);
     } catch (err: any) {
       console.error('Erro ao carregar turmas:', err);
-      setError(err.response?.data?.detail || 'Erro ao carregar turmas');
+      setError(err.response?.data?.detail || 'Erro ao carregar turmas. Verifique se há turmas cadastradas.');
     } finally {
       setLoading(false);
     }
@@ -89,7 +94,7 @@ const ImportacaoAlunosPage: React.FC = () => {
     try {
       const token = localStorage.getItem('access_token');
 
-      const response = await axios.get('http://localhost:8000/api/v1/importacao/template', {
+      const response = await axios.get('/api/v1/importacao/template', {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
@@ -229,23 +234,36 @@ const ImportacaoAlunosPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary" paragraph>
               Escolha a turma para a qual os alunos serão importados.
             </Typography>
-            <FormControl fullWidth>
-              <InputLabel>Turma</InputLabel>
-              <Select
-                value={turmaSelecionada}
-                onChange={(e) => {
-                  setTurmaSelecionada(e.target.value as number);
-                  if (e.target.value) setActiveStep(Math.max(activeStep, 1));
-                }}
-                label="Turma"
-              >
-                {turmas.map((turma) => (
-                  <MenuItem key={turma.id} value={turma.id}>
-                    {turma.nome} - {turma.ano_escolar}º Ano - {turma.turno}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            
+            {turmas.length === 0 ? (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body2" fontWeight="medium">
+                  Nenhuma turma cadastrada
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Você precisa cadastrar turmas antes de importar alunos. 
+                  Acesse a página de <strong>Turmas e Alunos</strong> para criar uma turma.
+                </Typography>
+              </Alert>
+            ) : (
+              <FormControl fullWidth>
+                <InputLabel>Turma</InputLabel>
+                <Select
+                  value={turmaSelecionada}
+                  onChange={(e) => {
+                    setTurmaSelecionada(e.target.value as number);
+                    if (e.target.value) setActiveStep(Math.max(activeStep, 1));
+                  }}
+                  label="Turma"
+                >
+                  {turmas.map((turma) => (
+                    <MenuItem key={turma.id} value={turma.id}>
+                      {turma.nome} - {turma.ano_escolar}º Ano - {turma.turno}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </CardContent>
         </Card>
 

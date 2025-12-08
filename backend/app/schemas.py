@@ -92,9 +92,9 @@ class EscolaUpdate(BaseSchema):
 
 class EscolaResponse(EscolaBase):
     id: int
-    diretor_id: Optional[int]
-    ativo: bool
-    created_at: datetime
+    diretor_id: Optional[int] = None
+    ativo: bool = True
+    created_at: Optional[datetime] = None
 
 
 class EscolaImportCSV(BaseSchema):

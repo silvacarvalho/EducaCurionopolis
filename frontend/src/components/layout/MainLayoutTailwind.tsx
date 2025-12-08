@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon, Notifications as NotificationsIcon, AccountCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useContextualSearch } from '../../contexts/ContextualSearchContext';
 import AdaptiveSidebarTailwind from './AdaptiveSidebarTailwind';
 import api from '../../services/api';
 
@@ -13,13 +14,13 @@ interface MainLayoutProps {
 const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { searchQuery, setSearchQuery } = useContextualSearch();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sidebarOpen');
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
@@ -67,7 +68,7 @@ const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    console.log('Buscar:', searchQuery);
+    // A busca contextual é gerenciada pelo componente da página atual
   };
 
   const handleNotifications = () => {

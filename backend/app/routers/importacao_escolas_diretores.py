@@ -279,12 +279,21 @@ async def importar_escolas(
                 
                 diretor_id = diretor.id
 
+            # Validar e processar email
+            email_raw = str(row.get('email', '')).strip() if pd.notna(row.get('email')) else ''
+            email = None
+            if email_raw:
+                if validate_email(email_raw):
+                    email = email_raw
+                else:
+                    resultados['erros'].append(f"Linha {linha}: Email '{email_raw}' inválido - será ignorado")
+
             # Criar escola
             nova_escola = Escola(
                 nome=nome,
                 endereco=str(row.get('endereco', '')).strip() if pd.notna(row.get('endereco')) else None,
                 telefone=str(row.get('telefone', '')).strip() if pd.notna(row.get('telefone')) else None,
-                email=str(row.get('email', '')).strip() if pd.notna(row.get('email')) else None,
+                email=email,
                 codigo_inep=codigo_inep,
                 diretor_id=diretor_id
             )

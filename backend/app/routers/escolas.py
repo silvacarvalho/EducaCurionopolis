@@ -91,21 +91,30 @@ async def list_escolas(
     GESTÃO MUNICIPAL sees all schools
     DIRETOR sees only their school
     """
-    query = db.query(Escola)
+    try:
+        query = db.query(Escola)
 
-    # Filter by access level
-    if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
-        if current_user.escola_dirigida:
-            query = query.filter(Escola.id == current_user.escola_dirigida.id)
-        else:
-            return []
+        # Filter by access level
+        if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
+            if current_user.escola_dirigida:
+                query = query.filter(Escola.id == current_user.escola_dirigida.id)
+            else:
+                return []
 
-    # Filter by ativo status
-    if ativo is not None:
-        query = query.filter(Escola.ativo == ativo)
+        # Filter by ativo status
+        if ativo is not None:
+            query = query.filter(Escola.ativo == ativo)
 
-    escolas = query.offset(skip).limit(limit).all()
-    return escolas
+        escolas = query.offset(skip).limit(limit).all()
+        return escolas
+    except Exception as e:
+        print(f">> ERRO ao listar escolas: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao listar escolas: {str(e)}"
+        )
 
 
 @router.get("/{escola_id}", response_model=EscolaResponse)

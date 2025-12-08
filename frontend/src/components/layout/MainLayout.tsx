@@ -3,6 +3,7 @@ import { Box, AppBar, Toolbar, Typography, InputBase, IconButton, Badge, Avatar,
 import { Search as SearchIcon, Notifications as NotificationsIcon, AccountCircle, Palette, Code } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useContextualSearch } from '../../contexts/ContextualSearchContext';
 import AdaptiveSidebar from './AdaptiveSidebar';
 import AdaptiveSidebarTailwind from './AdaptiveSidebarTailwind';
 import MainLayoutTailwind from './MainLayoutTailwind';
@@ -16,6 +17,7 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { searchQuery, setSearchQuery } = useContextualSearch();
 
   // Estado do A/B Test (Tailwind vs MUI)
   const [useTailwind, setUseTailwind] = useState(() => {
@@ -30,7 +32,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
   });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Salvar preferência de layout no localStorage
   useEffect(() => {
@@ -86,8 +87,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    // Implementar lógica de busca aqui
-    console.log('Buscar:', searchQuery);
+    // A busca contextual é gerenciada pelo componente da página atual
   };
 
   const handleNotifications = () => {

@@ -4,7 +4,9 @@
  */
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// In development, use empty string to leverage Vite proxy
+// In production, use VITE_API_URL environment variable
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
@@ -236,9 +238,11 @@ export const mensagensAPI = {
 
 // Get WebSocket URL
 export const getWebSocketUrl = (userId: number, token: string): string => {
-  const wsBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
-    .replace('http://', 'ws://')
-    .replace('https://', 'wss://');
+  // Use window.location for WebSocket to work with proxy in development
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsBaseUrl = import.meta.env.VITE_API_URL 
+    ? import.meta.env.VITE_API_URL.replace('http://', 'ws://').replace('https://', 'wss://')
+    : `${protocol}//${window.location.host}`;
   return `${wsBaseUrl}/ws/${userId}?token=${token}`;
 };
 

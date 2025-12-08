@@ -46,6 +46,7 @@ import {
 import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API } from '../services/api';
+import { useFilteredData } from '../hooks/useFilteredData';
 import {
   DescritorSAEB,
   QuestaoSAEB,
@@ -127,6 +128,9 @@ const SAEBV2DescritoresPage: React.FC = () => {
     return matchesSearch && matchesDisciplina && matchesAno;
   });
 
+  // Aplica busca contextual do header sobre os descritores já filtrados
+  const contextualFilteredDescritores = useFilteredData(filteredDescritores, ['codigo', 'descricao']);
+
   // Questões filtradas
   const filteredQuestoes = questoes.filter((q) => {
     const matchesSearch = questaoSearch === '' || 
@@ -137,6 +141,9 @@ const SAEBV2DescritoresPage: React.FC = () => {
     const matchesBloco = questaoBlocoFilter === '' || q.bloco === questaoBlocoFilter;
     return matchesSearch && matchesDisciplina && matchesAno && matchesBloco;
   });
+
+  // Aplica busca contextual do header sobre as questões já filtradas
+  const contextualFilteredQuestoes = useFilteredData(filteredQuestoes, ['enunciado', 'descritor.codigo', 'gabarito']);
 
   const clearDescritorFilters = () => {
     setDescritorSearch('');
@@ -506,7 +513,7 @@ const SAEBV2DescritoresPage: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} md={2}>
                   <Typography variant="body2" color="text.secondary">
-                    {filteredDescritores.length} de {descritores.length} descritores
+                    {contextualFilteredDescritores.length} de {descritores.length} descritores
                   </Typography>
                 </Grid>
               </Grid>
@@ -529,7 +536,18 @@ const SAEBV2DescritoresPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredDescritores.map((desc) => (
+                    {contextualFilteredDescritores.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} align="center">
+                          <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
+                            {descritores.length === 0
+                              ? 'Nenhum descritor cadastrado'
+                              : 'Nenhum descritor encontrado com os filtros aplicados'}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      contextualFilteredDescritores.map((desc) => (
                       <TableRow key={desc.id}>
                         <TableCell>
                           <Chip
@@ -561,7 +579,8 @@ const SAEBV2DescritoresPage: React.FC = () => {
                           </IconButton>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )))
+                    }
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -674,7 +693,7 @@ const SAEBV2DescritoresPage: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} md={1.5}>
                   <Typography variant="body2" color="text.secondary">
-                    {filteredQuestoes.length} de {questoes.length}
+                    {contextualFilteredQuestoes.length} de {questoes.length}
                   </Typography>
                 </Grid>
               </Grid>
@@ -695,7 +714,18 @@ const SAEBV2DescritoresPage: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredQuestoes.map((q) => (
+                  {contextualFilteredQuestoes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        <Typography variant="body2" color="text.secondary" sx={{ py: 4 }}>
+                          {questoes.length === 0
+                            ? 'Nenhuma questão cadastrada'
+                            : 'Nenhuma questão encontrada com os filtros aplicados'}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    contextualFilteredQuestoes.map((q) => (
                     <TableRow key={q.id}>
                       <TableCell>{q.id}</TableCell>
                       <TableCell>{q.enunciado.substring(0, 50)}...</TableCell>
@@ -727,7 +757,8 @@ const SAEBV2DescritoresPage: React.FC = () => {
                         </IconButton>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))
+                  }
                 </TableBody>
               </Table>
             </TableContainer>
