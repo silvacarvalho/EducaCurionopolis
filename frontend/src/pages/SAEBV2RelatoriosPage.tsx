@@ -40,7 +40,7 @@ import {
   MenuBook as MenuBookIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API, turmasAPI, escolasAPI } from '../services/api';
 import {
@@ -198,10 +198,8 @@ const SAEBV2RelatoriosPage: React.FC = () => {
   }, [selectedEscolaId, selectedSimuladoId]);
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="SAEB V2 - Relatórios Completos" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="SAEB V2 - Relatórios Completos">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Filters - Hidden on print */}
         <Paper sx={{ p: 3, mb: 3 }} className="no-print">
           <Typography variant="h6" gutterBottom>
@@ -965,8 +963,8 @@ const SAEBV2RelatoriosPage: React.FC = () => {
             </div>
           </>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

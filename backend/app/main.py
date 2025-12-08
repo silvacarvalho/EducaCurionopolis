@@ -2,15 +2,16 @@
 EDUCA+ Curionópolis - Main FastAPI Application
 Sistema Modular para Gestão e Demonstração de Métricas Educacionais
 """
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-import os
+from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
-from dotenv import load_dotenv
 
+from .config import settings
 from .database import init_db, engine, Base, get_db
 from .websocket import manager
 from .models import Usuario
@@ -33,17 +34,62 @@ from .routers import (
     mensagens,
     relatorios,
     importacao,
+    importacao_escolas_diretores,
     configuracoes_grafico
 )
 
-load_dotenv()
+
+# ============================================
+# SECURITY MIDDLEWARE
+# ============================================
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to add security headers to all responses.
+    Helps protect against common web vulnerabilities.
+    """
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # Prevent clickjacking
+        response.headers["X-Frame-Options"] = "DENY"
+        
+        # Prevent MIME type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # Enable XSS filter in browsers
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # Control referrer information
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # Permissions Policy (previously Feature-Policy)
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Only add strict security headers in production
+        if settings.is_production():
+            # HTTP Strict Transport Security (HSTS)
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            
+            # Content Security Policy (basic)
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' https:;"
+            )
+        
+        return response
+
 
 # ============================================
 # APPLICATION CONFIGURATION
 # ============================================
 
 app = FastAPI(
-    title="EDUCA+ Curionópolis",
+    title=settings.APP_NAME,
     description="""
     Sistema Modular para Acompanhar, Gerenciar e Demonstrar Métricas
     do Desenvolvimento da Educação no Município de Curionópolis/PA.
@@ -51,7 +97,7 @@ app = FastAPI(
     ## Módulos
 
     * **Avaliação** - Gestão de avaliações bimestrais
-    * **Diagnóstico** - Acompanhamento de diagnósticos (1º ao 5º ano)
+    * **Diagnóstico** - Acompanamento de diagnósticos (1º ao 5º ano)
     * **SAEB** - Simulados e resultados SAEB
     * **Relatórios** - Visualização e análise de dados
 
@@ -62,31 +108,47 @@ app = FastAPI(
     * Professor
     * Comunidade
     """,
-    version="1.0.0",
+    version=settings.APP_VERSION,
     contact={
         "name": "Prefeitura de Curionópolis",
         "email": "educacao@curionopolis.pa.gov.br"
-    }
+    },
+    # Disable docs in production for security
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
+
 # ============================================
-# CORS CONFIGURATION
+# MIDDLEWARE REGISTRATION
 # ============================================
 
-# Configure CORS for frontend access
-origins = [
-    "http://localhost:3000",  # Vite development server (current)
-    "http://localhost:3002",  # React development server
-    "http://localhost:5173",  # Vite development server (alternative)
-    os.getenv("FRONTEND_URL", "http://localhost:3000")
-]
+# Security Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware)
 
+# Trusted Host Middleware (prevent Host header attacks)
+if settings.is_production():
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.get_allowed_hosts()
+    )
+
+# CORS Configuration - Using settings from config
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.get_cors_origins(),
+    allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+    ],
+    expose_headers=["Content-Disposition"],
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 # ============================================
@@ -99,10 +161,30 @@ async def startup_event():
     Initialize database on application startup
     Creates all tables if they don't exist
     """
-    print(">> Iniciando EDUCA+ Curionopolis...")
+    print("=" * 50)
+    print(f">> Iniciando {settings.APP_NAME} v{settings.APP_VERSION}")
+    print(f">> Ambiente: {settings.ENVIRONMENT.upper()}")
+    print("=" * 50)
+    
+    # Security warnings
+    if settings.is_development():
+        print("⚠️  MODO DE DESENVOLVIMENTO ATIVO")
+        print("⚠️  Documentação da API disponível em /docs")
+    
+    if settings.DEBUG and settings.is_production():
+        print("🚨 ALERTA: DEBUG está ativado em PRODUÇÃO!")
+    
+    # Check for insecure SECRET_KEY
+    insecure_keys = ['your-secret-key', 'changeme', 'secret', 'password']
+    if any(k in settings.SECRET_KEY.lower() for k in insecure_keys):
+        print("🚨 ALERTA: SECRET_KEY parece ser insegura!")
+        print("   Gere uma nova com: python -c \"import secrets; print(secrets.token_hex(32))\"")
+    
     print(">> Criando tabelas no banco de dados...")
     init_db()
     print(">> Banco de dados inicializado com sucesso!")
+    print(f">> CORS habilitado para: {', '.join(settings.get_cors_origins())}")
+    print("=" * 50)
 
 
 # ============================================
@@ -221,6 +303,13 @@ app.include_router(
     tags=["Importação"]
 )
 
+# Importação de Escolas e Diretores
+app.include_router(
+    importacao_escolas_diretores.router,
+    prefix="/api/v1/importacao",
+    tags=["Importação de Escolas e Diretores"]
+)
+
 # Chart Configuration
 app.include_router(
     configuracoes_grafico.router,
@@ -281,12 +370,9 @@ async def websocket_endpoint(
     from .database import SessionLocal
     from .models import Usuario
     
-    SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
-    ALGORITHM = "HS256"
-    
     try:
-        # Validate token
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Validate token using centralized settings
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         token_email = payload.get("sub")  # sub contains email, not user_id
         
         if not token_email:

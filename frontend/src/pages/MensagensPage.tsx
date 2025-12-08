@@ -5,7 +5,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Paper,
   Typography,
   Tabs,
@@ -34,7 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useMessages } from '../contexts/MessagesContext';
 import { useNotification } from '../contexts/NotificationContext';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { MessageList, MessageComposeDialog, MessageViewDialog } from '../components/mensagens';
 import { Mensagem, PrioridadeMensagem } from '../types';
 import { mensagensAPI } from '../services/api';
@@ -137,10 +136,8 @@ const MensagensPage: React.FC = () => {
     : inbox.filter((m) => m.prioridade === filterPrioridade);
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Mensagens" showBackButton />
-
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Mensagens">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Paper sx={{ p: 3 }}>
           {/* Header */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -241,7 +238,7 @@ const MensagensPage: React.FC = () => {
             />
           </TabPanel>
         </Paper>
-      </Container>
+      </Box>
 
       {/* Compose FAB */}
       <Fab
@@ -281,7 +278,7 @@ const MensagensPage: React.FC = () => {
           setViewDialogOpen(false);
         }}
       />
-    </Box>
+    </MainLayout>
   );
 };
 

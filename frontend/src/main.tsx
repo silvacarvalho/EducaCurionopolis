@@ -7,6 +7,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { ChartConfigProvider } from './contexts/ChartConfigContext';
 import { MessagesProvider } from './contexts/MessagesContext';
 import App from './App';
+import './index.css';
 import './print.css';
 
 const theme = createTheme({

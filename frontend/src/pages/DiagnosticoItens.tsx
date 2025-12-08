@@ -8,7 +8,6 @@ import {
   Button,
   Card,
   CardContent,
-  Container,
   Dialog,
   DialogActions,
   DialogContent,
@@ -37,7 +36,7 @@ import {
 import { Add, Edit, Delete, ArrowBack as ArrowBackIcon, } from '@mui/icons-material';
 import { diagnosticosAPI } from '../services/api';
 import { ItemDiagnostico, ModalidadeDiagnostico } from '../types';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 
 
 const DiagnosticoItens: React.FC = () => {
@@ -156,11 +155,8 @@ const DiagnosticoItens: React.FC = () => {
   };
 
   return (
-    
-    <Box>
-      <AppBarWithUserMenu title="Gestão de Itens de Diagnóstico" showBackButton />
-      <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
+    <MainLayout title="Gestão de Itens de Diagnóstico">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h4">Itens de Diagnóstico</Typography>
           <Button
@@ -272,8 +268,7 @@ const DiagnosticoItens: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
-  </Box>
+    </MainLayout>
   );
 };
 

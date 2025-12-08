@@ -33,7 +33,7 @@ import {
   WarningAmber,
   Close,
 } from '@mui/icons-material';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { Turma } from '../types';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -173,10 +173,8 @@ const ImportacaoAlunosPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Importação de Alunos" showBackButton />
-
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Importação de Alunos">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Stepper */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
@@ -366,8 +364,8 @@ const ImportacaoAlunosPage: React.FC = () => {
             </CardContent>
           </Card>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

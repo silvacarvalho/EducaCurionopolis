@@ -5,7 +5,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Paper,
   Typography,
   Button,
@@ -45,7 +44,7 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API, turmasAPI } from '../services/api';
 import {
@@ -701,20 +700,17 @@ const SAEBV2ProfessorPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="SAEB V2 - Professor" showBackButton />
+      <MainLayout title="SAEB V2 - Professor">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
         </Box>
-      </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="SAEB V2 - Gestão de Simulados" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="SAEB V2 - Gestão de Simulados">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Quick Actions */}
         <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button
@@ -970,7 +966,7 @@ const SAEBV2ProfessorPage: React.FC = () => {
             )}
           </TabPanel>
         </Paper>
-      </Container>
+      </Box>
 
       {/* Liberar Simulado Dialog */}
       <Dialog
@@ -1207,7 +1203,7 @@ const SAEBV2ProfessorPage: React.FC = () => {
           <Button onClick={() => setTokensDialogOpen(false)}>Fechar</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </MainLayout>
   );
 };
 

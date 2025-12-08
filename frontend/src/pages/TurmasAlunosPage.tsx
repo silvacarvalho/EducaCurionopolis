@@ -10,7 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import TurmasTab from '../components/turmas/TurmasTab';
 import AlunosTab from '../components/turmas/AlunosTab';
 import DisciplinasTab from '../components/turmas/DisciplinasTab';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -47,10 +47,8 @@ const TurmasAlunosPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Gerenciamento de Turmas e Alunos" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Gerenciamento de Turmas e Alunos">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Paper>
           <Tabs
             value={tabValue}
@@ -82,8 +80,8 @@ const TurmasAlunosPage: React.FC = () => {
             <AlunosTab />
           </TabPanel>
         </Paper>
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

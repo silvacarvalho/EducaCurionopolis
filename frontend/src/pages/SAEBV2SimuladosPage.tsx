@@ -52,7 +52,7 @@ import {
   Assessment as AnaliseIcon,
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API } from '../services/api';
 import {
@@ -476,9 +476,8 @@ const SAEBV2SimuladosPage: React.FC = () => {
   };
 
   return (
-    <>
-      <AppBarWithUserMenu title="SAEB V2 - Simulados"  showBackButton />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="SAEB V2 - Simulados">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
           <Box>
             <Typography
@@ -887,8 +886,8 @@ const SAEBV2SimuladosPage: React.FC = () => {
             </Button>
           </DialogActions>
         </Dialog>
-      </Container>
-    </>
+      </Box>
+    </MainLayout>
   );
 };
 

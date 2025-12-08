@@ -157,7 +157,7 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
     return (
       <Box>
         <AppBarWithUserMenu title="Resultado do Simulado" showBackButton />
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Box sx={{ width: '100%', height: '100%', mt: 4, mb: 4 }}>
           <Paper sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center' }}>
               <CheckIcon sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
@@ -213,7 +213,7 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
               </Button>
             </Box>
           </Paper>
-        </Container>
+        </Box>
       </Box>
     );
   }

@@ -5,7 +5,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Paper,
   Typography,
   Table,
@@ -38,7 +37,7 @@ import {
   ArrowBack as BackIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API, turmasAPI } from '../services/api';
 import { ResultadoSimuladoAluno, SimuladoSAEB, Turma, SituacaoSAEB } from '../types';
@@ -248,10 +247,8 @@ const SAEBV2ResultadosPage: React.FC = () => {
   const selectedTurma = turmas.find((t) => t.id === selectedTurmaId);
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="SAEB V2 - Resultados por Turma" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="SAEB V2 - Resultados por Turma">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Filters */}
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h6" gutterBottom>
@@ -605,8 +602,8 @@ const SAEBV2ResultadosPage: React.FC = () => {
             )}
           </Paper>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

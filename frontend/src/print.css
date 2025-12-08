@@ -17,9 +17,24 @@
   /* Ocultar elementos que não devem aparecer na impressão */
   .no-print,
   .MuiAppBar-root,
+  .MuiDrawer-root,
+  .MuiDrawer-paper,
   header,
   nav {
     display: none !important;
+  }
+
+  /* Remover margem esquerda do conteúdo (ocupada pela sidebar) */
+  .MuiBox-root[style*="margin-left"] {
+    margin-left: 0 !important;
+  }
+
+  /* Garantir que o conteúdo principal ocupe toda a largura */
+  main,
+  [role="main"] {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Ajustar layout para impressão */

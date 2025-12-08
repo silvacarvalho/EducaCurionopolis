@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Container,
   Paper,
   TextField,
   Button,
@@ -36,7 +35,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Box sx={{ width: '40%', height: '25%', margin: 'auto', marginTop: '0%' }}>
       <Box
         sx={{
           minHeight: '100vh',
@@ -92,7 +91,7 @@ const Login: React.FC = () => {
           </form>
         </Paper>
       </Box>
-    </Container>
+    </Box>
   );
 };
 

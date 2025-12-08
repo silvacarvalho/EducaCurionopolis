@@ -12,13 +12,35 @@ ENV/
 dist/
 build/
 
-# FastAPI
+# ============================================
+# ENVIRONMENT & SECRETS (CRITICAL!)
+# ============================================
+# Never commit sensitive configuration files
 .env
 .env.local
+.env.development
+.env.staging
+.env.production
+.env*.local
+*.env
+
+# Keep .env.example files (they don't contain secrets)
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Secret keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/
 
 # Database
 *.db
 *.sqlite3
+*.sql.backup
 
 # IDEs
 .vscode/
@@ -32,6 +54,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.npm
+.yarn
 
 # Frontend build
 frontend/dist/
@@ -40,6 +64,8 @@ frontend/build/
 # OS
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Logs
 *.log
@@ -54,3 +80,36 @@ tests_/
 # Temporary files
 tmp/
 temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*~
+
+
+wireframes/
+*.sketch
+
+CHECKLIST-VALIDACAO.dm
+GUIA-NOVO-LAYOUT.md
+INSTRUCOES-FINAIS.md
+MIGRACAO-LAYOUT-STATUS.md
+migrar-layouts.ps1
+README-NOVO-LAYOUT.md
+RESUMO-IMPLEMENTACAO.md
+STATUS-MIGRACAO-FINAL.md
+IMPLEMENTACAO_VIEWS.md
+GUIA-IMPLEMENTACAO-ALUNOS.md
+FUNCIONALIDADE_IMPORTACAO_IMPLEMENTADA.md
+DEPLOY.md
+CRUD_DIRETORES_ESCOLA.md
+PERMISSOES_DIAGNOSTICO.md
+SISTEMA_PERMISSOES_IMPLEMENTADO.md
+DEPLOY.md
+
+
+
+
+

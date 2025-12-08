@@ -152,7 +152,7 @@ const Dashboard: React.FC = () => {
     <Box>
       <AppBarWithUserMenu title="EDUCA+ Curionópolis" />
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ width: '100%', height: '100%', mt: 4, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Bem-vindo ao EDUCA+ Curionópolis
         </Typography>
@@ -187,7 +187,7 @@ const Dashboard: React.FC = () => {
             </Grid>
           ))}
         </Grid>
-      </Container>
+      </Box>
     </Box>
   );
 };

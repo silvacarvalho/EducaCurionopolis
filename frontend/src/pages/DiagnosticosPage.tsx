@@ -2,10 +2,10 @@
  * Gestão de Diagnósticos (GESTÃO MUNICIPAL)
  * Criar diagnósticos e vincular itens
  */
+
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Button,
   Card,
   CardContent,
@@ -59,7 +59,7 @@ import {
   ModalidadeDiagnostico,
   PerfilUsuario,
 } from '../types';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { PermissionGate } from '../hooks/usePermissions';
 
 const DiagnosticosPage: React.FC = () => {
@@ -316,10 +316,8 @@ const DiagnosticosPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Gestão de Diagnósticos" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Gestão de Diagnósticos">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h4">Diagnósticos</Typography>
           <PermissionGate allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
@@ -344,7 +342,7 @@ const DiagnosticosPage: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Nome</TableCell>
+                <TableCell sx={{ width: '25%' }}>Nome</TableCell>
                 <TableCell>Ano Letivo</TableCell>
                 <TableCell>Tipo</TableCell>
                 <TableCell>Bimestre</TableCell>
@@ -422,7 +420,7 @@ const DiagnosticosPage: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      </Container>
+      </Box>
 
       {/* Dialog: Criar Diagnóstico com Stepper */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} maxWidth="md" fullWidth>
@@ -739,7 +737,7 @@ const DiagnosticosPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </MainLayout>
   );
 };
 

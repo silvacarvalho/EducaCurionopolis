@@ -83,6 +83,14 @@ export const escolasAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  downloadTemplate: () => api.get('/importacao/escolas/template', { responseType: 'blob' }),
+  importar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/importacao/escolas/importar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const diretoresAPI = {
@@ -92,6 +100,14 @@ export const diretoresAPI = {
   update: (id: number, data: any) => api.put(`/diretores/${id}`, data),
   delete: (id: number) => api.delete(`/diretores/${id}`),
   getEscola: (id: number) => api.get(`/diretores/${id}/escola`),
+  downloadTemplate: () => api.get('/importacao/diretores/template', { responseType: 'blob' }),
+  importar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/importacao/diretores/importar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export const professoresAPI = {

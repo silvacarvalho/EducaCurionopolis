@@ -91,7 +91,7 @@ const SAEBV2AlunoLoginPage: React.FC = () => {
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       }}
     >
-      <Container maxWidth="sm">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Header */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <SchoolIcon sx={{ fontSize: 64, color: 'white', mb: 2 }} />
@@ -200,7 +200,7 @@ const SAEBV2AlunoLoginPage: React.FC = () => {
             Prefeitura Municipal de Curionópolis - Secretaria de Educação
           </Typography>
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 };

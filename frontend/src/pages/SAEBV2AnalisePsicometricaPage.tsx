@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Container,
   Paper,
   Typography,
   Button,
@@ -37,7 +36,7 @@ import {
   Warning as WarningIcon,
   Error as ErrorIcon,
 } from '@mui/icons-material';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API } from '../services/api';
 import { AnalisePsicometricaSimulado } from '../types';
@@ -87,31 +86,27 @@ const SAEBV2AnalisePsicometricaPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Análise Psicométrica" showBackButton />
+      <MainLayout title="Análise Psicométrica">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
         </Box>
-      </Box>
+      </MainLayout>
     );
   }
 
   if (!analise) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Análise Psicométrica" showBackButton />
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <MainLayout title="Análise Psicométrica">
+        <Box sx={{ width: '100%', height: '100%' }}>
           <Alert severity="error">Erro ao carregar análise psicométrica</Alert>
-        </Container>
-      </Box>
+        </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <Box>
-      <AppBarWithUserMenu title={`Análise Psicométrica - ${analise.simulado_nome}`} showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title={`Análise Psicométrica - ${analise.simulado_nome}`}>
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Header Actions */}
         <Box sx={{ mb: 3 }}>
           <Button
@@ -419,8 +414,8 @@ const SAEBV2AnalisePsicometricaPage: React.FC = () => {
             </Accordion>
           ))}
         </Paper>
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

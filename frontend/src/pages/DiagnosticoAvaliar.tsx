@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
-  Container,
   FormControl,
   InputLabel,
   MenuItem,
@@ -46,7 +45,7 @@ import {
   AvaliacaoItem,
   DiagnosticoResultado,
 } from '../types';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 
 interface AlunoStatus {
   aluno: Aluno;
@@ -279,9 +278,8 @@ const DiagnosticoAvaliar: React.FC = () => {
   const stats = getProgressStats();
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Aplicar Diagnóstico" showBackButton />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Aplicar Diagnóstico">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
             {error}
@@ -535,8 +533,8 @@ const DiagnosticoAvaliar: React.FC = () => {
             </Paper>
           </>
         )}
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

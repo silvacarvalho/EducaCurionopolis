@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Button,
   Paper,
@@ -27,7 +26,7 @@ import {
   Remove as RemoveIcon,
 } from '@mui/icons-material';
 import { avaliacoesAgregadasAPI, turmasAPI, disciplinasAPI, alunosAPI } from '../services/api';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 
 interface Turma {
   id: number;
@@ -220,10 +219,8 @@ const AvaliacoesPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Gestão de Avaliações Bimestrais" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Gestão de Avaliações Bimestrais">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
           <Grid item xs={12} md={3}>
@@ -496,8 +493,8 @@ const AvaliacoesPage: React.FC = () => {
             {error}
           </Alert>
         </Snackbar>
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

@@ -43,7 +43,7 @@ import {
   Search as SearchIcon,
   Clear as ClearIcon,
 } from '@mui/icons-material';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API } from '../services/api';
 import {
@@ -400,10 +400,8 @@ const SAEBV2DescritoresPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="SAEB V2 - Descritores e Questões" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="SAEB V2 - Descritores e Questões">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Paper sx={{ p: 3 }}>
           <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
             <Tab label="Descritores" />
@@ -735,7 +733,7 @@ const SAEBV2DescritoresPage: React.FC = () => {
             </TableContainer>
           </TabPanel>
         </Paper>
-      </Container>
+      </Box>
 
       {/* Descritor Dialog */}
       <Dialog open={descritorDialogOpen} onClose={() => setDescritorDialogOpen(false)} maxWidth="md" fullWidth>
@@ -947,7 +945,7 @@ const SAEBV2DescritoresPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </MainLayout>
   );
 };
 

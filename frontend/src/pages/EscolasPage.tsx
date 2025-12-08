@@ -1,22 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Box,
   Container,
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
   Tabs,
   Tab,
   Paper,
-  IconButton,
+  Box,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import EscolasTab from '../components/escolas/EscolasTab';
 import DiretoresTab from '../components/escolas/DiretoresTab';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -41,8 +33,6 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const EscolasPage: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -50,10 +40,8 @@ const EscolasPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Gestão de Escolas e Diretores" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Gestão de Escolas e Diretores">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Paper>
           <Tabs
             value={tabValue}
@@ -74,8 +62,8 @@ const EscolasPage: React.FC = () => {
             <DiretoresTab />
           </TabPanel>
         </Paper>
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

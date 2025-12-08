@@ -181,7 +181,7 @@ const SAEBV2AlunoListPage: React.FC = () => {
         py: 4,
       }}
     >
-      <Container maxWidth="md">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Header with Student Info */}
         <Paper elevation={4} sx={{ p: 3, mb: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -371,7 +371,7 @@ const SAEBV2AlunoListPage: React.FC = () => {
             Prefeitura Municipal de Curionópolis - Secretaria de Educação
           </Typography>
         </Box>
-      </Container>
+      </Box>
     </Box>
   );
 };

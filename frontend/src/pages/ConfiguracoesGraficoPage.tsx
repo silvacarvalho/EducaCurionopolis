@@ -26,7 +26,7 @@ import {
   Palette as PaletteIcon,
 } from '@mui/icons-material';
 import { configuracoesGraficoAPI } from '../services/api';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import {
   BarChart,
   Bar,
@@ -145,10 +145,8 @@ const ConfiguracoesGraficoPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Configurações de Gráficos" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Configurações de Gráficos">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {error && (
           <Alert severity="error" onClose={() => setError('')} sx={{ mb: 2 }}>
             {error}
@@ -354,8 +352,8 @@ const ConfiguracoesGraficoPage: React.FC = () => {
             </Paper>
           </Grid>
         </Grid>
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

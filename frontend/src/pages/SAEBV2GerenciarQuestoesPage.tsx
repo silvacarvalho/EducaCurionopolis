@@ -38,7 +38,7 @@ import {
   Block as BlockIcon,
 } from '@mui/icons-material';
 import Tooltip from '@mui/material/Tooltip';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API } from '../services/api';
 import { SimuladoSAEB, SimuladoQuestao, QuestaoSAEB, DisciplinaSAEB, BlocoSAEB } from '../types';
@@ -150,31 +150,27 @@ const SAEBV2GerenciarQuestoesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Gerenciar Questões" showBackButton />
+      <MainLayout title="Gerenciar Questões">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
         </Box>
-      </Box>
+      </MainLayout>
     );
   }
 
   if (!simulado) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Gerenciar Questões" showBackButton />
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <MainLayout title="Gerenciar Questões">
+        <Box sx={{ width: '100%', height: '100%' }}>
           <Alert severity="error">Simulado não encontrado</Alert>
-        </Container>
-      </Box>
+        </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <Box>
-      <AppBarWithUserMenu title={`Gerenciar Questões - ${simulado.nome}`} showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title={`Gerenciar Questões - ${simulado.nome}`}>
+      <Container maxWidth="xl">
         {/* Header Actions */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Button
@@ -542,7 +538,7 @@ const SAEBV2GerenciarQuestoesPage: React.FC = () => {
           </DialogActions>
         </Dialog>
       </Container>
-    </Box>
+    </MainLayout>
   );
 };
 

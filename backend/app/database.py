@@ -4,19 +4,20 @@ Database configuration and session management
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+from .config import settings
 
-# Database URL from environment variable
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/educacurionopolis"
+# Database URL from settings
+DATABASE_URL = settings.DATABASE_URL
+
+# Create SQLAlchemy engine with security options
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=3600,  # Recycle connections after 1 hour
 )
-
-# Create SQLAlchemy engine
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

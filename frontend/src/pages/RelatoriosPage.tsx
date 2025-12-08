@@ -34,7 +34,7 @@ import DetalhamentoAvaliacaoModal from '../components/DetalhamentoAvaliacaoModal
 import RelatorioDiagnosticoPorEixo from '../components/RelatorioDiagnosticoPorEixo';
 import { relatoriosAPI } from '../services/api';
 import { DrillDownData, Bimestre } from '../types';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -316,10 +316,8 @@ const RelatoriosPage: React.FC = () => {
   };
 
   return (
-    <Box>
-      
-    <AppBarWithUserMenu title="Relatórios e Métricas" showBackButton />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Relatórios e Métricas">
+      <Box sx={{ width: '100%', height: '100%' }}>
 
         {/* Action Buttons */}
         <Box
@@ -630,8 +628,8 @@ const RelatoriosPage: React.FC = () => {
           disciplinaId={disciplinaId as number || undefined}
         />
         </Box>
-      </Container>
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 

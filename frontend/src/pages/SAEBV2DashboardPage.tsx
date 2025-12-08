@@ -29,7 +29,7 @@ import {
   CheckCircle as CheckIcon,
   EmojiEvents as TrophyIcon,
 } from '@mui/icons-material';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API } from '../services/api';
 import { DashboardMetricas } from '../types';
@@ -62,31 +62,27 @@ const SAEBV2DashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Dashboard SAEB" showBackButton />
+      <MainLayout title="Dashboard SAEB">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
         </Box>
-      </Box>
+      </MainLayout>
     );
   }
 
   if (!metricas) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Dashboard SAEB" showBackButton />
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
+      <MainLayout title="Dashboard SAEB">
+        <Box sx={{ width: '100%', height: '100%' }}>
           <Alert severity="error">Erro ao carregar métricas</Alert>
-        </Container>
-      </Box>
+        </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Dashboard SAEB - Métricas da Rede" showBackButton />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Dashboard SAEB - Métricas da Rede">
+      <Container maxWidth="xl">
         {/* Filtro de Ano Letivo */}
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5">{metricas.periodo}</Typography>
@@ -339,7 +335,7 @@ const SAEBV2DashboardPage: React.FC = () => {
           </Grid>
         </Paper>
       </Container>
-    </Box>
+    </MainLayout>
   );
 };
 

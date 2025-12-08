@@ -5,7 +5,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Paper,
   Typography,
   Button,
@@ -45,7 +44,7 @@ import {
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
 import { saebV2API, turmasAPI, alunosAPI } from '../services/api';
 import {
@@ -219,20 +218,17 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
 
   if (loading && activeStep === 0) {
     return (
-      <Box>
-        <AppBarWithUserMenu title="Lançamento Manual SAEB" showBackButton backPath="/saeb-v2/professor" />
+      <MainLayout title="Lançamento Manual SAEB">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
           <CircularProgress />
         </Box>
-      </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Lançamento Manual de Resultados SAEB" showBackButton backPath="/saeb-v2/professor" />
-
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Lançamento Manual de Resultados SAEB">
+      <Box sx={{ width: '100%', height: '100%' }}>
         {/* Stepper */}
         <Paper sx={{ p: 3, mb: 3 }}>
           <Stepper activeStep={activeStep}>
@@ -473,7 +469,7 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
             </Box>
           </Paper>
         )}
-      </Container>
+      </Box>
 
       {/* Result Dialog */}
       <Dialog
@@ -570,7 +566,7 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </MainLayout>
   );
 };
 

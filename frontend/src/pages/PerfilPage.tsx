@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Button,
   Paper,
@@ -20,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -154,10 +153,8 @@ const PerfilPage: React.FC = () => {
   }
 
   return (
-    <Box>
-      <AppBarWithUserMenu title="Meu Perfil" showBackButton />
-
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="Meu Perfil">
+      <Box sx={{ width: '100%', height: '100%' }}>
         <Paper sx={{ p: 4 }}>
           {/* User Header */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -369,7 +366,7 @@ const PerfilPage: React.FC = () => {
             </Grid>
           </TabPanel>
         </Paper>
-      </Container>
+      </Box>
 
       {/* Success Snackbar */}
       <Snackbar
@@ -388,7 +385,7 @@ const PerfilPage: React.FC = () => {
           {error}
         </Alert>
       </Snackbar>
-    </Box>
+    </MainLayout>
   );
 };
 

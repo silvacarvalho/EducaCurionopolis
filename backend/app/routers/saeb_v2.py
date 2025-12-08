@@ -2140,7 +2140,6 @@ async def autenticar_por_token(
     """
     from jose import jwt
     from datetime import timedelta
-    import os
 
     token_str = auth_data.token.upper()
 
@@ -2171,12 +2170,8 @@ async def autenticar_por_token(
         token.data_primeiro_acesso = datetime.now()
         db.commit()
 
-    # Generate JWT token for student session
-    SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
-    ALGORITHM = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Generate JWT token for student session - using centralized settings
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {
         "sub": f"aluno_{token.aluno_id}",
         "aluno_id": token.aluno_id,
@@ -2186,7 +2181,7 @@ async def autenticar_por_token(
     }
     expire = datetime.utcnow() + access_token_expires
     to_encode.update({"exp": expire})
-    access_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    access_token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
     return TokenAuthResponse(
         access_token=access_token,

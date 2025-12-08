@@ -8,6 +8,7 @@ import { PerfilUsuario } from './types';
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import DashboardNew from './pages/DashboardNew';
 import RelatoriosPage from './pages/RelatoriosPage';
 import EscolasPage from './pages/EscolasPage';
 import ProfessoresPage from './pages/ProfessoresPage';
@@ -57,6 +58,14 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route
         path="/"
+        element={
+          <AuthenticatedRoute>
+            <DashboardNew />
+          </AuthenticatedRoute>
+        }
+      />
+      <Route
+        path="/dashboard-old"
         element={
           <AuthenticatedRoute>
             <Dashboard />

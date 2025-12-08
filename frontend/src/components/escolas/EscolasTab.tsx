@@ -26,6 +26,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
+  Download as DownloadIcon,
+  Upload as UploadIcon,
 } from '@mui/icons-material';
 import { escolasAPI, diretoresAPI } from '../../services/api';
 import { Escola, Usuario } from '../../types';
@@ -38,6 +40,8 @@ const EscolasTab: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEscola, setEditingEscola] = useState<Escola | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -174,15 +178,86 @@ const EscolasTab: React.FC = () => {
     });
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await escolasAPI.downloadTemplate();
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `template_importacao_escolas_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setSuccess('Template baixado com sucesso!');
+    } catch (err: any) {
+      setError('Erro ao baixar template');
+    }
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    setImportResult(null);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await escolasAPI.importar(file);
+      setImportResult(response.data);
+      if (response.data.sucesso > 0) {
+        setSuccess(`${response.data.sucesso} escola(s) importada(s) com sucesso!`);
+        loadEscolas();
+        loadDiretores();
+      }
+      if (response.data.erros?.length > 0) {
+        setError(`${response.data.erros.length} erro(s) encontrado(s). Verifique os detalhes abaixo.`);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao importar arquivo');
+    } finally {
+      setImporting(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="h5">Gerenciar Escolas</Typography>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            startIcon={<DownloadIcon />}
+            onClick={handleDownloadTemplate}
+            variant="outlined"
+            color="info"
+          >
+            Baixar Template
+          </Button>
+          <Button
+            component="label"
+            startIcon={<UploadIcon />}
+            variant="outlined"
+            color="success"
+            disabled={importing}
+          >
+            {importing ? 'Importando...' : 'Importar Excel'}
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              hidden
+              onChange={handleImportFile}
+            />
+          </Button>
           <Button
             startIcon={<RefreshIcon />}
             onClick={loadEscolas}
-            sx={{ mr: 1 }}
           >
             Atualizar
           </Button>
@@ -206,6 +281,37 @@ const EscolasTab: React.FC = () => {
         <Alert severity="success" onClose={() => setSuccess('')} sx={{ mb: 2 }}>
           {success}
         </Alert>
+      )}
+
+      {/* Resultado da importação */}
+      {importResult && (
+        <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Resultado da Importação
+          </Typography>
+          <Typography variant="body2">
+            Total de registros: {importResult.total} | 
+            Sucesso: <strong style={{ color: 'green' }}>{importResult.sucesso}</strong> | 
+            Erros: <strong style={{ color: 'red' }}>{importResult.erros?.length || 0}</strong>
+          </Typography>
+          {importResult.erros?.length > 0 && (
+            <Box sx={{ mt: 1, maxHeight: 150, overflow: 'auto' }}>
+              <Typography variant="caption" color="error">
+                Erros encontrados:
+              </Typography>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {importResult.erros.map((erro: string, idx: number) => (
+                  <li key={idx}>
+                    <Typography variant="caption" color="error">{erro}</Typography>
+                  </li>
+                ))}
+              </ul>
+            </Box>
+          )}
+          <Button size="small" onClick={() => setImportResult(null)} sx={{ mt: 1 }}>
+            Fechar
+          </Button>
+        </Paper>
       )}
 
       {loading ? (

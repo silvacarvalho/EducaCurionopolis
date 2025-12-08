@@ -35,7 +35,14 @@
       "Bash(cat:*)",
       "Bash(cmd.exe /c \"taskkill /F /PID 452\")",
       "Bash(./venv/Scripts/pip install:*)",
-      "Bash(cmd.exe /c \"taskkill /F /PID 13072\")"
+      "Bash(cmd.exe /c \"taskkill /F /PID 13072\")",
+      "Bash(for file in ImportacaoAlunosPage.tsx ConfiguracoesGraficoPage.tsx SAEBV2DashboardPage.tsx SAEBV2ConfiguracoesPage.tsx SAEBV2DescritoresPage.tsx SAEBV2SimuladosPage.tsx)",
+      "Bash(do echo \"Processando $file...\")",
+      "Bash(done)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 6220\")",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

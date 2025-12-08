@@ -14,7 +14,7 @@ import {
   Paper,
 } from '@mui/material';
 import { Edit as EditIcon, Save as SaveIcon, Cancel as CancelIcon, Settings as SettingsIcon } from '@mui/icons-material';
-import AppBarWithUserMenu from '../components/common/AppBarWithUserMenu';
+import MainLayout from '../components/layout/MainLayout';
 import { saebV2API } from '../services/api';
 import { ConfiguracaoSAEB } from '../types';
 import { useNotification } from '../contexts/NotificationContext';
@@ -68,21 +68,19 @@ const SAEBV2ConfiguracoesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <>
-        <AppBarWithUserMenu title="SAEB V2 - Configurações" showBackButton />
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <MainLayout title="SAEB V2 - Configurações">
+        <Box sx={{ width: '100%', height: '100%' }}>
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
             <CircularProgress />
           </Box>
-        </Container>
-      </>
+        </Box>
+      </MainLayout>
     );
   }
 
   return (
-    <>
-      <AppBarWithUserMenu title="SAEB V2 - Configurações" showBackButton />
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <MainLayout title="SAEB V2 - Configurações">
+      <Container maxWidth="xl">
         <Box display="flex" alignItems="center" gap={2} mb={4}>
           <SettingsIcon sx={{ fontSize: 36, color: 'primary.main' }} />
           <Box>
@@ -248,7 +246,7 @@ const SAEBV2ConfiguracoesPage: React.FC = () => {
           </Box>
         </Paper>
       </Container>
-    </>
+    </MainLayout>
   );
 };
 
