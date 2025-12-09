@@ -127,12 +127,16 @@ interface AdaptiveSidebarProps {
   open: boolean;
   onToggle: () => void;
   unreadMessages?: number;
+  onLayoutToggle?: () => void;
+  useTailwind?: boolean;
 }
 
 const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
   open,
   onToggle,
-  unreadMessages = 0
+  unreadMessages = 0,
+  onLayoutToggle,
+  useTailwind = true
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -402,6 +406,40 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
             </div>
           ))}
         </nav>
+
+        {/* Footer com botão de toggle de layout */}
+        {onLayoutToggle && (
+          <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/15 bg-black/10">
+            <button
+              onClick={onLayoutToggle}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-white/15 ${
+                open ? 'justify-start' : 'justify-center'
+              }`}
+            >
+              <div className="flex-shrink-0 text-white/90">
+                {useTailwind ? (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                )}
+              </div>
+              {open && (
+                <div className="flex-1 text-left">
+                  <p className="text-xs font-medium text-white/95">
+                    {useTailwind ? 'Material-UI' : 'Tailwind CSS'}
+                  </p>
+                  <p className="text-[0.65rem] text-white/70">
+                    Versão: {useTailwind ? 'Tailwind' : 'MUI'}
+                  </p>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Popover para submenus quando collapsed */}

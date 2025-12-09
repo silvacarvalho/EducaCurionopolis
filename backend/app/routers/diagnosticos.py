@@ -2,7 +2,7 @@
 Diagnóstico Module Router
 Diagnostic assessment for grades 1-5 with item-based evaluation
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
@@ -72,6 +72,9 @@ async def list_itens_diagnostico(
     if ativo is not None:
         query = query.filter(ItemDiagnostico.ativo == ativo)
 
+    # Ordenar por modalidade e depois por descrição
+    query = query.order_by(ItemDiagnostico.modalidade, ItemDiagnostico.descricao)
+
     itens = query.offset(skip).limit(limit).all()
     return itens
 
@@ -139,6 +142,176 @@ async def delete_item_diagnostico(
     db.commit()
 
     return None
+
+
+@router.get("/itens/template/download")
+async def download_template_itens(
+    current_user: Usuario = Depends(require_gestao_municipal)
+):
+    """
+    Baixar template Excel para importação de itens de diagnóstico
+    """
+    from fastapi.responses import StreamingResponse
+    import openpyxl
+    from io import BytesIO
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Itens Diagnóstico"
+    
+    # Cabeçalhos
+    headers = ["Descrição", "Modalidade", "Anos Aplicáveis"]
+    ws.append(headers)
+    
+    # Exemplos
+    ws.append([
+        "Identificar letras do alfabeto",
+        "LEITURA",
+        "1,2"
+    ])
+    ws.append([
+        "Produzir texto com sequência lógica",
+        "ESCRITA",
+        "3,4,5"
+    ])
+    
+    # Ajustar largura das colunas
+    ws.column_dimensions['A'].width = 60
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 20
+    
+    # Adicionar instruções
+    ws2 = wb.create_sheet("Instruções")
+    ws2.append(["INSTRUÇÕES PARA PREENCHIMENTO"])
+    ws2.append([])
+    ws2.append(["Descrição: Texto descritivo do item de diagnóstico"])
+    ws2.append(["Modalidade: Digite LEITURA ou ESCRITA"])
+    ws2.append(["Anos Aplicáveis: Anos separados por vírgula (ex: 1,2,3 ou 4,5)"])
+    
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=template_itens_diagnostico.xlsx"}
+    )
+
+
+@router.post("/itens/importar")
+async def importar_itens(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_gestao_municipal)
+):
+    """
+    Importar itens de diagnóstico a partir de arquivo Excel
+    """
+    from fastapi import UploadFile, File
+    import openpyxl
+    from io import BytesIO
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Arquivo deve ser .xlsx ou .xls"
+        )
+    
+    try:
+        contents = await file.read()
+        wb = openpyxl.load_workbook(BytesIO(contents))
+        ws = wb.active
+        
+        sucesso = 0
+        erros = []
+        
+        # Pular cabeçalho
+        for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not row[0]:  # Pular linhas vazias
+                continue
+            
+            try:
+                descricao = str(row[0]).strip()
+                modalidade = str(row[1]).strip().upper()
+                anos_raw = str(row[2]).strip()
+                
+                # Processar anos aplicáveis - converter de "4.5" ou "1,2,3" para formato correto
+                anos_list = []
+                for ano in anos_raw.replace(',', ' ').split():
+                    try:
+                        # Converte para float primeiro (caso venha 4.5 do Excel) e depois para int
+                        ano_int = int(float(ano.strip()))
+                        if 1 <= ano_int <= 5:
+                            anos_list.append(ano_int)
+                        else:
+                            raise ValueError(f"Ano {ano_int} fora do intervalo 1-5")
+                    except ValueError as e:
+                        erros.append({
+                            "linha": idx,
+                            "erro": f"Ano inválido '{ano}': {str(e)}"
+                        })
+                        continue
+                
+                if not anos_list:
+                    erros.append({
+                        "linha": idx,
+                        "erro": "Nenhum ano válido encontrado"
+                    })
+                    continue
+                
+                # Formatar como string: "1,2,3"
+                anos_aplicaveis = ','.join(str(a) for a in sorted(set(anos_list)))
+                
+                # Validações
+                if modalidade not in ['LEITURA', 'ESCRITA']:
+                    erros.append({
+                        "linha": idx,
+                        "erro": f"Modalidade inválida: {modalidade}. Use LEITURA ou ESCRITA"
+                    })
+                    continue
+                
+                # Verificar se já existe item com mesma descrição
+                existing_item = db.query(ItemDiagnostico).filter(
+                    func.lower(ItemDiagnostico.descricao) == func.lower(descricao)
+                ).first()
+                
+                if existing_item:
+                    # Atualizar item existente
+                    existing_item.modalidade = modalidade
+                    existing_item.anos_aplicaveis = anos_aplicaveis
+                    existing_item.ativo = True
+                else:
+                    # Criar novo item
+                    db_item = ItemDiagnostico(
+                        descricao=descricao,
+                        modalidade=modalidade,
+                        anos_aplicaveis=anos_aplicaveis,
+                        ativo=True
+                    )
+                    db.add(db_item)
+                
+                sucesso += 1
+                
+            except Exception as e:
+                erros.append({
+                    "linha": idx,
+                    "erro": str(e)
+                })
+        
+        db.commit()
+        
+        return {
+            "sucesso": sucesso,
+            "total_linhas": ws.max_row - 1,
+            "erros": erros
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao processar arquivo: {str(e)}"
+        )
 
 
 # ============================================

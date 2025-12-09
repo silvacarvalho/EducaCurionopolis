@@ -101,27 +101,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
   // Se estiver usando Tailwind, renderizar a versão Tailwind
   if (useTailwind) {
     return (
-      <>
-        <MainLayoutTailwind title={title}>
-          {children}
-        </MainLayoutTailwind>
-        {/* Botão de Toggle A/B Test */}
-        <div className="fixed bottom-6 right-6 z-50">
-          <button
-            onClick={toggleLayout}
-            className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300 group"
-            title="Trocar para Material-UI"
-          >
-            <Palette className="w-5 h-5" />
-            <span className="hidden sm:inline font-medium">Material-UI</span>
-          </button>
-          <div className="mt-2 text-center">
-            <span className="inline-block px-3 py-1 text-xs font-semibold text-purple-600 bg-purple-100 rounded-full">
-              Versão: Tailwind
-            </span>
-          </div>
-        </div>
-      </>
+      <MainLayoutTailwind title={title}>
+        {children}
+      </MainLayoutTailwind>
     );
   }
 
@@ -132,6 +114,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
         open={sidebarOpen}
         onToggle={handleToggleSidebar}
         unreadMessages={unreadMessages}
+        onLayoutToggle={toggleLayout}
+        useTailwind={useTailwind}
       />
 
       {/* Main Content */}
@@ -270,23 +254,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
           </Box>
         </Box>
       </Box>
-
-      {/* Botão de Toggle A/B Test */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={toggleLayout}
-          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300 group"
-          title="Trocar para Tailwind CSS"
-        >
-          <Code className="w-5 h-5" />
-          <span className="hidden sm:inline font-medium">Tailwind CSS</span>
-        </button>
-        <div className="mt-2 text-center">
-          <span className="inline-block px-3 py-1 text-xs font-semibold text-purple-600 bg-purple-100 rounded-full">
-            Versão: MUI
-          </span>
-        </div>
-      </div>
     </Box>
   );
 };

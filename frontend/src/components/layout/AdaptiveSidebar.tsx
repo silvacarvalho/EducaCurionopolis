@@ -32,6 +32,8 @@ import {
   Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
+  Palette,
+  Code,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -148,12 +150,16 @@ interface AdaptiveSidebarProps {
   open: boolean;
   onToggle: () => void;
   unreadMessages?: number;
+  onLayoutToggle?: () => void;
+  useTailwind?: boolean;
 }
 
 const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
   open,
   onToggle,
-  unreadMessages = 0
+  unreadMessages = 0,
+  onLayoutToggle,
+  useTailwind = false
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -638,6 +644,74 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
           </Box>
         ))}
       </List>
+
+      {/* Footer com botão de toggle de layout */}
+      {onLayoutToggle && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 1.5,
+            borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+            background: 'rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <ListItemButton
+            onClick={onLayoutToggle}
+            sx={{
+              minHeight: 40,
+              justifyContent: open ? 'initial' : 'center',
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+              },
+            }}
+          >
+            <ListItemIcon
+              sx={{
+                minWidth: 0,
+                mr: open ? 1.5 : 'auto',
+                justifyContent: 'center',
+                color: 'rgba(255, 255, 255, 0.9)',
+                '& .MuiSvgIcon-root': {
+                  fontSize: '1.25rem',
+                },
+              }}
+            >
+              {useTailwind ? <Palette /> : <Code />}
+            </ListItemIcon>
+            {open && (
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    color: 'rgba(255, 255, 255, 0.95)',
+                    display: 'block',
+                  }}
+                >
+                  {useTailwind ? 'Material-UI' : 'Tailwind CSS'}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontSize: '0.65rem',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  Versão: {useTailwind ? 'Tailwind' : 'MUI'}
+                </Typography>
+              </Box>
+            )}
+          </ListItemButton>
+        </Box>
+      )}
 
       {/* Popover para submenus quando collapsed */}
       <Popover

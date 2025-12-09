@@ -177,6 +177,10 @@ export const diagnosticosAPI = {
   createItem: (data: any) => api.post('/diagnosticos/itens', data),
   updateItem: (id: number, data: any) => api.put(`/diagnosticos/itens/${id}`, data),
   deleteItem: (id: number) => api.delete(`/diagnosticos/itens/${id}`),
+  downloadTemplateItens: () => api.get('/diagnosticos/itens/template/download', { responseType: 'blob' }),
+  importarItens: (formData: FormData) => api.post('/diagnosticos/itens/importar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 
   // Diagnósticos
   list: (params?: any) => api.get('/diagnosticos', { params }),

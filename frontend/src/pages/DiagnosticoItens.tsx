@@ -33,7 +33,7 @@ import {
   FormGroup,
   Alert,
 } from '@mui/material';
-import { Add, Edit, Delete, ArrowBack as ArrowBackIcon, } from '@mui/icons-material';
+import { Add, Edit, Delete, ArrowBack as ArrowBackIcon, Download as DownloadIcon, Upload as UploadIcon } from '@mui/icons-material';
 import { diagnosticosAPI } from '../services/api';
 import { ItemDiagnostico, ModalidadeDiagnostico } from '../types';
 import MainLayout from '../components/layout/MainLayout';
@@ -46,6 +46,8 @@ const DiagnosticoItens: React.FC = () => {
   const [editingItem, setEditingItem] = useState<ItemDiagnostico | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
 
   // Form state
   const [descricao, setDescricao] = useState('');
@@ -146,6 +148,51 @@ const DiagnosticoItens: React.FC = () => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await diagnosticosAPI.downloadTemplateItens();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'template_itens_diagnostico.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setSuccess('Template baixado com sucesso');
+    } catch (err: any) {
+      setError('Erro ao baixar template');
+    }
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setImporting(true);
+      setImportResult(null);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await diagnosticosAPI.importarItens(formData);
+      setImportResult(response.data);
+      
+      if (response.data.erros.length === 0) {
+        setSuccess(`${response.data.sucesso} itens importados com sucesso!`);
+      } else {
+        setError(`Importados ${response.data.sucesso} de ${response.data.total_linhas} itens. Verifique os erros.`);
+      }
+      
+      loadItens();
+      event.target.value = ''; // Reset file input
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao importar itens');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const getModalidadeLabel = (mod: ModalidadeDiagnostico) => {
     return mod === ModalidadeDiagnostico.LEITURA ? 'Leitura' : 'Escrita';
   };
@@ -159,22 +206,59 @@ const DiagnosticoItens: React.FC = () => {
       <Box sx={{ width: '100%', height: '100%' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h4">Itens de Diagnóstico</Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpenDialog()}
-          >
-            Novo Item
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              color="info"
+              startIcon={<DownloadIcon />}
+              onClick={handleDownloadTemplate}
+            >
+              Baixar Template
+            </Button>
+            <Button
+              variant="outlined"
+              color="success"
+              component="label"
+              startIcon={<UploadIcon />}
+              disabled={importing}
+            >
+              {importing ? 'Importando...' : 'Importar Itens'}
+              <input
+                type="file"
+                hidden
+                accept=".xlsx,.xls"
+                onChange={handleImportFile}
+              />
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => handleOpenDialog()}
+            >
+              Novo Item
+            </Button>
+          </Box>
         </Box>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
+        {importResult && importResult.erros.length > 0 && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2">Erros na importação:</Typography>
+            <ul>
+              {importResult.erros.map((erro: string, idx: number) => (
+                <li key={idx}>{erro}</li>
+              ))}
+            </ul>
+          </Alert>
+        )}
+
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>
+                <TableCell width="50">#</TableCell>
                 <TableCell>Descrição</TableCell>
                 <TableCell>Modalidade</TableCell>
                 <TableCell>Anos Aplicáveis</TableCell>
@@ -182,8 +266,9 @@ const DiagnosticoItens: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {itens.map((item) => (
+              {itens.map((item, index) => (
                 <TableRow key={item.id}>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>{item.descricao}</TableCell>
                   <TableCell>
                     <Chip
@@ -210,6 +295,12 @@ const DiagnosticoItens: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Typography variant="body2" color="text.secondary">
+            Total: {itens.length} {itens.length === 1 ? 'item' : 'itens'}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Dialog para criar/editar item */}

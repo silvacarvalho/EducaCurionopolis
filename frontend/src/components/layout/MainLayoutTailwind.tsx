@@ -21,10 +21,19 @@ const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
   });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  
+  const [useTailwind, setUseTailwind] = useState(() => {
+    const saved = localStorage.getItem('layoutVersion');
+    return saved === 'tailwind';
+  });
 
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
   }, [sidebarOpen]);
+  
+  useEffect(() => {
+    localStorage.setItem('layoutVersion', useTailwind ? 'tailwind' : 'mui');
+  }, [useTailwind]);
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -74,6 +83,11 @@ const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
   const handleNotifications = () => {
     navigate('/mensagens');
   };
+  
+  const toggleLayout = () => {
+    setUseTailwind(!useTailwind);
+    window.location.reload(); // Reload para aplicar mudança
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -82,6 +96,8 @@ const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
         open={sidebarOpen}
         onToggle={handleToggleSidebar}
         unreadMessages={unreadMessages}
+        onLayoutToggle={toggleLayout}
+        useTailwind={useTailwind}
       />
 
       {/* Main Content */}
