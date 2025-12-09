@@ -57,9 +57,6 @@ yarn-error.log*
 .npm
 .yarn
 
-# Frontend build
-frontend/dist/
-frontend/build/
 
 # OS
 .DS_Store
