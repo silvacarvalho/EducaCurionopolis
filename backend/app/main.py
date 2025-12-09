@@ -40,6 +40,14 @@ from .routers import (
 
 
 # ============================================
+# FRONTEND BUILD DIRECTORY
+# ============================================
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_BUILD_DIR = BASE_DIR.parent / "frontend" / "dist"
+
+
+# ============================================
 # SECURITY MIDDLEWARE
 # ============================================
 
@@ -323,7 +331,25 @@ app.include_router(
 
 @app.get("/", tags=["Root"])
 async def root():
-    """Root endpoint - API information"""
+    """Root endpoint - Serve frontend in production, API info otherwise"""
+    # In production, serve the frontend
+    if settings.is_production() and FRONTEND_BUILD_DIR.exists():
+        index_file = FRONTEND_BUILD_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+    
+    # Development or no frontend build - return API info
+    return {
+        "message": "EDUCA+ Curionópolis API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "status": "online"
+    }
+
+
+@app.get("/api", tags=["Root"])
+async def api_info():
+    """API information endpoint"""
     return {
         "message": "EDUCA+ Curionópolis API",
         "version": "1.0.0",
@@ -423,10 +449,6 @@ async def websocket_endpoint(
 # ============================================
 # STATIC FILES & SPA SUPPORT
 # ============================================
-
-# Get frontend build directory
-BASE_DIR = Path(__file__).resolve().parent.parent
-FRONTEND_BUILD_DIR = BASE_DIR.parent / "frontend" / "dist"
 
 # Mount static files (CSS, JS, assets) if build exists
 if FRONTEND_BUILD_DIR.exists():
