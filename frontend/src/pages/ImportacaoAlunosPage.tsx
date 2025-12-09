@@ -148,7 +148,7 @@ const ImportacaoAlunosPage: React.FC = () => {
 
       const token = localStorage.getItem('access_token');
       const response = await axios.post(
-        `http://localhost:8000/api/v1/importacao/alunos?turma_id=${turmaSelecionada}`,
+        `/api/v1/importacao/alunos?turma_id=${turmaSelecionada}`,
         formData,
         {
           headers: {
