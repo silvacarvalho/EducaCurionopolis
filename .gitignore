@@ -11,9 +11,8 @@ ENV/
 *.egg-info/
 build/
 
-# Ignore dist except frontend build
-dist/
-!frontend/dist/
+# Frontend build is tracked for deployment
+# dist/ files are committed to serve in production
 
 # ============================================
 # ENVIRONMENT & SECRETS (CRITICAL!)

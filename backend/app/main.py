@@ -88,6 +88,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "font-src 'self' data:; "
                 "connect-src 'self' https:;"
             )
+        else:
+            # Em desenvolvimento, permitir HTTP local
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https: http:; "
+                "font-src 'self' data:; "
+                "connect-src 'self' http://localhost:* http://127.0.0.1:* https:;"
+            )
         
         return response
 
