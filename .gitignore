@@ -9,8 +9,11 @@ env/
 ENV/
 .venv
 *.egg-info/
-dist/
 build/
+
+# Ignore dist except frontend build
+dist/
+!frontend/dist/
 
 # ============================================
 # ENVIRONMENT & SECRETS (CRITICAL!)
