@@ -450,10 +450,8 @@ async def websocket_endpoint(
 # STATIC FILES & SPA SUPPORT
 # ============================================
 
-# Mount static files (CSS, JS, assets) if build exists
+# Serve static files if build exists
 if FRONTEND_BUILD_DIR.exists():
-    app.mount("/assets", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "assets")), name="assets")
-    
     # Serve static files from root (favicon, etc.)
     @app.get("/favicon.ico")
     async def favicon_ico():
@@ -471,13 +469,27 @@ if FRONTEND_BUILD_DIR.exists():
     async def favico_48():
         return FileResponse(str(FRONTEND_BUILD_DIR / "favico-48.png"))
     
-    # Catch-all route for SPA - must be last
+    # Catch-all route for SPA and assets
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        """Serve index.html for all non-API routes (SPA support)"""
-        # Don't catch API routes or static assets
-        if full_path.startswith("api/") or full_path.startswith("assets/"):
+        """Serve static assets or index.html for SPA routes"""
+        # Don't catch API routes
+        if full_path.startswith("api/"):
             return JSONResponse(status_code=404, content={"detail": "Not found"})
+        
+        # Try to serve static asset first
+        if full_path.startswith("assets/"):
+            asset_path = FRONTEND_BUILD_DIR / full_path
+            if asset_path.exists() and asset_path.is_file():
+                # Determine content type
+                content_type = "application/octet-stream"
+                if full_path.endswith(".js"):
+                    content_type = "application/javascript"
+                elif full_path.endswith(".css"):
+                    content_type = "text/css"
+                elif full_path.endswith(".json"):
+                    content_type = "application/json"
+                return FileResponse(str(asset_path), media_type=content_type)
         
         # Serve index.html for SPA routing
         index_file = FRONTEND_BUILD_DIR / "index.html"
