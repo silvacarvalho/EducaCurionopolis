@@ -24,9 +24,8 @@ build/
 .env.staging
 .env.production
 .env*.local
-*.env
 
-# Keep .env.example files (they don't contain secrets)
+# Keep safe environment files (no secrets)
 !.env.example
 !backend/.env.example
 !frontend/.env.example
@@ -107,6 +106,7 @@ CRUD_DIRETORES_ESCOLA.md
 PERMISSOES_DIAGNOSTICO.md
 SISTEMA_PERMISSOES_IMPLEMENTADO.md
 DEPLOY.md
+GUIA_DEPLOY.md
 
 files/
 
