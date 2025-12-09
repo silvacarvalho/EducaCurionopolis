@@ -7,6 +7,7 @@ export enum PerfilUsuario {
   DIRETOR_COORDENADOR = 'diretor_coordenador',
   PROFESSOR = 'professor',
   COMUNIDADE = 'comunidade',
+  ALUNO = 'aluno',
 }
 
 export enum NivelDesempenho {

@@ -33,6 +33,7 @@ interface Turma {
   nome: string;
   ano_escolar: number;
   ano_letivo: number;
+  total_alunos?: number;
 }
 
 interface Disciplina {

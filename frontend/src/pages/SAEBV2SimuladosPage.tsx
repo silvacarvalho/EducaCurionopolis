@@ -592,7 +592,7 @@ const SAEBV2SimuladosPage: React.FC = () => {
                       <Chip
                         label={simulado.status}
                         size="small"
-                        color={simulado.status === 'ATIVO' ? 'success' : 'default'}
+                        color={simulado.status === StatusSimulado.PUBLICADO || simulado.status === StatusSimulado.EM_ANDAMENTO ? 'success' : 'default'}
                         sx={{ fontWeight: 600 }}
                       />
                     </TableCell>

@@ -126,6 +126,10 @@ const getMenuConfig = (perfil: PerfilUsuario, unreadMessages: number): MenuItem[
       { icon: <DashboardIcon />, text: 'Dashboard', path: '/' },
       { icon: <AssessmentIcon />, text: 'Relatórios Públicos', path: '/relatorios' },
     ],
+    [PerfilUsuario.ALUNO]: [
+      { icon: <DashboardIcon />, text: 'Dashboard', path: '/' },
+      { icon: <AssignmentIcon />, text: 'Meus Simulados', path: '/saeb-v2/aluno' },
+    ],
   };
 
   return configs[perfil] || [];
@@ -137,6 +141,7 @@ const perfilNames: Record<PerfilUsuario, string> = {
   [PerfilUsuario.DIRETOR_COORDENADOR]: 'Diretor/Coordenador',
   [PerfilUsuario.PROFESSOR]: 'Professor',
   [PerfilUsuario.COMUNIDADE]: 'Comunidade',
+  [PerfilUsuario.ALUNO]: 'Aluno',
 };
 
 interface AdaptiveSidebarProps {
@@ -157,8 +162,7 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const [popoverContent, setPopoverContent] = useState<MenuItem | null>(null);
   const [isMouseOverPopover, setIsMouseOverPopover] = useState(false);
-  const closeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const previousPathRef = React.useRef<string>(location.pathname);
+  const closeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const menuConfig = user ? getMenuConfig(user.perfil, unreadMessages) : [];
 
@@ -465,9 +469,6 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
                             fontSize: '0.8rem',
                             fontWeight: 500,
                             color: 'rgba(255, 255, 255, 0.85)',
-                            '.Mui-selected &': {
-                              color: 'rgba(255, 255, 255, 0.95)',
-                            },
                             letterSpacing: '0.01em',
                           }}
                         />
@@ -562,10 +563,6 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
                               fontSize: '0.78rem',
                               fontWeight: 400,
                               color: 'rgba(255, 255, 255, 0.75)',
-                              '.Mui-selected &': {
-                                color: 'rgba(255, 255, 255, 0.95)',
-                                fontWeight: 500,
-                              },
                             }}
                           />
                         </ListItemButton>

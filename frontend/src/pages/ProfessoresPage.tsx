@@ -41,7 +41,14 @@ import { professoresAPI, escolasAPI } from '../services/api';
 import { Professor, Escola } from '../types';
 import MainLayout from '../components/layout/MainLayout';
 
-interface ProfessorComUsuario extends Professor {
+interface ProfessorComUsuario {
+  id: number;
+  usuario_id: number;
+  escola_id: number;
+  matricula?: string;
+  formacao?: string;
+  ativo: boolean;
+  created_at: string;
   usuario?: {
     id: number;
     cpf: string;

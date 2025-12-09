@@ -138,12 +138,12 @@ const SAEBV2DescritoresPage: React.FC = () => {
       (q.descritor?.codigo && q.descritor.codigo.toLowerCase().includes(questaoSearch.toLowerCase()));
     const matchesDisciplina = questaoDisciplinaFilter === '' || q.disciplina === questaoDisciplinaFilter;
     const matchesAno = questaoAnoFilter === '' || q.ano_escolar === Number(questaoAnoFilter);
-    const matchesBloco = questaoBlocoFilter === '' || q.bloco === questaoBlocoFilter;
+    const matchesBloco = questaoBlocoFilter === '' || q.bloco === Number(questaoBlocoFilter);
     return matchesSearch && matchesDisciplina && matchesAno && matchesBloco;
   });
 
   // Aplica busca contextual do header sobre as questões já filtradas
-  const contextualFilteredQuestoes = useFilteredData(filteredQuestoes, ['enunciado', 'descritor.codigo', 'gabarito']);
+  const contextualFilteredQuestoes = useFilteredData(filteredQuestoes, ['enunciado', 'gabarito']);
 
   const clearDescritorFilters = () => {
     setDescritorSearch('');

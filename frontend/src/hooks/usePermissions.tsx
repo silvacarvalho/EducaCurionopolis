@@ -24,6 +24,7 @@ export const usePermissions = () => {
         [PerfilUsuario.DIRETOR_COORDENADOR]: 'Diretor/Coordenador',
         [PerfilUsuario.PROFESSOR]: 'Professor',
         [PerfilUsuario.COMUNIDADE]: 'Comunidade',
+        [PerfilUsuario.ALUNO]: 'Aluno',
       };
 
       const allowedLabels = config.allowedProfiles.map(p => profileLabels[p]).join(', ');

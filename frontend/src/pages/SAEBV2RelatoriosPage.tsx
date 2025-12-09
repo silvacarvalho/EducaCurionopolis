@@ -795,8 +795,8 @@ const SAEBV2RelatoriosPage: React.FC = () => {
                                 <Box sx={{ width: '100%' }}>
                                   <LinearProgress
                                     variant="determinate"
-                                    value={porcentagemAcertos}
-                                    color={getDesempenhoColor(porcentagemAcertos)}
+                                    value={porcentagemAcertos ?? 0}
+                                    color={getDesempenhoColor(porcentagemAcertos ?? 0)}
                                     sx={{ height: 8, borderRadius: 4 }}
                                   />
                                 </Box>

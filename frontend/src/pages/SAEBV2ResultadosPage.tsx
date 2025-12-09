@@ -160,7 +160,7 @@ const SAEBV2ResultadosPage: React.FC = () => {
     }
   };
 
-  const getSituacaoIcon = (situacao: SituacaoSAEB) => {
+  const getSituacaoIcon = (situacao: SituacaoSAEB): React.ReactElement | undefined => {
     switch (situacao) {
       case SituacaoSAEB.ADEQUADO:
         return <TrophyIcon fontSize="small" />;
@@ -172,7 +172,7 @@ const SAEBV2ResultadosPage: React.FC = () => {
       case SituacaoSAEB.MUITO_CRITICO:
         return <CancelIcon fontSize="small" />;
       default:
-        return null;
+        return undefined;
     }
   };
 
@@ -184,8 +184,8 @@ const SAEBV2ResultadosPage: React.FC = () => {
 
       switch (orderBy) {
         case 'nome':
-          aValue = a.aluno?.nome || '';
-          bValue = b.aluno?.nome || '';
+          aValue = a.aluno?.nome_completo || '';
+          bValue = b.aluno?.nome_completo || '';
           break;
         case 'total_acertos':
           aValue = a.total_acertos;
@@ -558,7 +558,7 @@ const SAEBV2ResultadosPage: React.FC = () => {
                       >
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
-                            {resultado.aluno?.nome || 'Aluno não encontrado'}
+                            {resultado.aluno?.nome_completo || 'Aluno não encontrado'}
                           </Typography>
                         </TableCell>
                         <TableCell align="center">

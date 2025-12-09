@@ -105,6 +105,10 @@ const getMenuConfig = (perfil: PerfilUsuario, unreadMessages: number): MenuItem[
       { icon: <DashboardIcon />, text: 'Dashboard', path: '/' },
       { icon: <AssessmentIcon />, text: 'Relatórios Públicos', path: '/relatorios' },
     ],
+    [PerfilUsuario.ALUNO]: [
+      { icon: <DashboardIcon />, text: 'Dashboard', path: '/' },
+      { icon: <AssignmentIcon />, text: 'Meus Simulados', path: '/saeb-v2/aluno' },
+    ],
   };
 
   return configs[perfil] || [];
@@ -116,6 +120,7 @@ const perfilNames: Record<PerfilUsuario, string> = {
   [PerfilUsuario.DIRETOR_COORDENADOR]: 'Diretor/Coordenador',
   [PerfilUsuario.PROFESSOR]: 'Professor',
   [PerfilUsuario.COMUNIDADE]: 'Comunidade',
+  [PerfilUsuario.ALUNO]: 'Aluno',
 };
 
 interface AdaptiveSidebarProps {
@@ -136,7 +141,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const [popoverContent, setPopoverContent] = useState<MenuItem | null>(null);
   const [isMouseOverPopover, setIsMouseOverPopover] = useState(false);
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
 
   const menuConfig = user ? getMenuConfig(user.perfil, unreadMessages) : [];
