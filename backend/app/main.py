@@ -452,55 +452,28 @@ async def websocket_endpoint(
 
 # Serve static files if build exists
 if FRONTEND_BUILD_DIR.exists():
+    # Mount assets directory
+    from fastapi.staticfiles import StaticFiles as SF
+    assets_dir = FRONTEND_BUILD_DIR / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", SF(directory=str(assets_dir)), name="static_assets")
+    
     # Serve static files from root (favicon, etc.)
-    @app.get("/favicon.ico")
+    @app.get("/favicon.ico", include_in_schema=False)
     async def favicon_ico():
         return FileResponse(str(FRONTEND_BUILD_DIR / "favicon.ico"))
     
-    @app.get("/favicon.svg")
+    @app.get("/favicon.svg", include_in_schema=False)
     async def favicon_svg():
         return FileResponse(str(FRONTEND_BUILD_DIR / "favicon.svg"))
     
-    @app.get("/favico-32.png")
+    @app.get("/favico-32.png", include_in_schema=False)
     async def favico_32():
         return FileResponse(str(FRONTEND_BUILD_DIR / "favico-32.png"))
     
-    @app.get("/favico-48.png")
+    @app.get("/favico-48.png", include_in_schema=False)
     async def favico_48():
         return FileResponse(str(FRONTEND_BUILD_DIR / "favico-48.png"))
-    
-    # Catch-all route for SPA and assets
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        """Serve static assets or index.html for SPA routes"""
-        # Don't catch API routes
-        if full_path.startswith("api/"):
-            return JSONResponse(status_code=404, content={"detail": "Not found"})
-        
-        # Try to serve static asset first
-        if full_path.startswith("assets/"):
-            asset_path = FRONTEND_BUILD_DIR / full_path
-            print(f"[DEBUG] Looking for asset: {asset_path}, exists: {asset_path.exists()}")
-            if asset_path.exists() and asset_path.is_file():
-                # Determine content type
-                content_type = "application/octet-stream"
-                if full_path.endswith(".js"):
-                    content_type = "application/javascript"
-                elif full_path.endswith(".css"):
-                    content_type = "text/css"
-                elif full_path.endswith(".json"):
-                    content_type = "application/json"
-                print(f"[DEBUG] Serving asset with content-type: {content_type}")
-                return FileResponse(str(asset_path), media_type=content_type)
-            else:
-                print(f"[DEBUG] Asset NOT found, falling back to index.html")
-        
-        # Serve index.html for SPA routing
-        index_file = FRONTEND_BUILD_DIR / "index.html"
-        if index_file.exists():
-            return FileResponse(str(index_file))
-        
-        return JSONResponse(status_code=404, content={"detail": "Frontend not built"})
 
 
 # ============================================
@@ -510,8 +483,10 @@ if FRONTEND_BUILD_DIR.exists():
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     """Custom 404 handler with SPA fallback"""
+    path = request.url.path
+    
     # For API routes, return JSON error
-    if request.url.path.startswith("/api/"):
+    if path.startswith("/api/"):
         return JSONResponse(
             status_code=404,
             content={
@@ -520,10 +495,18 @@ async def not_found_handler(request, exc):
             }
         )
     
+    # For assets, return 404
+    if path.startswith("/assets/"):
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Asset não encontrado"}
+        )
+    
     # For other routes, serve index.html (SPA fallback)
-    index_file = FRONTEND_BUILD_DIR / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
+    if FRONTEND_BUILD_DIR.exists():
+        index_file = FRONTEND_BUILD_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
     
     # Fallback if frontend not built
     return JSONResponse(
