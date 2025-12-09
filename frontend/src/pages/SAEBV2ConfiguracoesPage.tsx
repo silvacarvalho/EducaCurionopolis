@@ -25,6 +25,7 @@ const SAEBV2ConfiguracoesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingAno, setEditingAno] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ questoes_por_bloco: 0, descricao: '' });
+  const [creatingConfigs, setCreatingConfigs] = useState(false);
 
   useEffect(() => {
     loadConfiguracoes();
@@ -66,6 +67,33 @@ const SAEBV2ConfiguracoesPage: React.FC = () => {
     }
   };
 
+  const handleCreateDefaultConfigs = async () => {
+    try {
+      setCreatingConfigs(true);
+      
+      // Criar configuração para 5º ano
+      await saebV2API.createConfiguracao({
+        ano_escolar: 5,
+        questoes_por_bloco: 11,
+        descricao: 'Configuração para 5º ano do Ensino Fundamental',
+      });
+
+      // Criar configuração para 9º ano
+      await saebV2API.createConfiguracao({
+        ano_escolar: 9,
+        questoes_por_bloco: 13,
+        descricao: 'Configuração para 9º ano do Ensino Fundamental',
+      });
+
+      showNotification('Configurações criadas com sucesso!', 'success');
+      await loadConfiguracoes();
+    } catch (err: any) {
+      showNotification(err.response?.data?.detail || 'Erro ao criar configurações', 'error');
+    } finally {
+      setCreatingConfigs(false);
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout title="SAEB V2 - Configurações">
@@ -93,7 +121,46 @@ const SAEBV2ConfiguracoesPage: React.FC = () => {
           </Box>
         </Box>
 
-        <Grid container spacing={3}>
+        {configuracoes.length === 0 ? (
+          <Paper
+            sx={{
+              p: 6,
+              textAlign: 'center',
+              borderRadius: 2,
+              bgcolor: 'grey.50',
+              border: '2px dashed',
+              borderColor: 'grey.300',
+            }}
+          >
+            <SettingsIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+              Nenhuma configuração cadastrada
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              Para começar a usar o sistema SAEB V2, é necessário criar as configurações padrão
+              para os anos escolares (5º e 9º ano).
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleCreateDefaultConfigs}
+              disabled={creatingConfigs}
+              startIcon={creatingConfigs ? <CircularProgress size={20} /> : <SaveIcon />}
+            >
+              {creatingConfigs ? 'Criando configurações...' : 'Criar Configurações Padrão'}
+            </Button>
+            <Box sx={{ mt: 4, p: 3, bgcolor: 'info.50', borderRadius: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                <strong>As configurações padrão incluem:</strong><br />
+                • 5º Ano: 11 questões por bloco<br />
+                • 9º Ano: 13 questões por bloco<br />
+                (Você poderá editar estes valores depois)
+              </Typography>
+            </Box>
+          </Paper>
+        ) : (
+          <>
+            <Grid container spacing={3}>
           {configuracoes.map((config) => (
             <Grid item xs={12} md={6} key={config.id}>
               <Card
@@ -245,6 +312,8 @@ const SAEBV2ConfiguracoesPage: React.FC = () => {
             </Typography>
           </Box>
         </Paper>
+        </>
+        )}
       </Container>
     </MainLayout>
   );
