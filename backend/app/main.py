@@ -453,6 +453,38 @@ async def websocket_endpoint(
 # Mount static files (CSS, JS, assets) if build exists
 if FRONTEND_BUILD_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_BUILD_DIR / "assets")), name="assets")
+    
+    # Serve static files from root (favicon, etc.)
+    @app.get("/favicon.ico")
+    async def favicon_ico():
+        return FileResponse(str(FRONTEND_BUILD_DIR / "favicon.ico"))
+    
+    @app.get("/favicon.svg")
+    async def favicon_svg():
+        return FileResponse(str(FRONTEND_BUILD_DIR / "favicon.svg"))
+    
+    @app.get("/favico-32.png")
+    async def favico_32():
+        return FileResponse(str(FRONTEND_BUILD_DIR / "favico-32.png"))
+    
+    @app.get("/favico-48.png")
+    async def favico_48():
+        return FileResponse(str(FRONTEND_BUILD_DIR / "favico-48.png"))
+    
+    # Catch-all route for SPA - must be last
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve index.html for all non-API routes (SPA support)"""
+        # Don't catch API routes
+        if full_path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "Not found"})
+        
+        # Serve index.html for SPA routing
+        index_file = FRONTEND_BUILD_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        
+        return JSONResponse(status_code=404, content={"detail": "Frontend not built"})
 
 
 # ============================================
