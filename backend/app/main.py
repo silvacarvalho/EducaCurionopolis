@@ -480,6 +480,7 @@ if FRONTEND_BUILD_DIR.exists():
         # Try to serve static asset first
         if full_path.startswith("assets/"):
             asset_path = FRONTEND_BUILD_DIR / full_path
+            print(f"[DEBUG] Looking for asset: {asset_path}, exists: {asset_path.exists()}")
             if asset_path.exists() and asset_path.is_file():
                 # Determine content type
                 content_type = "application/octet-stream"
@@ -489,7 +490,10 @@ if FRONTEND_BUILD_DIR.exists():
                     content_type = "text/css"
                 elif full_path.endswith(".json"):
                     content_type = "application/json"
+                print(f"[DEBUG] Serving asset with content-type: {content_type}")
                 return FileResponse(str(asset_path), media_type=content_type)
+            else:
+                print(f"[DEBUG] Asset NOT found, falling back to index.html")
         
         # Serve index.html for SPA routing
         index_file = FRONTEND_BUILD_DIR / "index.html"
