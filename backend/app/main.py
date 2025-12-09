@@ -475,8 +475,8 @@ if FRONTEND_BUILD_DIR.exists():
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         """Serve index.html for all non-API routes (SPA support)"""
-        # Don't catch API routes
-        if full_path.startswith("api/"):
+        # Don't catch API routes or static assets
+        if full_path.startswith("api/") or full_path.startswith("assets/"):
             return JSONResponse(status_code=404, content={"detail": "Not found"})
         
         # Serve index.html for SPA routing
