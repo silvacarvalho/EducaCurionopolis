@@ -36,6 +36,7 @@ import SAEBV2ConfiguracoesPage from './pages/SAEBV2ConfiguracoesPage';
 import SAEBV2LancamentoManualPage from './pages/SAEBV2LancamentoManualPage';
 import SAEBV2AnalisePsicometricaPage from './pages/SAEBV2AnalisePsicometricaPage';
 import SAEBV2DashboardPage from './pages/SAEBV2DashboardPage';
+import GestoresPage from './pages/GestoresPage';
 
 // Simple Protected Route for authenticated users only
 const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -302,6 +303,14 @@ function App() {
         element={
           <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
             <SAEBV2DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gestores"
+        element={
+          <ProtectedRoute allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
+            <GestoresPage />
           </ProtectedRoute>
         }
       />

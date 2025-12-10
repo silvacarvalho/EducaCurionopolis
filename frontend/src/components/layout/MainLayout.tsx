@@ -211,6 +211,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
               </Badge>
             </IconButton>
 
+
             {/* User Menu */}
             <IconButton
               size="large"
@@ -233,6 +234,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
                 horizontal: 'right',
               }}
             >
+              
               <MenuItem onClick={handleProfile}>Meu Perfil</MenuItem>
               <MenuItem onClick={handleLogout}>Sair</MenuItem>
             </Menu>

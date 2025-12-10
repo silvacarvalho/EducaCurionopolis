@@ -777,4 +777,28 @@ export interface DashboardMetricas {
     media: number;
     total_participacoes: number;
   }>;
+  media_por_disciplina?: {
+    portugues: number;
+    matematica: number;
+  };
+  top_5_questoes_problematicas?: Array<{
+    simulado_id?: number;
+    simulado_nome?: string;
+    questao_id?: number;
+    enunciado?: string;
+    indice_dificuldade?: number;
+    indice_discriminacao?: number | null;
+    distratores_eficazes?: string[];
+  }>;
+  percentual_questoes_distratores_eficazes?: number;
+  alpha_cronbach_rede?: number;
+  mapa_descritores?: Array<{
+    descritor_codigo: string;
+    media_dificuldade: number;
+    total_questoes: number;
+  }>;
+  comparacao_periodos?: {
+    ano_anterior_media: number;
+    delta_versus_ano_anterior: number;
+  };
 }

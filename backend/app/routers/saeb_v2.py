@@ -2804,6 +2804,159 @@ async def dashboard_metricas(
                 elif classificacao == "Muito difícil":
                     questoes_stats['muito_dificeis'] += 1
 
+    # --- Métricas Avançadas: média por disciplina, top questões problemáticas, distratores, alpha médio, descritores ---
+    from app.utils.psicometria import (
+        calcular_indice_dificuldade,
+        separar_grupos_extremos,
+        calcular_indice_discriminacao,
+        analisar_distratores,
+        calcular_alpha_cronbach,
+    )
+
+    disciplina_acc = {
+        'portugues': {'soma': 0.0, 'count': 0},
+        'matematica': {'soma': 0.0, 'count': 0}
+    }
+
+    descritores_agg = {}
+    top_questoes_candidates = []
+    total_questions_considered = 0
+    questions_with_3_distratores = 0
+    alpha_weighted_sum = 0.0
+    alpha_weight_total = 0
+
+    # Processar por simulado para cálculos psicométricos por questão
+    for sim_id in simulado_ids:
+        # resultados finalizados do simulado
+        resultados_sim = db.query(ResultadoSimuladoAluno).filter(
+            ResultadoSimuladoAluno.simulado_id == sim_id,
+            ResultadoSimuladoAluno.finalizado == True
+        ).all()
+
+        # coletar escores totais (porcentagem) por aluno
+        escores_totais = {r.aluno_id: r.porcentagem for r in resultados_sim}
+
+        # alpha por simulado (ponderado)
+        simulado_questoes = db.query(SimuladoQuestao).filter(
+            SimuladoQuestao.simulado_id == sim_id
+        ).all()
+
+        if len(resultados_sim) >= 5 and simulado_questoes:
+            # montar matriz aluno x questão para alpha
+            matriz_respostas = []
+            for resultado in resultados_sim:
+                linha = []
+                for sq in simulado_questoes:
+                    resposta = db.query(RespostaAlunoSAEB).filter(
+                        RespostaAlunoSAEB.resultado_id == resultado.id,
+                        RespostaAlunoSAEB.simulado_questao_id == sq.id
+                    ).first()
+                    linha.append(1 if (resposta and resposta.correto) else 0)
+                matriz_respostas.append(linha)
+
+            alpha = calcular_alpha_cronbach(matriz_respostas)
+            alpha_weighted_sum += alpha * len(resultados_sim)
+            alpha_weight_total += len(resultados_sim)
+
+        # processar questões do simulado
+        for sq in simulado_questoes:
+            # Contar respostas e acertos por questão (ano todo agrupado)
+            total_resp = db.query(func.count(RespostaAlunoSAEB.id)).filter(
+                RespostaAlunoSAEB.simulado_questao_id == sq.id
+            ).scalar() or 0
+
+            total_acertos = db.query(func.count(RespostaAlunoSAEB.id)).filter(
+                RespostaAlunoSAEB.simulado_questao_id == sq.id,
+                RespostaAlunoSAEB.correto == True
+            ).scalar() or 0
+
+            if total_resp == 0:
+                continue
+
+            total_questions_considered += 1
+
+            indice_dif, _ = calcular_indice_dificuldade(total_acertos, total_resp)
+
+            # discriminação (se houver participantes suficientes no simulado)
+            if len(resultados_sim) >= 5:
+                respostas_q = db.query(RespostaAlunoSAEB).join(ResultadoSimuladoAluno).filter(
+                    ResultadoSimuladoAluno.simulado_id == sim_id,
+                    ResultadoSimuladoAluno.finalizado == True,
+                    RespostaAlunoSAEB.simulado_questao_id == sq.id
+                ).all()
+
+                respostas_list = [(r.resultado.aluno_id, 1 if r.correto else 0) for r in respostas_q]
+                acertos_sup, acertos_inf = separar_grupos_extremos(respostas_list, escores_totais)
+                tamanho_grupo = max(1, int(len(resultados_sim) * 0.27))
+                indice_disc, _ = calcular_indice_discriminacao(acertos_sup, acertos_inf, tamanho_grupo)
+            else:
+                indice_disc = None
+
+            # distratores
+            distrib = {}
+            respostas_all = db.query(RespostaAlunoSAEB).filter(RespostaAlunoSAEB.simulado_questao_id == sq.id).all()
+            for r in respostas_all:
+                distrib[r.resposta] = distrib.get(r.resposta, 0) + 1
+
+            distratores_ef = analisar_distratores(distrib, sq.questao.alternativa_correta, total_resp)
+            if len(distratores_ef) >= 3:
+                questions_with_3_distratores += 1
+
+            # agregar por disciplina
+            questao = db.query(QuestaoSAEB).filter(QuestaoSAEB.id == sq.questao_id).first()
+            if questao:
+                if questao.disciplina == 'portugues' or getattr(questao, 'disciplina', '').lower() == 'portugues':
+                    disciplina_acc['portugues']['soma'] += indice_dif
+                    disciplina_acc['portugues']['count'] += 1
+                else:
+                    disciplina_acc['matematica']['soma'] += indice_dif
+                    disciplina_acc['matematica']['count'] += 1
+
+            # agregar por descritor
+            codigo_desc = sq.questao.descritor.codigo if sq.questao and sq.questao.descritor else None
+            if codigo_desc:
+                if codigo_desc not in descritores_agg:
+                    descritores_agg[codigo_desc] = {'soma': 0.0, 'count': 0}
+                descritores_agg[codigo_desc]['soma'] += indice_dif
+                descritores_agg[codigo_desc]['count'] += 1
+
+            # candidato para top problemas
+            top_questoes_candidates.append({
+                'simulado_id': sim_id,
+                'simulado_nome': db.query(SimuladoSAEB).filter(SimuladoSAEB.id == sim_id).first().nome if db.query(SimuladoSAEB).filter(SimuladoSAEB.id == sim_id).first() else None,
+                'questao_id': sq.questao_id,
+                'enunciado': (sq.questao.enunciado[:120] + '...') if sq.questao and len(sq.questao.enunciado) > 120 else (sq.questao.enunciado if sq.questao else ''),
+                'indice_dificuldade': indice_dif,
+                'indice_discriminacao': indice_disc,
+                'distratores_eficazes': distratores_ef
+            })
+
+    # calcular alpha médio ponderado
+    alpha_cronbach_rede = round((alpha_weighted_sum / alpha_weight_total), 3) if alpha_weight_total > 0 else 0
+
+    # montar mapa de descritores
+    mapa_descritores = []
+    for codigo, v in descritores_agg.items():
+        mapa_descritores.append({
+            'descritor_codigo': codigo,
+            'media_dificuldade': round(v['soma'] / v['count'], 2) if v['count'] > 0 else 0,
+            'total_questoes': v['count']
+        })
+
+    # top 5 questões problemáticas (menor índice de dificuldade)
+    top_5 = sorted(top_questoes_candidates, key=lambda x: (x.get('indice_dificuldade', 100), x.get('indice_discriminacao') if x.get('indice_discriminacao') is not None else 999))[:5]
+
+    # comparação com ano anterior (média da rede)
+    media_ano_anterior = db.query(func.avg(ResultadoSimuladoAluno.porcentagem)).join(SimuladoSAEB).filter(
+        SimuladoSAEB.ano_letivo == (ano_letivo - 1),
+        ResultadoSimuladoAluno.finalizado == True
+    ).scalar() or 0
+
+    comparacao_periodos = {
+        'ano_anterior_media': round(media_ano_anterior, 2),
+        'delta_versus_ano_anterior': round((media_rede - media_ano_anterior), 2)
+    }
+
     # Evolução mensal (últimos 6 meses)
     evolucao = []
     for i in range(5, -1, -1):
@@ -2851,5 +3004,14 @@ async def dashboard_metricas(
         'questoes_medias': questoes_stats['medias'],
         'questoes_dificeis': questoes_stats['dificeis'],
         'questoes_muito_dificeis': questoes_stats['muito_dificeis'],
-        'evolucao_mensal': evolucao
+        'evolucao_mensal': evolucao,
+        'media_por_disciplina': {
+            'portugues': round(disciplina_acc['portugues']['soma'] / disciplina_acc['portugues']['count'], 2) if disciplina_acc['portugues']['count'] > 0 else 0,
+            'matematica': round(disciplina_acc['matematica']['soma'] / disciplina_acc['matematica']['count'], 2) if disciplina_acc['matematica']['count'] > 0 else 0,
+        },
+        'top_5_questoes_problematicas': top_5,
+        'percentual_questoes_distratores_eficazes': round((questions_with_3_distratores / total_questions_considered * 100), 2) if total_questions_considered > 0 else 0,
+        'alpha_cronbach_rede': alpha_cronbach_rede,
+        'mapa_descritores': mapa_descritores,
+        'comparacao_periodos': comparacao_periodos
     }

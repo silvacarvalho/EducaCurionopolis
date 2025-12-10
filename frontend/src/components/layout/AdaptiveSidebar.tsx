@@ -34,6 +34,7 @@ import {
   ExpandMore,
   Palette,
   Code,
+  People as PeopleIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -57,15 +58,16 @@ const getMenuConfig = (perfil: PerfilUsuario, unreadMessages: number): MenuItem[
       { icon: <DashboardIcon />, text: 'Dashboard', path: '/' },
       { icon: <AssessmentIcon />, text: 'Relatórios', path: '/relatorios' },
       { icon: <MessageIcon />, text: 'Mensagens', path: '/mensagens', badge: unreadMessages },
-      {
-        icon: <SettingsIcon />,
-        text: 'Gestão',
-        subItems: [
-          { icon: <SchoolIcon />, text: 'Escolas', path: '/escolas' },
-          { icon: <UploadIcon />, text: 'Importar Alunos', path: '/importacao-alunos' },
-          { icon: <SettingsIcon />, text: 'Config. Gráficos', path: '/configuracoes-grafico' },
-        ],
-      },
+      
+        { icon: <SettingsIcon />,
+          text: 'Gestão',
+          subItems: [
+            { icon: <SchoolIcon />, text: 'Escolas', path: '/escolas' },
+            { icon: <PeopleIcon />, text: 'Gestores', path: '/gestores' },
+            { icon: <UploadIcon />, text: 'Importar Alunos', path: '/importacao-alunos' },
+            { icon: <SettingsIcon />, text: 'Config. Gráficos', path: '/configuracoes-grafico' },
+          ],
+        },
       {
         icon: <AssignmentIcon />,
         text: 'SAEB',
