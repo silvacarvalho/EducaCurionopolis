@@ -251,7 +251,17 @@ const RelatoriosPage: React.FC = () => {
     try {
       const { disciplinasAPI } = await import('../services/api');
       const response = await disciplinasAPI.list();
-      setDisciplinas(response.data);
+      // Deduplicate disciplines by normalized name (case-insensitive, trimmed)
+      const seen: Record<string, any> = {};
+      const unique: any[] = [];
+      (response.data || []).forEach((d: any) => {
+        const key = (d.nome || '').toLowerCase().trim();
+        if (!seen[key]) {
+          seen[key] = true;
+          unique.push(d);
+        }
+      });
+      setDisciplinas(unique);
     } catch (error) {
       console.error('Erro ao carregar disciplinas:', error);
     }

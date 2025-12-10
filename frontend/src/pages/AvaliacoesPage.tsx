@@ -93,8 +93,9 @@ const AvaliacoesPage: React.FC = () => {
       const unique: Disciplina[] = [];
       const seen = new Set<string>();
       for (const d of filtered) {
-        if (!seen.has(d.nome)) {
-          seen.add(d.nome);
+        const key = (d.nome || '').toLowerCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
           unique.push(d);
         }
       }
@@ -104,8 +105,9 @@ const AvaliacoesPage: React.FC = () => {
       const unique: Disciplina[] = [];
       const seen = new Set<string>();
       for (const d of allDisciplinas) {
-        if (!seen.has(d.nome)) {
-          seen.add(d.nome);
+        const key = (d.nome || '').toLowerCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
           unique.push(d);
         }
       }
@@ -202,7 +204,7 @@ const AvaliacoesPage: React.FC = () => {
         turma_id: parseInt(selectedTurma),
         // disciplina_id must correspond to the disciplina record for this turma
         disciplina_id: (() => {
-          const found = allDisciplinas.find(d => d.nome === selectedDisciplina && d.turma_id === parseInt(selectedTurma));
+              const found = allDisciplinas.find(d => (d.nome || '').toLowerCase().trim() === (selectedDisciplina || '').toLowerCase().trim() && d.turma_id === parseInt(selectedTurma));
           return found ? found.id : undefined;
         })(),
         bimestre: selectedBimestre,

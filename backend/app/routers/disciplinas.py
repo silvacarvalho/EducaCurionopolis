@@ -3,6 +3,7 @@ Subjects Router
 """
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List
 
 from ..database import get_db
@@ -25,9 +26,11 @@ async def create_disciplina(
     verify_turma_access(disciplina_data.turma_id, current_user, db)
 
     # Check if disciplina with same name already exists in the same turma
+    # case-insensitive check for existing discipline name in the same turma
+    nome_normalizado = disciplina_data.nome.strip().lower()
     existing_disciplina = db.query(Disciplina).filter(
         Disciplina.turma_id == disciplina_data.turma_id,
-        Disciplina.nome == disciplina_data.nome,
+        func.lower(func.trim(Disciplina.nome)) == nome_normalizado,
         Disciplina.ativo == True
     ).first()
 
@@ -186,9 +189,11 @@ async def update_disciplina(
     # Update fields
     if disciplina_data.nome is not None:
         # Check if new name already exists in the same turma (excluding current disciplina)
+        # case-insensitive check for other discipline with same name in the turma
+        nome_normalizado = disciplina_data.nome.strip().lower()
         existing_disciplina = db.query(Disciplina).filter(
             Disciplina.turma_id == disciplina.turma_id,
-            Disciplina.nome == disciplina_data.nome,
+            func.lower(func.trim(Disciplina.nome)) == nome_normalizado,
             Disciplina.id != disciplina_id,
             Disciplina.ativo == True
         ).first()
