@@ -170,6 +170,8 @@ async def update_turma(
         turma.professor_id = turma_data.professor_id
     if turma_data.ativo is not None:
         turma.ativo = turma_data.ativo
+    if hasattr(turma_data, 'ano_escolar') and turma_data.ano_escolar is not None:
+        turma.ano_escolar = turma_data.ano_escolar
 
     db.commit()
     db.refresh(turma)

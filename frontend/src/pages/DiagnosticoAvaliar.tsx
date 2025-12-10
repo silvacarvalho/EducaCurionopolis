@@ -35,7 +35,7 @@ import {
   NavigateBefore,
   PersonOff,
 } from '@mui/icons-material';
-import { diagnosticosAPI, alunosAPI } from '../services/api';
+import { diagnosticosAPI, alunosAPI, turmasAPI } from '../services/api';
 import {
   Diagnostico,
   ItemDiagnostico,
@@ -56,6 +56,8 @@ interface AlunoStatus {
 const DiagnosticoAvaliar: React.FC = () => {
   const [diagnosticos, setDiagnosticos] = useState<Diagnostico[]>([]);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
+  const [turmas, setTurmas] = useState<any[]>([]);
+  const [selectedTurma, setSelectedTurma] = useState<number | ''>('');
   const [alunosStatus, setAlunosStatus] = useState<AlunoStatus[]>([]);
   const [selectedDiagnostico, setSelectedDiagnostico] = useState<number | ''>('');
   const [currentAlunoIndex, setCurrentAlunoIndex] = useState(0);
@@ -69,7 +71,7 @@ const DiagnosticoAvaliar: React.FC = () => {
 
   useEffect(() => {
     loadDiagnosticos();
-    loadAlunos();
+    loadTurmas();
   }, []);
 
   useEffect(() => {
@@ -77,6 +79,15 @@ const DiagnosticoAvaliar: React.FC = () => {
       loadResultados();
     }
   }, [selectedDiagnostico, alunos]);
+
+  useEffect(() => {
+    if (selectedTurma) {
+      loadAlunos(selectedTurma as number);
+    } else {
+      setAlunos([]);
+      setAlunosStatus([]);
+    }
+  }, [selectedTurma]);
 
   const loadDiagnosticos = async () => {
     try {
@@ -87,9 +98,20 @@ const DiagnosticoAvaliar: React.FC = () => {
     }
   };
 
-  const loadAlunos = async () => {
+  const loadTurmas = async () => {
     try {
-      const response = await alunosAPI.list({ ativo: true });
+      const response = await turmasAPI.list();
+      setTurmas(response.data || []);
+    } catch (err) {
+      setError('Erro ao carregar turmas');
+    }
+  };
+
+  const loadAlunos = async (turmaId?: number) => {
+    try {
+      const params: any = { ativo: true };
+      if (turmaId) params.turma_id = turmaId;
+      const response = await alunosAPI.list(params);
       setAlunos(response.data);
     } catch (err) {
       setError('Erro ao carregar alunos');
@@ -107,9 +129,9 @@ const DiagnosticoAvaliar: React.FC = () => {
 
   const loadResultados = async () => {
     try {
-      const response = await diagnosticosAPI.listResultados({
-        diagnostico_id: selectedDiagnostico,
-      });
+      const params: any = { diagnostico_id: selectedDiagnostico };
+      if (selectedTurma) params.turma_id = selectedTurma;
+      const response = await diagnosticosAPI.listResultados(params);
       const resultados = response.data;
 
       const statusList: AlunoStatus[] = alunos.map((aluno) => {
@@ -134,6 +156,15 @@ const DiagnosticoAvaliar: React.FC = () => {
     setHipoteseEscrita('');
     setObservacoes('');
     loadItens(diagnosticoId);
+  };
+
+  const handleTurmaChange = (turmaId: number | '') => {
+    setSelectedTurma(turmaId);
+    setCurrentAlunoIndex(0);
+    setAvaliacoes(new Map());
+    setHipoteseEscrita('');
+    setObservacoes('');
+    // loadAlunos será chamado pelo useEffect que observa selectedTurma
   };
 
   const handleAvaliacaoChange = (itemId: number, resposta: NivelEvolucao) => {
@@ -291,8 +322,24 @@ const DiagnosticoAvaliar: React.FC = () => {
           </Alert>
         )}
 
-        {/* Seleção de Diagnóstico */}
+        {/* Seleção de Turma + Diagnóstico */}
         <Paper sx={{ p: 3, mb: 3 }}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Turma</InputLabel>
+            <Select
+              value={selectedTurma}
+              onChange={(e) => handleTurmaChange(e.target.value as any)}
+              label="Turma"
+            >
+              <MenuItem value={''}>Selecione uma turma</MenuItem>
+              {turmas.map((t) => (
+                <MenuItem key={t.id} value={t.id}>
+                  {`${t.nome} — ${t.ano_escolar}`}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <FormControl fullWidth>
             <InputLabel>Diagnóstico</InputLabel>
             <Select

@@ -161,6 +161,7 @@ class TurmaUpdate(BaseSchema):
     turno: Optional[str] = None
     professor_id: Optional[int] = None
     ativo: Optional[bool] = None
+    ano_escolar: Optional[int] = Field(None, ge=1, le=9)
 
 
 class TurmaResponse(TurmaBase):
