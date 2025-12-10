@@ -50,6 +50,7 @@ interface Aluno {
 const AvaliacoesPage: React.FC = () => {
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+  const [allDisciplinas, setAllDisciplinas] = useState<Disciplina[]>([]);
   const [totalAlunos, setTotalAlunos] = useState(0);
 
   const [loading, setLoading] = useState(false);
@@ -76,20 +77,50 @@ const AvaliacoesPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedTurma) {
-      loadDisciplinas();
-      // Get total alunos from the selected turma
-      const turma = turmas.find(t => t.id === parseInt(selectedTurma));
-      setTotalAlunos(turma?.total_alunos || 0);
-    } else {
-      setDisciplinas([]);
-      setTotalAlunos(0);
-      resetForm();
-    }
-  }, [selectedTurma, turmas]);
+    // load all disciplines once (to build unique discipline list)
+    loadAllDisciplinas();
+  }, []);
 
   useEffect(() => {
-    if (selectedTurma && selectedDisciplina && selectedBimestre) {
+    // When turma changes, update disciplines list shown (unique by name within turma)
+    const turma = turmas.find(t => t.id === parseInt(selectedTurma));
+    setTotalAlunos(turma?.total_alunos || 0);
+
+    if (selectedTurma) {
+      // filter all disciplinas for that turma
+      const filtered = allDisciplinas.filter(d => d.turma_id === parseInt(selectedTurma));
+      // dedupe by name
+      const unique: Disciplina[] = [];
+      const seen = new Set<string>();
+      for (const d of filtered) {
+        if (!seen.has(d.nome)) {
+          seen.add(d.nome);
+          unique.push(d);
+        }
+      }
+      setDisciplinas(unique);
+    } else {
+      // No turma selected: show unique disciplines across scope (allDisciplinas)
+      const unique: Disciplina[] = [];
+      const seen = new Set<string>();
+      for (const d of allDisciplinas) {
+        if (!seen.has(d.nome)) {
+          seen.add(d.nome);
+          unique.push(d);
+        }
+      }
+      setDisciplinas(unique);
+      // if no turma selected, reset form values
+      if (!selectedTurma) {
+        resetForm();
+      }
+    }
+  }, [selectedTurma, turmas, allDisciplinas]);
+
+  useEffect(() => {
+    // Load existing aggregated evaluation when a disciplina and bimestre are selected.
+    // If a turma is selected too, the backend will filter by turma; otherwise returns aggregated across scope.
+    if (selectedDisciplina && selectedBimestre) {
       loadAvaliacaoExistente();
     } else {
       resetForm();
@@ -113,10 +144,10 @@ const AvaliacoesPage: React.FC = () => {
     }
   };
 
-  const loadDisciplinas = async () => {
+  const loadAllDisciplinas = async () => {
     try {
-      const response = await disciplinasAPI.list({ turma_id: selectedTurma });
-      setDisciplinas(response.data);
+      const response = await disciplinasAPI.list();
+      setAllDisciplinas(response.data || []);
     } catch (err) {
       console.error('Erro ao carregar disciplinas:', err);
     }
@@ -127,12 +158,14 @@ const AvaliacoesPage: React.FC = () => {
   const loadAvaliacaoExistente = async () => {
     try {
       setLoading(true);
-      const response = await avaliacoesAgregadasAPI.list({
-        turma_id: selectedTurma,
-        disciplina_id: selectedDisciplina,
+      const params: any = {
         bimestre: selectedBimestre,
         ano_letivo: anoLetivo,
-      });
+      };
+      if (selectedTurma) params.turma_id = selectedTurma;
+      if (selectedDisciplina) params.disciplina_nome = selectedDisciplina;
+
+      const response = await avaliacoesAgregadasAPI.list(params);
 
       if (response.data && response.data.length > 0) {
         const avaliacao = response.data[0];
@@ -167,7 +200,11 @@ const AvaliacoesPage: React.FC = () => {
 
       const avaliacaoData = {
         turma_id: parseInt(selectedTurma),
-        disciplina_id: parseInt(selectedDisciplina),
+        // disciplina_id must correspond to the disciplina record for this turma
+        disciplina_id: (() => {
+          const found = allDisciplinas.find(d => d.nome === selectedDisciplina && d.turma_id === parseInt(selectedTurma));
+          return found ? found.id : undefined;
+        })(),
         bimestre: selectedBimestre,
         ano_letivo: anoLetivo,
         qtd_abaixo_media: qtdAbaixoMedia,
@@ -175,6 +212,11 @@ const AvaliacoesPage: React.FC = () => {
         qtd_acima_media: qtdAcimaMedia,
         observacoes: observacoes || undefined,
       };
+
+      if (!avaliacaoData.disciplina_id) {
+        setError('Disciplina não encontrada para a turma selecionada. Selecione uma disciplina válida.');
+        return;
+      }
 
       if (avaliacaoExistente) {
         // Atualizar avaliação existente
@@ -207,8 +249,7 @@ const AvaliacoesPage: React.FC = () => {
   };
 
   const getDisciplinaLabel = () => {
-    const disciplina = disciplinas.find((d) => d.id.toString() === selectedDisciplina);
-    return disciplina?.nome || 'Nenhuma';
+    return selectedDisciplina || 'Nenhuma';
   };
 
   const getTotalInformado = () => qtdAbaixoMedia + qtdNaMedia + qtdAcimaMedia;
@@ -307,15 +348,16 @@ const AvaliacoesPage: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth required disabled={!selectedTurma}>
+              <FormControl fullWidth required>
                 <InputLabel>Disciplina</InputLabel>
                 <Select
                   value={selectedDisciplina}
                   label="Disciplina"
                   onChange={(e) => setSelectedDisciplina(e.target.value)}
                 >
+                  <MenuItem value="">Todas</MenuItem>
                   {disciplinas.map((disciplina) => (
-                    <MenuItem key={disciplina.id} value={disciplina.id.toString()}>
+                    <MenuItem key={`${disciplina.id}-${disciplina.turma_id}`} value={disciplina.nome}>
                       {disciplina.nome}
                     </MenuItem>
                   ))}

@@ -117,6 +117,7 @@ async def create_avaliacao_agregada(
 async def list_avaliacoes_agregadas(
     turma_id: int = None,
     disciplina_id: int = None,
+    disciplina_nome: str = None,
     bimestre: int = None,
     ano_letivo: int = None,
     skip: int = 0,
@@ -137,9 +138,10 @@ async def list_avaliacoes_agregadas(
 
     if turma_id:
         query = query.filter(AvaliacaoAgregada.turma_id == turma_id)
-
     if disciplina_id:
         query = query.filter(AvaliacaoAgregada.disciplina_id == disciplina_id)
+    if disciplina_nome:
+        query = query.join(Disciplina, AvaliacaoAgregada.disciplina).filter(Disciplina.nome == disciplina_nome)
 
     if bimestre:
         query = query.filter(AvaliacaoAgregada.bimestre == bimestre)

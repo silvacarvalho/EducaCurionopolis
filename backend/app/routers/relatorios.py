@@ -437,6 +437,7 @@ async def relatorio_avaliacao_agregada_geral(
     escola_id: int = None,
     turma_id: int = None,
     disciplina_id: int = None,
+    disciplina_nome: str = None,
     ano_letivo: int = None,
     bimestre: int = None,
     db: Session = Depends(get_db),
@@ -458,6 +459,10 @@ async def relatorio_avaliacao_agregada_geral(
         query = query.filter(AvaliacaoAgregada.turma_id == turma_id)
     if disciplina_id:
         query = query.filter(AvaliacaoAgregada.disciplina_id == disciplina_id)
+    # Support filtering by discipline name across turmas
+    if disciplina_nome:
+        # join Disciplina to filter by name
+        query = query.join(Disciplina, AvaliacaoAgregada.disciplina).filter(Disciplina.nome == disciplina_nome)
     if ano_letivo:
         query = query.filter(AvaliacaoAgregada.ano_letivo == ano_letivo)
     if bimestre:
@@ -509,6 +514,7 @@ async def avaliacoes_agregadas_drill_down_escolas(
     ano_letivo: int = None,
     bimestre: int = None,
     disciplina_id: int = None,
+    disciplina_nome: str = None,
     escola_id: int = None,
     turma_id: int = None,
     db: Session = Depends(get_db),
@@ -549,6 +555,8 @@ async def avaliacoes_agregadas_drill_down_escolas(
         query = query.filter(AvaliacaoAgregada.bimestre == bimestre)
     if disciplina_id:
         query = query.filter(AvaliacaoAgregada.disciplina_id == disciplina_id)
+    if disciplina_nome:
+        query = query.join(Disciplina, AvaliacaoAgregada.disciplina).filter(Disciplina.nome == disciplina_nome)
 
     query = query.group_by(Escola.id, Escola.nome)
 
@@ -582,6 +590,7 @@ async def avaliacoes_agregadas_drill_down_turmas(
     ano_letivo: int = None,
     bimestre: int = None,
     disciplina_id: int = None,
+    disciplina_nome: str = None,
     turma_id: int = None,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
@@ -614,6 +623,8 @@ async def avaliacoes_agregadas_drill_down_turmas(
         query = query.filter(AvaliacaoAgregada.bimestre == bimestre)
     if disciplina_id:
         query = query.filter(AvaliacaoAgregada.disciplina_id == disciplina_id)
+    if disciplina_nome:
+        query = query.join(Disciplina, AvaliacaoAgregada.disciplina).filter(Disciplina.nome == disciplina_nome)
 
     query = query.group_by(Turma.id, Turma.nome)
 
