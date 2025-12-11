@@ -7,8 +7,8 @@ from typing import List
 from datetime import datetime
 
 from ..database import get_db
-from ..models import Turma, Usuario, PerfilUsuario, Professor
-from ..schemas import TurmaCreate, TurmaUpdate, TurmaResponse
+from ..models import Turma, Usuario, PerfilUsuario, Professor, Disciplina
+from ..schemas import TurmaCreate, TurmaUpdate, TurmaResponse, VincularDisciplinasTurma
 from ..auth import get_current_active_user, require_diretor_or_gestao
 from ..dependencies import verify_escola_access
 
@@ -198,5 +198,153 @@ async def delete_turma(
 
     turma.ativo = False
     db.commit()
+
+    return None
+
+
+# ============================================
+# DISCIPLINAS VINCULAÇÃO ENDPOINTS
+# ============================================
+
+@router.post("/{turma_id}/disciplinas", status_code=status.HTTP_200_OK)
+async def vincular_disciplinas(
+    turma_id: int,
+    vinculo_data: VincularDisciplinasTurma,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_diretor_or_gestao)
+):
+    """
+    Vincular múltiplas disciplinas a uma turma
+    Substitui todas as disciplinas anteriores pelas novas
+    """
+    turma = db.query(Turma).filter(Turma.id == turma_id).first()
+    
+    if not turma:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Turma não encontrada"
+        )
+    
+    # Verificar acesso
+    verify_escola_access(turma.escola_id, current_user, db)
+    
+    # Buscar disciplinas e validar se existem
+    disciplinas = []
+    for disciplina_id in vinculo_data.disciplina_ids:
+        disciplina = db.query(Disciplina).filter(
+            Disciplina.id == disciplina_id,
+            Disciplina.ativo == True
+        ).first()
+        
+        if not disciplina:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Disciplina com ID {disciplina_id} não encontrada"
+            )
+        
+        disciplinas.append(disciplina)
+    
+    # Limpar disciplinas antigas e adicionar novas
+    turma.disciplinas.clear()
+    turma.disciplinas.extend(disciplinas)
+    
+    db.commit()
+    db.refresh(turma)
+    
+    return {
+        "message": "Disciplinas vinculadas com sucesso",
+        "turma_id": turma.id,
+        "disciplinas_ids": [d.id for d in turma.disciplinas],
+        "total_disciplinas": len(turma.disciplinas)
+    }
+
+
+@router.post("/{turma_id}/disciplinas/{disciplina_id}", status_code=status.HTTP_200_OK)
+async def adicionar_disciplina(
+    turma_id: int,
+    disciplina_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_diretor_or_gestao)
+):
+    """Adicionar uma disciplina à turma (sem remover as existentes)"""
+    turma = db.query(Turma).filter(Turma.id == turma_id).first()
+    
+    if not turma:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Turma não encontrada"
+        )
+    
+    verify_escola_access(turma.escola_id, current_user, db)
+    
+    disciplina = db.query(Disciplina).filter(
+        Disciplina.id == disciplina_id,
+        Disciplina.ativo == True
+    ).first()
+    
+    if not disciplina:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disciplina não encontrada"
+        )
+    
+    # Verificar se já está vinculada
+    if disciplina in turma.disciplinas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Disciplina já está vinculada a esta turma"
+        )
+    
+    turma.disciplinas.append(disciplina)
+    db.commit()
+    
+    return {
+        "message": "Disciplina adicionada com sucesso",
+        "turma_id": turma.id,
+        "disciplina_id": disciplina.id
+    }
+
+
+@router.delete("/{turma_id}/disciplinas/{disciplina_id}", status_code=status.HTTP_200_OK)
+async def desvincular_disciplina(
+    turma_id: int,
+    disciplina_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_diretor_or_gestao)
+):
+    """Remover uma disciplina da turma"""
+    turma = db.query(Turma).filter(Turma.id == turma_id).first()
+    
+    if not turma:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Turma não encontrada"
+        )
+    
+    verify_escola_access(turma.escola_id, current_user, db)
+    
+    disciplina = db.query(Disciplina).filter(Disciplina.id == disciplina_id).first()
+    
+    if not disciplina:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disciplina não encontrada"
+        )
+    
+    # Verificar se está vinculada
+    if disciplina not in turma.disciplinas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Disciplina não está vinculada a esta turma"
+        )
+    
+    turma.disciplinas.remove(disciplina)
+    db.commit()
+    
+    return {
+        "message": "Disciplina removida com sucesso",
+        "turma_id": turma.id,
+        "disciplina_id": disciplina.id
+    }
 
     return None

@@ -68,16 +68,30 @@ async def create_avaliacao_agregada(
     # Verify turma access
     verify_turma_access(avaliacao_data.turma_id, current_user, db)
 
-    # Verify disciplina exists and belongs to turma
+    # Verify turma exists
+    turma = db.query(Turma).filter(Turma.id == avaliacao_data.turma_id).first()
+    if not turma:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Turma não encontrada"
+        )
+
+    # Verify disciplina exists
     disciplina = db.query(Disciplina).filter(
-        Disciplina.id == avaliacao_data.disciplina_id,
-        Disciplina.turma_id == avaliacao_data.turma_id
+        Disciplina.id == avaliacao_data.disciplina_id
     ).first()
 
     if not disciplina:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Disciplina não encontrada ou não pertence a esta turma"
+            detail="Disciplina não encontrada"
+        )
+    
+    # NEW VALIDATION: Verify disciplina is linked to turma
+    if disciplina not in turma.disciplinas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A disciplina não está vinculada a esta turma"
         )
 
     # Check if evaluation already exists

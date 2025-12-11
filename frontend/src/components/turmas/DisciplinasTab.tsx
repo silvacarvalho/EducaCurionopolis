@@ -13,7 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Tooltip,
   Alert,
@@ -21,15 +20,17 @@ import {
   Chip,
   Typography,
   MenuItem,
+  Autocomplete,
+  Divider,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   PersonAdd as PersonAddIcon,
-  PersonRemove as PersonRemoveIcon,
+  LinkOff as LinkOffIcon,
 } from '@mui/icons-material';
-import { disciplinasAPI, professoresAPI } from '../../services/api';
+import { disciplinasAPI, professoresAPI, turmasAPI } from '../../services/api';
 import { Disciplina } from '../../types';
 
 interface Professor {
@@ -53,16 +54,26 @@ interface DisciplinasTabProps {
 }
 
 const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) => {
-  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
+  // Disciplinas vinculadas à turma
+  const [disciplinasVinculadas, setDisciplinasVinculadas] = useState<Disciplina[]>([]);
+  // Todas as disciplinas globais disponíveis
+  const [disciplinasGlobais, setDisciplinasGlobais] = useState<Disciplina[]>([]);
+  // Disciplinas selecionadas para vincular
+  const [disciplinasSelecionadas, setDisciplinasSelecionadas] = useState<Disciplina[]>([]);
+  
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [loading, setLoading] = useState(false);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openVincularDialog, setOpenVincularDialog] = useState(false);
-  const [editingDisciplina, setEditingDisciplina] = useState<Disciplina | null>(null);
+  
+  // Dialogs
+  const [openNovaDialog, setOpenNovaDialog] = useState(false);
+  const [openVincularProfessorDialog, setOpenVincularProfessorDialog] = useState(false);
   const [selectedDisciplina, setSelectedDisciplina] = useState<Disciplina | null>(null);
+  
+  // Messages
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
+  // Form data para criar nova disciplina global
   const [formData, setFormData] = useState({
     nome: '',
     carga_horaria: '',
@@ -72,20 +83,30 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) =>
 
   useEffect(() => {
     if (turmaId) {
-      loadDisciplinas();
+      loadDisciplinasVinculadas();
+      loadDisciplinasGlobais();
       loadProfessores();
     }
   }, [turmaId]);
 
-  const loadDisciplinas = async () => {
+  const loadDisciplinasVinculadas = async () => {
     try {
       setLoading(true);
-      const response = await disciplinasAPI.list({ turma_id: turmaId });
-      setDisciplinas(response.data);
+      const response = await disciplinasAPI.listByTurma(turmaId);
+      setDisciplinasVinculadas(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao carregar disciplinas');
+      setError(err.response?.data?.detail || 'Erro ao carregar disciplinas da turma');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDisciplinasGlobais = async () => {
+    try {
+      const response = await disciplinasAPI.list();
+      setDisciplinasGlobais(response.data);
+    } catch (err: any) {
+      console.error('Erro ao carregar disciplinas globais:', err);
     }
   };
 
@@ -98,71 +119,89 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) =>
     }
   };
 
-  const handleOpenDialog = (disciplina?: Disciplina) => {
-    if (disciplina) {
-      setEditingDisciplina(disciplina);
-      setFormData({
-        nome: disciplina.nome,
-        carga_horaria: disciplina.carga_horaria?.toString() || '',
-      });
-    } else {
-      setEditingDisciplina(null);
-      setFormData({
-        nome: '',
-        carga_horaria: '',
-      });
-    }
-    setOpenDialog(true);
+  // Filtrar disciplinas disponíveis (não vinculadas)
+  const disciplinasDisponiveis = disciplinasGlobais.filter(
+    (global) => !disciplinasVinculadas.some((vinc) => vinc.id === global.id)
+  );
+
+  const handleOpenNovaDialog = () => {
+    setFormData({ nome: '', carga_horaria: '' });
+    setOpenNovaDialog(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditingDisciplina(null);
-    setFormData({
-      nome: '',
-      carga_horaria: '',
-    });
+  const handleCloseNovaDialog = () => {
+    setOpenNovaDialog(false);
+    setFormData({ nome: '', carga_horaria: '' });
   };
 
-  const handleOpenVincularDialog = (disciplina: Disciplina) => {
-    setSelectedDisciplina(disciplina);
-    setSelectedProfessor('');
-    setOpenVincularDialog(true);
-  };
-
-  const handleCloseVincularDialog = () => {
-    setOpenVincularDialog(false);
-    setSelectedDisciplina(null);
-    setSelectedProfessor('');
-  };
-
-  const handleSubmit = async () => {
+  const handleCriarDisciplinaGlobal = async () => {
     try {
       setLoading(true);
       const dataToSend = {
         nome: formData.nome,
         carga_horaria: formData.carga_horaria ? parseInt(formData.carga_horaria) : undefined,
-        turma_id: turmaId,
       };
 
-      if (editingDisciplina) {
-        await disciplinasAPI.update(editingDisciplina.id, {
-          nome: formData.nome,
-          carga_horaria: formData.carga_horaria ? parseInt(formData.carga_horaria) : undefined,
-        });
-        setSuccess('Disciplina atualizada com sucesso!');
-      } else {
-        await disciplinasAPI.create(dataToSend);
-        setSuccess('Disciplina criada com sucesso!');
-      }
-
-      handleCloseDialog();
-      loadDisciplinas();
+      await disciplinasAPI.create(dataToSend);
+      setSuccess('Disciplina criada com sucesso! Agora você pode vinculá-la à turma.');
+      handleCloseNovaDialog();
+      loadDisciplinasGlobais();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao salvar disciplina');
+      setError(err.response?.data?.detail || 'Erro ao criar disciplina');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVincularDisciplinas = async () => {
+    if (disciplinasSelecionadas.length === 0) {
+      setError('Selecione ao menos uma disciplina para vincular');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Criar array com IDs das disciplinas já vinculadas + novas selecionadas
+      const todasDisciplinasIds = [
+        ...disciplinasVinculadas.map(d => d.id),
+        ...disciplinasSelecionadas.map(d => d.id)
+      ];
+
+      await turmasAPI.vincularDisciplinas(turmaId, todasDisciplinasIds);
+      
+      setSuccess(`${disciplinasSelecionadas.length} disciplina(s) vinculada(s) com sucesso!`);
+      setDisciplinasSelecionadas([]);
+      loadDisciplinasVinculadas();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao vincular disciplinas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDesvincular = async (disciplinaId: number) => {
+    if (window.confirm('Tem certeza que deseja desvincular esta disciplina da turma?')) {
+      try {
+        await turmasAPI.desvincularDisciplina(turmaId, disciplinaId);
+        setSuccess('Disciplina desvinculada com sucesso!');
+        loadDisciplinasVinculadas();
+      } catch (err: any) {
+        setError(err.response?.data?.detail || 'Erro ao desvincular disciplina');
+      }
+    }
+  };
+
+  const handleOpenVincularProfessorDialog = (disciplina: Disciplina) => {
+    setSelectedDisciplina(disciplina);
+    setSelectedProfessor('');
+    setOpenVincularProfessorDialog(true);
+  };
+
+  const handleCloseVincularProfessorDialog = () => {
+    setOpenVincularProfessorDialog(false);
+    setSelectedDisciplina(null);
+    setSelectedProfessor('');
   };
 
   const handleVincularProfessor = async () => {
@@ -174,9 +213,8 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) =>
         parseInt(selectedProfessor),
         selectedDisciplina.id
       );
-      setSuccess('Professor vinculado com sucesso!');
-      handleCloseVincularDialog();
-      loadDisciplinas();
+      setSuccess('Professor vinculado à disciplina com sucesso!');
+      handleCloseVincularProfessorDialog();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Erro ao vincular professor');
     } finally {
@@ -184,131 +222,156 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) =>
     }
   };
 
-  const handleDesvincularProfessor = async (
-    professorId: number,
-    disciplinaId: number
-  ) => {
-    if (window.confirm('Tem certeza que deseja desvincular este professor?')) {
-      try {
-        await disciplinasAPI.desvincularProfessor(professorId, disciplinaId);
-        setSuccess('Professor desvinculado com sucesso!');
-        loadDisciplinas();
-      } catch (err: any) {
-        setError(err.response?.data?.detail || 'Erro ao desvincular professor');
-      }
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir esta disciplina?')) {
-      try {
-        await disciplinasAPI.delete(id);
-        setSuccess('Disciplina excluída com sucesso!');
-        loadDisciplinas();
-      } catch (err: any) {
-        setError(err.response?.data?.detail || 'Erro ao excluir disciplina');
-      }
-    }
-  };
-
-  const getProfessorNome = (professorId: number) => {
-    const professor = professores.find((p) => p.id === professorId);
-    return professor?.usuario?.nome_completo || '-';
-  };
-
   return (
     <Box>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Disciplinas da Turma</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-        >
-          Nova Disciplina
-        </Button>
-      </Box>
+      {/* SEÇÃO 1: Disciplinas Vinculadas */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" color="primary">
+              Disciplinas Vinculadas à Turma
+            </Typography>
+            <Chip
+              label={`${disciplinasVinculadas.length} disciplina(s)`}
+              color="primary"
+              size="small"
+            />
+          </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Nome</TableCell>
-              <TableCell>Carga Horária</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell align="right">Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Carregando...
-                </TableCell>
-              </TableRow>
-            ) : disciplinas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Nenhuma disciplina cadastrada
-                </TableCell>
-              </TableRow>
-            ) : (
-              disciplinas.map((disciplina) => (
-                <TableRow key={disciplina.id}>
-                  <TableCell>{disciplina.nome}</TableCell>
-                  <TableCell>
-                    {disciplina.carga_horaria ? `${disciplina.carga_horaria}h` : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={disciplina.ativo ? 'Ativa' : 'Inativa'}
-                      color={disciplina.ativo ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Vincular Professor">
-                      <IconButton
-                        size="small"
-                        color="info"
-                        onClick={() => handleOpenVincularDialog(disciplina)}
-                      >
-                        <PersonAddIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Editar">
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleOpenDialog(disciplina)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Excluir">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => handleDelete(disciplina.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Nome</TableCell>
+                  <TableCell>Carga Horária</TableCell>
+                  <TableCell align="right">Ações</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      Carregando...
+                    </TableCell>
+                  </TableRow>
+                ) : disciplinasVinculadas.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      <Alert severity="info">
+                        Nenhuma disciplina vinculada. Adicione disciplinas abaixo.
+                      </Alert>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  disciplinasVinculadas.map((disciplina) => (
+                    <TableRow key={disciplina.id}>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight="medium">
+                          {disciplina.nome}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {disciplina.carga_horaria ? `${disciplina.carga_horaria}h` : '-'}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Vincular Professor">
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => handleOpenVincularProfessorDialog(disciplina)}
+                          >
+                            <PersonAddIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Desvincular da Turma">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDesvincular(disciplina.id)}
+                          >
+                            <LinkOffIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingDisciplina ? 'Editar Disciplina' : 'Nova Disciplina'}
-        </DialogTitle>
+      <Divider sx={{ my: 3 }} />
+
+      {/* SEÇÃO 2: Adicionar Disciplinas */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" color="secondary" sx={{ mb: 2 }}>
+            Adicionar Disciplinas à Turma
+          </Typography>
+
+          <Box sx={{ mb: 3 }}>
+            <Autocomplete
+              multiple
+              options={disciplinasDisponiveis}
+              getOptionLabel={(option) => option.nome}
+              value={disciplinasSelecionadas}
+              onChange={(event, newValue) => {
+                setDisciplinasSelecionadas(newValue);
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Selecionar Disciplinas"
+                  placeholder="Buscar disciplinas..."
+                  helperText="Selecione uma ou mais disciplinas para vincular"
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Typography variant="body2">{option.nome}</Typography>
+                    {option.carga_horaria && (
+                      <Typography variant="caption" color="text.secondary">
+                        {option.carga_horaria}h semanais
+                      </Typography>
+                    )}
+                  </Box>
+                </li>
+              )}
+              noOptionsText="Nenhuma disciplina disponível"
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={handleOpenNovaDialog}
+            >
+              Criar Nova Disciplina Global
+            </Button>
+            
+            <Button
+              variant="contained"
+              onClick={handleVincularDisciplinas}
+              disabled={disciplinasSelecionadas.length === 0 || loading}
+            >
+              Vincular Selecionadas ({disciplinasSelecionadas.length})
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Dialog: Criar Nova Disciplina Global */}
+      <Dialog open={openNovaDialog} onClose={handleCloseNovaDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Criar Nova Disciplina Global</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+          <Alert severity="info" sx={{ mt: 1, mb: 2 }}>
+            Disciplinas globais podem ser reutilizadas em múltiplas turmas.
+          </Alert>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="Nome da Disciplina"
               fullWidth
@@ -318,31 +381,31 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) =>
               placeholder="Ex: Matemática, Português, etc."
             />
             <TextField
-              label="Carga Horária (horas)"
+              label="Carga Horária Semanal (horas)"
               type="number"
               fullWidth
               value={formData.carga_horaria}
               onChange={(e) => setFormData({ ...formData, carga_horaria: e.target.value })}
-              placeholder="Ex: 40"
+              placeholder="Ex: 4"
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancelar</Button>
+          <Button onClick={handleCloseNovaDialog}>Cancelar</Button>
           <Button
-            onClick={handleSubmit}
+            onClick={handleCriarDisciplinaGlobal}
             variant="contained"
             disabled={loading || !formData.nome}
           >
-            {editingDisciplina ? 'Atualizar' : 'Criar'}
+            Criar Disciplina
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Vincular Professor Dialog */}
+      {/* Dialog: Vincular Professor */}
       <Dialog
-        open={openVincularDialog}
-        onClose={handleCloseVincularDialog}
+        open={openVincularProfessorDialog}
+        onClose={handleCloseVincularProfessorDialog}
         maxWidth="sm"
         fullWidth
       >
@@ -363,14 +426,15 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ turmaId, escolaId }) =>
             >
               {professores.map((professor) => (
                 <MenuItem key={professor.id} value={professor.id.toString()}>
-                  {professor.usuario?.nome_completo} {professor.matricula ? `- ${professor.matricula}` : ''}
+                  {professor.usuario?.nome_completo}{' '}
+                  {professor.matricula ? `- ${professor.matricula}` : ''}
                 </MenuItem>
               ))}
             </TextField>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseVincularDialog}>Cancelar</Button>
+          <Button onClick={handleCloseVincularProfessorDialog}>Cancelar</Button>
           <Button
             onClick={handleVincularProfessor}
             variant="contained"

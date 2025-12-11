@@ -39,7 +39,8 @@ interface Turma {
 interface Disciplina {
   id: number;
   nome: string;
-  turma_id: number;
+  carga_horaria?: number;
+  turmas_ids?: number[];
 }
 
 interface Aluno {
@@ -82,24 +83,13 @@ const AvaliacoesPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // When turma changes, update disciplines list shown (unique by name within turma)
+    // When turma changes, update disciplines list shown
     const turma = turmas.find(t => t.id === parseInt(selectedTurma));
     setTotalAlunos(turma?.total_alunos || 0);
 
     if (selectedTurma) {
-      // filter all disciplinas for that turma
-      const filtered = allDisciplinas.filter(d => d.turma_id === parseInt(selectedTurma));
-      // dedupe by name
-      const unique: Disciplina[] = [];
-      const seen = new Set<string>();
-      for (const d of filtered) {
-        const key = (d.nome || '').toLowerCase().trim();
-        if (!seen.has(key)) {
-          seen.add(key);
-          unique.push(d);
-        }
-      }
-      setDisciplinas(unique);
+      // Load disciplinas vinculadas à turma específica
+      loadDisciplinasByTurma(parseInt(selectedTurma));
     } else {
       // No turma selected: show unique disciplines across scope (allDisciplinas)
       const unique: Disciplina[] = [];
@@ -112,10 +102,7 @@ const AvaliacoesPage: React.FC = () => {
         }
       }
       setDisciplinas(unique);
-      // if no turma selected, reset form values
-      if (!selectedTurma) {
-        resetForm();
-      }
+      resetForm();
     }
   }, [selectedTurma, turmas, allDisciplinas]);
 
@@ -152,6 +139,16 @@ const AvaliacoesPage: React.FC = () => {
       setAllDisciplinas(response.data || []);
     } catch (err) {
       console.error('Erro ao carregar disciplinas:', err);
+    }
+  };
+
+  const loadDisciplinasByTurma = async (turmaId: number) => {
+    try {
+      const response = await disciplinasAPI.listByTurma(turmaId);
+      setDisciplinas(response.data || []);
+    } catch (err) {
+      console.error('Erro ao carregar disciplinas da turma:', err);
+      setDisciplinas([]);
     }
   };
 
@@ -202,9 +199,9 @@ const AvaliacoesPage: React.FC = () => {
 
       const avaliacaoData = {
         turma_id: parseInt(selectedTurma),
-        // disciplina_id must correspond to the disciplina record for this turma
+        // disciplina_id from the disciplinas list (já filtrada pela turma)
         disciplina_id: (() => {
-              const found = allDisciplinas.find(d => (d.nome || '').toLowerCase().trim() === (selectedDisciplina || '').toLowerCase().trim() && d.turma_id === parseInt(selectedTurma));
+          const found = disciplinas.find(d => (d.nome || '').toLowerCase().trim() === (selectedDisciplina || '').toLowerCase().trim());
           return found ? found.id : undefined;
         })(),
         bimestre: selectedBimestre,
@@ -359,7 +356,7 @@ const AvaliacoesPage: React.FC = () => {
                 >
                   <MenuItem value="">Todas</MenuItem>
                   {disciplinas.map((disciplina) => (
-                    <MenuItem key={`${disciplina.id}-${disciplina.turma_id}`} value={disciplina.nome}>
+                    <MenuItem key={disciplina.id} value={disciplina.nome}>
                       {disciplina.nome}
                     </MenuItem>
                   ))}

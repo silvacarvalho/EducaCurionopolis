@@ -174,6 +174,7 @@ class TurmaResponse(TurmaBase):
     professor: Optional['ProfessorResponse'] = None
     escola: Optional['EscolaResponse'] = None
     total_alunos: int = 0  # Número de alunos ativos na turma
+    disciplinas: List['DisciplinaResponse'] = []  # Disciplinas vinculadas
 
     class Config:
         from_attributes = True
@@ -189,7 +190,8 @@ class DisciplinaBase(BaseSchema):
 
 
 class DisciplinaCreate(DisciplinaBase):
-    turma_id: int
+    """Criar disciplina global (sem vínculo com turma)"""
+    pass
 
 
 class DisciplinaUpdate(BaseSchema):
@@ -200,15 +202,23 @@ class DisciplinaUpdate(BaseSchema):
 
 class DisciplinaResponse(DisciplinaBase):
     id: int
-    turma_id: int
     ativo: bool
     created_at: datetime
+    turmas_ids: List[int] = []  # IDs das turmas vinculadas
+
+    class Config:
+        from_attributes = True
 
 
 class VincularProfessorDisciplina(BaseSchema):
     """Link teacher to subject"""
     professor_id: int
     disciplina_id: int
+
+
+class VincularDisciplinasTurma(BaseSchema):
+    """Vincular múltiplas disciplinas a uma turma"""
+    disciplina_ids: List[int] = Field(..., min_items=1)
 
 
 # ============================================

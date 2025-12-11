@@ -41,6 +41,22 @@ async def create_avaliacao(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Aluno não encontrado"
         )
+    
+    # Verify disciplina exists
+    disciplina = db.query(Disciplina).filter(Disciplina.id == avaliacao_data.disciplina_id).first()
+    if not disciplina:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Disciplina não encontrada"
+        )
+    
+    # NEW VALIDATION: Verify disciplina is linked to the aluno's turma
+    turma = aluno.turma
+    if disciplina not in turma.disciplinas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A disciplina não está vinculada à turma do aluno"
+        )
 
     # Check if evaluation already exists
     existing = db.query(AvaliacaoBimestral).filter(

@@ -103,15 +103,16 @@ export interface Turma {
   ativo: boolean;
   created_at: string;
   total_alunos?: number;  // Número de alunos ativos na turma
+  disciplinas?: Disciplina[];  // Disciplinas vinculadas à turma
 }
 
 export interface Disciplina {
   id: number;
   nome: string;
-  turma_id: number;
   carga_horaria?: number;
   ativo: boolean;
   created_at: string;
+  turmas_ids?: number[];  // IDs das turmas vinculadas
 }
 
 export interface Aluno {

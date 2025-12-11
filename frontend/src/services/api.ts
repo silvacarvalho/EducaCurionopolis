@@ -126,10 +126,18 @@ export const turmasAPI = {
   create: (data: any) => api.post('/turmas', data),
   update: (id: number, data: any) => api.put(`/turmas/${id}`, data),
   delete: (id: number) => api.delete(`/turmas/${id}`),
+  // Endpoints de vinculação de disciplinas
+  vincularDisciplinas: (turmaId: number, disciplinaIds: number[]) =>
+    api.post(`/turmas/${turmaId}/disciplinas`, { disciplina_ids: disciplinaIds }),
+  adicionarDisciplina: (turmaId: number, disciplinaId: number) =>
+    api.post(`/turmas/${turmaId}/disciplinas/${disciplinaId}`),
+  desvincularDisciplina: (turmaId: number, disciplinaId: number) =>
+    api.delete(`/turmas/${turmaId}/disciplinas/${disciplinaId}`),
 };
 
 export const disciplinasAPI = {
   list: (params?: any) => api.get('/disciplinas', { params }),
+  listByTurma: (turmaId: number) => api.get(`/disciplinas/turma/${turmaId}`),
   create: (data: any) => api.post('/disciplinas', data),
   update: (id: number, data: any) => api.put(`/disciplinas/${id}`, data),
   delete: (id: number) => api.delete(`/disciplinas/${id}`),

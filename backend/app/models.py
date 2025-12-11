@@ -82,6 +82,14 @@ professor_disciplina = Table(
     Column('created_at', DateTime(timezone=True), server_default=func.now())
 )
 
+turma_disciplina = Table(
+    'turma_disciplina',
+    Base.metadata,
+    Column('turma_id', Integer, ForeignKey('turmas.id', ondelete='CASCADE'), primary_key=True),
+    Column('disciplina_id', Integer, ForeignKey('disciplinas.id', ondelete='CASCADE'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
+
 diagnostico_item = Table(
     'diagnostico_item',
     Base.metadata,
@@ -210,7 +218,7 @@ class Turma(Base):
     escola = relationship("Escola", back_populates="turmas")
     professor = relationship("Professor", back_populates="turmas")
     alunos = relationship("Aluno", back_populates="turma", cascade="all, delete-orphan")
-    disciplinas = relationship("Disciplina", back_populates="turma", cascade="all, delete-orphan")
+    disciplinas = relationship("Disciplina", secondary=turma_disciplina, back_populates="turmas")
 
     def __repr__(self):
         return f"<Turma(nome={self.nome}, ano_escolar={self.ano_escolar}, ano_letivo={self.ano_letivo})>"
@@ -218,14 +226,14 @@ class Turma(Base):
 
 class Disciplina(Base):
     """
-    Subject entity
-    Each subject belongs to a class and can have multiple teachers
+    Subject entity (Global)
+    Can be linked to multiple classes and can have multiple teachers
+    N:M relationship with Turma through turma_disciplina association table
     """
     __tablename__ = "disciplinas"
 
     id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(100), nullable=False)  # "Matemática", "Português", etc.
-    turma_id = Column(Integer, ForeignKey('turmas.id'), nullable=False)
+    nome = Column(String(100), nullable=False, unique=True)  # "Matemática", "Português", etc.
     carga_horaria = Column(Integer)  # Weekly hours
     ativo = Column(Boolean, default=True)
 
@@ -233,12 +241,12 @@ class Disciplina(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
-    turma = relationship("Turma", back_populates="disciplinas")
+    turmas = relationship("Turma", secondary=turma_disciplina, back_populates="disciplinas")
     professores = relationship("Professor", secondary=professor_disciplina, back_populates="disciplinas")
     avaliacoes = relationship("AvaliacaoBimestral", back_populates="disciplina")
 
     def __repr__(self):
-        return f"<Disciplina(nome={self.nome}, turma_id={self.turma_id})>"
+        return f"<Disciplina(nome={self.nome})>"
 
 
 class Aluno(Base):
