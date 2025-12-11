@@ -13,6 +13,8 @@ build/
 
 # Frontend build is tracked for deployment
 # dist/ files are committed to serve in production
+!frontend/dist/
+!frontend/dist/**
 
 # ============================================
 # ENVIRONMENT & SECRETS (CRITICAL!)
