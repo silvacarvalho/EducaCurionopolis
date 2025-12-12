@@ -27,36 +27,59 @@ def upgrade() -> None:
     - Remove coluna turma_id de disciplinas
     """
     
-    # 1. Criar tabela associativa turma_disciplina
-    op.create_table(
-        'turma_disciplina',
-        sa.Column('turma_id', sa.Integer(), nullable=False),
-        sa.Column('disciplina_id', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.ForeignKeyConstraint(['disciplina_id'], ['disciplinas.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['turma_id'], ['turmas.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('turma_id', 'disciplina_id')
-    )
+    # Verificar se a tabela já existe
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'turma_disciplina')"
+    ))
+    table_exists = result.scalar()
     
-    # 2. Criar índices para performance
-    op.create_index('ix_turma_disciplina_turma_id', 'turma_disciplina', ['turma_id'])
-    op.create_index('ix_turma_disciplina_disciplina_id', 'turma_disciplina', ['disciplina_id'])
+    if not table_exists:
+        # 1. Criar tabela associativa turma_disciplina
+        op.create_table(
+            'turma_disciplina',
+            sa.Column('turma_id', sa.Integer(), nullable=False),
+            sa.Column('disciplina_id', sa.Integer(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.ForeignKeyConstraint(['disciplina_id'], ['disciplinas.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['turma_id'], ['turmas.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('turma_id', 'disciplina_id')
+        )
+        
+        # 2. Criar índices para performance
+        op.create_index('ix_turma_disciplina_turma_id', 'turma_disciplina', ['turma_id'])
+        op.create_index('ix_turma_disciplina_disciplina_id', 'turma_disciplina', ['disciplina_id'])
+        
+        # 3. Migrar dados existentes: copiar relacionamentos turma_id -> disciplina.id
+        op.execute("""
+            INSERT INTO turma_disciplina (turma_id, disciplina_id, created_at)
+            SELECT turma_id, id, created_at 
+            FROM disciplinas 
+            WHERE turma_id IS NOT NULL
+        """)
+        print("✓ Tabela turma_disciplina criada e dados migrados")
+    else:
+        print("✓ Tabela turma_disciplina já existe, pulando criação")
     
-    # 3. Migrar dados existentes: copiar relacionamentos turma_id -> disciplina.id
-    op.execute("""
-        INSERT INTO turma_disciplina (turma_id, disciplina_id, created_at)
-        SELECT turma_id, id, created_at 
-        FROM disciplinas 
-        WHERE turma_id IS NOT NULL
-    """)
+    # Verificar se a coluna turma_id ainda existe em disciplinas
+    result = conn.execute(sa.text(
+        "SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'disciplinas' AND column_name = 'turma_id')"
+    ))
+    column_exists = result.scalar()
     
-    # 4. Remover foreign key constraint de disciplinas.turma_id
-    op.drop_constraint('disciplinas_turma_id_fkey', 'disciplinas', type_='foreignkey')
+    if column_exists:
+        # 4. Remover foreign key constraint de disciplinas.turma_id
+        try:
+            op.drop_constraint('disciplinas_turma_id_fkey', 'disciplinas', type_='foreignkey')
+        except Exception:
+            pass  # Constraint pode não existir
+        
+        # 5. Remover coluna turma_id de disciplinas
+        op.drop_column('disciplinas', 'turma_id')
+        print("✓ Coluna turma_id removida de disciplinas")
+    else:
+        print("✓ Coluna turma_id já foi removida de disciplinas")
     
-    # 5. Remover coluna turma_id de disciplinas
-    op.drop_column('disciplinas', 'turma_id')
-    
-    # Log de sucesso
     print("✓ Migration concluída: disciplinas agora são N:M com turmas")
 
 
