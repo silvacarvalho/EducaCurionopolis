@@ -20,12 +20,33 @@ import {
   Tab,
   IconButton,
   Menu,
+  Card,
+  CardContent,
+  Chip,
+  alpha,
+  Fade,
+  Grow,
 } from '@mui/material';
 import {
   AccountCircle as AccountCircleIcon,
   ArrowBack as ArrowBackIcon,
   PictureAsPdf as PictureAsPdfIcon,
-  Print as PrintIcon
+  Print as PrintIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingFlat as TrendingFlatIcon,
+  People as PeopleIcon,
+  School as SchoolIcon,
+  Class as ClassIcon,
+  Assessment as AssessmentIcon,
+  FilterList as FilterListIcon,
+  BarChart as BarChartIcon,
+  Timeline as TimelineIcon,
+  EmojiEvents as TrophyIcon,
+  Warning as WarningIcon,
+  CheckCircle as CheckCircleIcon,
+  Groups as GroupsIcon,
+  AutoGraph as AutoGraphIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -330,33 +351,67 @@ const RelatoriosPage: React.FC = () => {
       <Box sx={{ width: '100%', height: '100%' }}>
 
         {/* Action Buttons */}
-        <Box
-          className="no-print"
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 2,
-            mb: 3,
-            '@media print': {
-              display: 'none'
-            }
-          }}
-        >
-          <Button
-            variant="outlined"
-            startIcon={<PrintIcon />}
-            onClick={handlePrint}
+        <Fade in timeout={600}>
+          <Box
+            className="no-print"
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 2,
+              mb: 3,
+              '@media print': {
+                display: 'none'
+              }
+            }}
           >
-            Imprimir
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PictureAsPdfIcon />}
-            onClick={handleGeneratePDF}
-          >
-            Gerar PDF
-          </Button>
-        </Box>
+            <Button
+              variant="outlined"
+              startIcon={<PrintIcon />}
+              onClick={handlePrint}
+              sx={{
+                borderRadius: 3,
+                textTransform: 'none',
+                fontWeight: 600,
+                borderWidth: 2,
+                px: 3,
+                py: 1,
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': {
+                  borderWidth: 2,
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(25, 118, 210, 0.25)',
+                  background: alpha('#1976d2', 0.04),
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              Imprimir
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PictureAsPdfIcon />}
+              onClick={handleGeneratePDF}
+              sx={{
+                borderRadius: 3,
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)',
+                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            >
+              Gerar PDF
+            </Button>
+          </Box>
+        </Fade>
 
         <Box id="relatorios-content">
 
@@ -408,19 +463,28 @@ const RelatoriosPage: React.FC = () => {
         </Box>
 
         {/* Filters */}
-        <Paper
-          className="no-print"
-          sx={{
-            p: 2,
-            mb: 3,
-            '@media print': {
-              display: 'none'
-            }
-          }}
-        >
-          <Typography variant="subtitle2" gutterBottom>
-            Filtros de Busca
-          </Typography>
+        <Grow in timeout={800}>
+          <Paper
+            className="no-print"
+            elevation={3}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+              border: '1px solid',
+              borderColor: 'divider',
+              '@media print': {
+                display: 'none'
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+              <FilterListIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                Filtros de Busca
+              </Typography>
+            </Box>
           <Grid container spacing={2}>
             {/* First Row */}
             <Grid item xs={12} sm={6} md={3}>
@@ -507,7 +571,8 @@ const RelatoriosPage: React.FC = () => {
               </FormControl>
             </Grid>
           </Grid>
-        </Paper>
+          </Paper>
+        </Grow>
 
         {/* Print-only Tab Title */}
         <Box
@@ -526,60 +591,217 @@ const RelatoriosPage: React.FC = () => {
         </Box>
 
         {/* Tabs for different report types */}
-        <Box
-          className="no-print"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            '@media print': {
-              display: 'none'
-            }
-          }}
-        >
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-            <Tab label="Avaliações" />
-            <Tab label="Diagnósticos" />
-            <Tab label="SAEB" />
-          </Tabs>
-        </Box>
+        <Fade in timeout={1000}>
+          <Paper
+            className="no-print"
+            elevation={2}
+            sx={{
+              borderRadius: 3,
+              mb: 3,
+              overflow: 'hidden',
+              '@media print': {
+                display: 'none'
+              }
+            }}
+          >
+            <Tabs 
+              value={tabValue} 
+              onChange={(_, newValue) => setTabValue(newValue)}
+              sx={{
+                '& .MuiTabs-indicator': {
+                  height: 4,
+                  borderRadius: '4px 4px 0 0',
+                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                },
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  minHeight: 64,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    color: 'primary.main',
+                    background: alpha('#667eea', 0.05),
+                  },
+                  '&.Mui-selected': {
+                    color: 'primary.main',
+                  },
+                },
+              }}
+            >
+              <Tab icon={<BarChartIcon />} iconPosition="start" label="Avaliações" />
+              <Tab icon={<AutoGraphIcon />} iconPosition="start" label="Diagnósticos" />
+            </Tabs>
+          </Paper>
+        </Fade>
 
         {/* Avaliações Tab */}
         <TabPanel value={tabValue} index={0}>
           {/* Summary Cards */}
           {summaryData && evalLevel === 'geral' && (
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={3}>
-                <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'white' }}>
-                  <Typography variant="h6">Total de Alunos</Typography>
-                  <Typography variant="h4">{summaryData.total_alunos}</Typography>
-                </Paper>
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Grow in timeout={400}>
+                  <Card
+                    elevation={4}
+                    sx={{
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 12px 24px rgba(102, 126, 234, 0.4)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500, mb: 0.5 }}>
+                            Total de Alunos
+                          </Typography>
+                          <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                            {summaryData.total_alunos}
+                          </Typography>
+                        </Box>
+                        <GroupsIcon sx={{ fontSize: 48, opacity: 0.3 }} />
+                      </Box>
+                      <Chip 
+                        icon={<PeopleIcon />} 
+                        label="Ativos" 
+                        size="small" 
+                        sx={{ 
+                          bgcolor: 'rgba(255,255,255,0.2)', 
+                          color: 'white',
+                          fontWeight: 600,
+                        }} 
+                      />
+                    </CardContent>
+                  </Card>
+                </Grow>
               </Grid>
-              <Grid item xs={12} sm={3}>
-                <Paper sx={{ p: 2, bgcolor: 'error.light', color: 'white' }}>
-                  <Typography variant="h6">Abaixo da Média</Typography>
-                  <Typography variant="h4">{summaryData.abaixo_media}</Typography>
-                  <Typography variant="body2">
-                    {summaryData.percentual_abaixo.toFixed(2)}%
-                  </Typography>
-                </Paper>
+              <Grid item xs={12} sm={6} md={3}>
+                <Grow in timeout={600}>
+                  <Card
+                    elevation={4}
+                    sx={{
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                      color: 'white',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 12px 24px rgba(245, 87, 108, 0.4)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500, mb: 0.5 }}>
+                            Abaixo da Média
+                          </Typography>
+                          <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                            {summaryData.abaixo_media}
+                          </Typography>
+                        </Box>
+                        <WarningIcon sx={{ fontSize: 48, opacity: 0.3 }} />
+                      </Box>
+                      <Chip 
+                        icon={<TrendingDownIcon />} 
+                        label={`${summaryData.percentual_abaixo.toFixed(1)}%`}
+                        size="small" 
+                        sx={{ 
+                          bgcolor: 'rgba(255,255,255,0.2)', 
+                          color: 'white',
+                          fontWeight: 600,
+                        }} 
+                      />
+                    </CardContent>
+                  </Card>
+                </Grow>
               </Grid>
-              <Grid item xs={12} sm={3}>
-                <Paper sx={{ p: 2, bgcolor: 'warning.light', color: 'white' }}>
-                  <Typography variant="h6">Na Média</Typography>
-                  <Typography variant="h4">{summaryData.na_media}</Typography>
-                  <Typography variant="body2">
-                    {summaryData.percentual_na.toFixed(2)}%
-                  </Typography>
-                </Paper>
+              <Grid item xs={12} sm={6} md={3}>
+                <Grow in timeout={800}>
+                  <Card
+                    elevation={4}
+                    sx={{
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                      color: '#5a3a31',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 12px 24px rgba(252, 182, 159, 0.4)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ opacity: 0.85, fontWeight: 500, mb: 0.5 }}>
+                            Na Média
+                          </Typography>
+                          <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                            {summaryData.na_media}
+                          </Typography>
+                        </Box>
+                        <TrendingFlatIcon sx={{ fontSize: 48, opacity: 0.3 }} />
+                      </Box>
+                      <Chip 
+                        label={`${summaryData.percentual_na.toFixed(1)}%`}
+                        size="small" 
+                        sx={{ 
+                          bgcolor: 'rgba(90, 58, 49, 0.15)', 
+                          color: '#5a3a31',
+                          fontWeight: 600,
+                        }} 
+                      />
+                    </CardContent>
+                  </Card>
+                </Grow>
               </Grid>
-              <Grid item xs={12} sm={3}>
-                <Paper sx={{ p: 2, bgcolor: 'success.light', color: 'white' }}>
-                  <Typography variant="h6">Acima da Média</Typography>
-                  <Typography variant="h4">{summaryData.acima_media}</Typography>
-                  <Typography variant="body2">
-                    {summaryData.percentual_acima.toFixed(2)}%
-                  </Typography>
-                </Paper>
+              <Grid item xs={12} sm={6} md={3}>
+                <Grow in timeout={1000}>
+                  <Card
+                    elevation={4}
+                    sx={{
+                      borderRadius: 3,
+                      background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                      color: '#1e4d2b',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 12px 24px rgba(168, 237, 234, 0.4)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box>
+                          <Typography variant="body2" sx={{ opacity: 0.85, fontWeight: 500, mb: 0.5 }}>
+                            Acima da Média
+                          </Typography>
+                          <Typography variant="h3" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                            {summaryData.acima_media}
+                          </Typography>
+                        </Box>
+                        <TrophyIcon sx={{ fontSize: 48, opacity: 0.3 }} />
+                      </Box>
+                      <Chip 
+                        icon={<CheckCircleIcon />} 
+                        label={`${summaryData.percentual_acima.toFixed(1)}%`}
+                        size="small" 
+                        sx={{ 
+                          bgcolor: 'rgba(30, 77, 43, 0.15)', 
+                          color: '#1e4d2b',
+                          fontWeight: 600,
+                        }} 
+                      />
+                    </CardContent>
+                  </Card>
+                </Grow>
               </Grid>
             </Grid>
           )}
@@ -618,13 +840,6 @@ const RelatoriosPage: React.FC = () => {
         {/* Diagnósticos Tab */}
         <TabPanel value={tabValue} index={1}>
           <RelatorioDiagnosticoPorEixo />
-        </TabPanel>
-
-        {/* SAEB Tab */}
-        <TabPanel value={tabValue} index={2}>
-          <Typography variant="body1">
-            Relatórios SAEB (a implementar)
-          </Typography>
         </TabPanel>
 
         {/* Modal de Detalhamento */}

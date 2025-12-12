@@ -20,8 +20,14 @@
   .MuiDrawer-root,
   .MuiDrawer-paper,
   header,
-  nav {
+  nav,
+  aside,
+  [role="navigation"],
+  .sidebar,
+  .adaptive-sidebar,
+  [class*="fixed"][class*="left-0"] {
     display: none !important;
+    visibility: hidden !important;
   }
 
   /* Remover margem esquerda do conteúdo (ocupada pela sidebar) */
@@ -31,8 +37,10 @@
 
   /* Garantir que o conteúdo principal ocupe toda a largura */
   main,
-  [role="main"] {
+  [role="main"],
+  [class*="pl-"] {
     margin-left: 0 !important;
+    padding-left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -42,6 +50,38 @@
     margin: 0;
     padding: 0;
     font-size: 11px;
+    overflow: visible !important;
+  }
+
+  /* Ocultar todas as scrollbars */
+  * {
+    overflow: visible !important;
+    -webkit-overflow-scrolling: auto !important;
+  }
+
+  /* Ocultar scrollbars em todos navegadores */
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  * {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
+  }
+
+  /* Ocultar todos elementos fixed exceto o conteúdo */
+  *[class*="fixed"],
+  *[class*="sticky"] {
+    position: static !important;
+  }
+
+  /* Exceção: manter conteúdo principal visível */
+  main,
+  [role="main"] {
+    position: static !important;
+    display: block !important;
   }
 
   /* Container principal */

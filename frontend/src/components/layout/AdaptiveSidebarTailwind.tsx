@@ -274,7 +274,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
     <>
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-screen text-white transition-all duration-300 z-40 flex flex-col ${
+        className={`no-print fixed top-0 left-0 h-screen text-white transition-all duration-300 z-40 flex flex-col ${
           open ? 'w-[280px]' : 'w-[70px]'
         }`}
         style={{ background: 'linear-gradient(180deg, #1e88e5 0%, #1976d2 50%, #1565c0 100%)' }}

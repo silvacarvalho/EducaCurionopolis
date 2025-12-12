@@ -317,9 +317,13 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
   return (
     <Drawer
       variant="permanent"
+      className="adaptive-sidebar no-print"
       sx={{
         width: open ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
         flexShrink: 0,
+        '@media print': {
+          display: 'none !important',
+        },
         '& .MuiDrawer-paper': {
           width: open ? DRAWER_WIDTH : DRAWER_WIDTH_COLLAPSED,
           boxSizing: 'border-box',
@@ -329,6 +333,9 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
           overflowX: 'hidden',
           borderRight: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '4px 0 24px rgba(21, 101, 192, 0.2)',
+          '@media print': {
+            display: 'none !important',
+          },
         },
       }}
     >

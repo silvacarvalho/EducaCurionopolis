@@ -102,12 +102,12 @@ const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
 
       {/* Main Content */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
+        className={`flex-1 flex flex-col transition-all duration-300 print:!pl-0 ${
           sidebarOpen ? 'pl-[280px]' : 'pl-[70px]'
         }`}
       >
         {/* Top AppBar */}
-        <header className="sticky top-0 z-30 bg-white border-b border-slate-200">
+        <header className="no-print sticky top-0 z-30 bg-white border-b border-slate-200">
           <div className="flex items-center justify-between h-16 px-6">
             {/* Title */}
             <h1 className="text-xl font-semibold text-slate-800">
@@ -188,7 +188,7 @@ const MainLayoutTailwind: React.FC<MainLayoutProps> = ({ children, title }) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-auto print:p-0 print:overflow-visible">
           {children}
         </main>
       </div>

@@ -108,15 +108,32 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      backgroundColor: '#f8fafc', 
+      overflow: 'hidden',
+      '@media print': {
+        backgroundColor: 'white',
+      }
+    }}>
       {/* Adaptive Sidebar */}
-      <AdaptiveSidebar
-        open={sidebarOpen}
-        onToggle={handleToggleSidebar}
-        unreadMessages={unreadMessages}
-        onLayoutToggle={toggleLayout}
-        useTailwind={useTailwind}
-      />
+      <Box
+        className="no-print"
+        sx={{
+          '@media print': {
+            display: 'none !important',
+          }
+        }}
+      >
+        <AdaptiveSidebar
+          open={sidebarOpen}
+          onToggle={handleToggleSidebar}
+          unreadMessages={unreadMessages}
+          onLayoutToggle={toggleLayout}
+          useTailwind={useTailwind}
+        />
+      </Box>
 
       {/* Main Content */}
       <Box
@@ -127,6 +144,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
           flexDirection: 'column',
           minWidth: 0,
           overflow: 'hidden',
+          '@media print': {
+            width: '100% !important',
+            maxWidth: '100% !important',
+            marginLeft: '0 !important',
+          }
         }}
       >
         {/* Top AppBar */}
@@ -137,6 +159,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
             backgroundColor: 'white',
             borderBottom: '1px solid #e2e8f0',
             color: '#1e293b',
+            '@media print': {
+              display: 'none !important',
+            }
           }}
         >
           <Toolbar>
@@ -249,9 +274,23 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
+            '@media print': {
+              p: 0,
+              overflow: 'visible',
+            }
           }}
         >
-          <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', maxWidth: '100%' }}>
+          <Box sx={{ 
+            flex: 1, 
+            overflowY: 'auto', 
+            overflowX: 'hidden', 
+            maxWidth: '100%',
+            '@media print': {
+              overflow: 'visible !important',
+              overflowY: 'visible !important',
+              overflowX: 'visible !important',
+            }
+          }}>
             {children}
           </Box>
         </Box>
