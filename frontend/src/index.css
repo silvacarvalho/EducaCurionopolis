@@ -1,3 +1,295 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================
+   PWA & Mobile Optimizations
+   ============================================ */
+
+/* Safe Areas para dispositivos com notch (iPhone X+) */
+@supports (padding: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Prevenir zoom em inputs no iOS */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Touch feedback melhorado */
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .tap-highlight-transparent {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Scrollbar customizada mobile-friendly */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Pull to refresh prevention (quando não desejado) */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Melhorar performance de scroll no iOS */
+.scroll-smooth-ios {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Cards responsivos */
+@layer components {
+  .card-mobile {
+    @apply bg-white rounded-lg shadow-sm border border-slate-200 p-3 md:p-4;
+  }
+  
+  .card-mobile-compact {
+    @apply bg-white rounded-lg shadow-sm border border-slate-200 p-2 md:p-3;
+  }
+}
+
+/* Botões touch-friendly */
+@layer components {
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  
+  .btn-primary-mobile {
+    @apply bg-blue-600 text-white px-4 py-3 rounded-lg font-medium 
+           hover:bg-blue-700 active:bg-blue-800 transition-colors
+           disabled:bg-gray-300 disabled:cursor-not-allowed;
+  }
+  
+  .btn-secondary-mobile {
+    @apply bg-slate-100 text-slate-700 px-4 py-3 rounded-lg font-medium 
+           hover:bg-slate-200 active:bg-slate-300 transition-colors;
+  }
+}
+
+/* Inputs mobile-friendly */
+@layer components {
+  .input-mobile {
+    @apply w-full px-4 py-3 text-base bg-white border border-slate-300 rounded-lg
+           focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none
+           transition-colors placeholder:text-slate-400;
+  }
+  
+  .select-mobile {
+    @apply w-full px-4 py-3 text-base bg-white border border-slate-300 rounded-lg
+           focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none
+           transition-colors appearance-none cursor-pointer;
+  }
+}
+
+/* Skeleton loading para mobile */
+@layer components {
+  .skeleton {
+    @apply animate-pulse bg-slate-200 rounded;
+  }
+  
+  .skeleton-text {
+    @apply h-4 skeleton;
+  }
+  
+  .skeleton-title {
+    @apply h-6 skeleton;
+  }
+  
+  .skeleton-avatar {
+    @apply w-10 h-10 rounded-full skeleton;
+  }
+}
+
+/* Bottom Navigation (para futuro uso) */
+@layer components {
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 
+           flex items-center justify-around h-16 z-50;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center flex-1 h-full
+           text-slate-500 transition-colors;
+  }
+  
+  .bottom-nav-item.active {
+    @apply text-blue-600;
+  }
+  
+  .bottom-nav-item-icon {
+    @apply text-xl;
+  }
+  
+  .bottom-nav-item-label {
+    @apply text-xs mt-0.5;
+  }
+}
+
+/* Floating Action Button */
+@layer components {
+  .fab {
+    @apply fixed right-4 bottom-4 w-14 h-14 bg-blue-600 text-white 
+           rounded-full shadow-lg flex items-center justify-center
+           hover:bg-blue-700 active:bg-blue-800 transition-all
+           hover:shadow-xl active:scale-95 z-40;
+  }
+  
+  .fab-extended {
+    @apply fixed right-4 bottom-4 h-14 px-6 bg-blue-600 text-white 
+           rounded-full shadow-lg flex items-center gap-2
+           hover:bg-blue-700 active:bg-blue-800 transition-all
+           hover:shadow-xl active:scale-95 z-40;
+  }
+}
+
+/* Modal mobile-friendly */
+@layer components {
+  .modal-mobile {
+    @apply fixed inset-0 z-50 flex items-end md:items-center justify-center;
+  }
+  
+  .modal-mobile-content {
+    @apply bg-white w-full md:max-w-lg md:rounded-lg rounded-t-2xl 
+           max-h-[90vh] overflow-y-auto shadow-xl;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  
+  .modal-mobile-header {
+    @apply sticky top-0 bg-white px-4 py-3 border-b border-slate-200 
+           flex items-center justify-between;
+  }
+}
+
+/* Swipe indicator para modais/sheets */
+@layer components {
+  .swipe-indicator {
+    @apply w-10 h-1 bg-slate-300 rounded-full mx-auto mt-2 mb-1;
+  }
+}
+
+/* Empty state */
+@layer components {
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+  }
+  
+  .empty-state-icon {
+    @apply w-16 h-16 text-slate-300 mb-4;
+  }
+  
+  .empty-state-title {
+    @apply text-lg font-medium text-slate-700 mb-2;
+  }
+  
+  .empty-state-description {
+    @apply text-sm text-slate-500 max-w-xs;
+  }
+}
+
+/* Status badge */
+@layer components {
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+}
+
+/* Animações mobile */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}

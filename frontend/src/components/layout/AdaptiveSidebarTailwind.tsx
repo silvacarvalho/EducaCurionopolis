@@ -15,10 +15,28 @@ import {
   People as PeopleIcon,
   ExpandLess,
   ExpandMore,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { PerfilUsuario } from '../../types';
+
+// Hook para detectar se é mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return isMobile;
+};
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -143,6 +161,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
   const [popoverContent, setPopoverContent] = useState<MenuItem | null>(null);
@@ -152,17 +171,21 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
 
   const menuConfig = user ? getMenuConfig(user.perfil, unreadMessages) : [];
 
+  // Fechar sidebar ao navegar no mobile
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    handlePopoverClose();
+    if (isMobile && open) {
+      onToggle();
+    }
+  };
+
   const handleMenuToggle = (menuText: string) => {
     setExpandedMenus(prev =>
       prev.includes(menuText)
         ? prev.filter(t => t !== menuText)
         : [...prev, menuText]
     );
-  };
-
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    handlePopoverClose();
   };
 
   const isActive = (path: string) => {
@@ -270,26 +293,53 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
       .toUpperCase();
   };
 
+  // Classes condicionais para mobile vs desktop
+  const sidebarClasses = isMobile
+    ? `no-print fixed top-0 left-0 h-screen text-white transition-transform duration-300 z-50 flex flex-col w-[280px] ${
+        open ? 'translate-x-0' : '-translate-x-full'
+      }`
+    : `no-print fixed top-0 left-0 h-screen text-white transition-all duration-300 z-40 flex flex-col ${
+        open ? 'w-[280px]' : 'w-[70px]'
+      }`;
+
   return (
     <>
+      {/* Overlay para mobile */}
+      {isMobile && open && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+          onClick={onToggle}
+        />
+      )}
+
       {/* Sidebar */}
       <div
-        className={`no-print fixed top-0 left-0 h-screen text-white transition-all duration-300 z-40 flex flex-col ${
-          open ? 'w-[280px]' : 'w-[70px]'
-        }`}
+        className={sidebarClasses}
         style={{ background: 'linear-gradient(180deg, #1e88e5 0%, #1976d2 50%, #1565c0 100%)' }}
       >
-        {/* Toggle Button */}
-        <button
-          onClick={onToggle}
-          className="absolute -right-[15px] top-5 z-50 w-[30px] h-[30px] bg-white rounded-full shadow-md border border-gray-200/80 flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:shadow-lg hover:scale-105"
-        >
-          {open ? (
-            <ChevronLeftIcon className="text-gray-800 text-sm" />
-          ) : (
-            <MenuIcon className="text-gray-800 text-sm" />
-          )}
-        </button>
+        {/* Toggle Button - escondido no mobile quando fechado */}
+        {!isMobile && (
+          <button
+            onClick={onToggle}
+            className="absolute -right-[15px] top-5 z-50 w-[30px] h-[30px] bg-white rounded-full shadow-md border border-gray-200/80 flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:shadow-lg hover:scale-105"
+          >
+            {open ? (
+              <ChevronLeftIcon className="text-gray-800 text-sm" />
+            ) : (
+              <MenuIcon className="text-gray-800 text-sm" />
+            )}
+          </button>
+        )}
+        
+        {/* Close button for mobile */}
+        {isMobile && (
+          <button
+            onClick={onToggle}
+            className="absolute right-3 top-3 z-50 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center transition-all duration-200 hover:bg-white/30 active:scale-95"
+          >
+            <CloseIcon className="text-white text-xl" />
+          </button>
+        )}
 
         {/* User Section */}
         <div className="p-4 py-5 border-b border-white/15 min-h-[80px] bg-black/10">
@@ -320,19 +370,19 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
                 // Menu com subItems (expansível)
                 <>
                   <button
-                    onClick={() => open && handleMenuToggle(item.text)}
-                    onMouseEnter={(e) => handlePopoverOpen(e, item)}
-                    onMouseLeave={() => !open && schedulePopoverClose()}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 mx-0.5 rounded-lg transition-all duration-200 ${
+                    onClick={() => (open || isMobile) && handleMenuToggle(item.text)}
+                    onMouseEnter={(e) => !isMobile && handlePopoverOpen(e, item)}
+                    onMouseLeave={() => !isMobile && !open && schedulePopoverClose()}
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 md:py-1.5 mx-0.5 rounded-lg transition-all duration-200 ${
                       isMenuActive(item)
                         ? 'bg-white/20 shadow-md hover:bg-white/25'
-                        : 'hover:bg-white/10'
-                    } ${!open && 'justify-center'}`}
+                        : 'hover:bg-white/10 active:bg-white/20'
+                    } ${!open && !isMobile && 'justify-center'}`}
                   >
                     <div className="flex-shrink-0 text-white/70 transition-colors duration-200">
                       {item.icon}
                     </div>
-                    {open && (
+                    {(open || isMobile) && (
                       <>
                         <span className="flex-1 text-left text-sm font-medium">
                           {item.text}
@@ -346,16 +396,16 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
                     )}
                   </button>
                   {/* Submenus */}
-                  {open && expandedMenus.includes(item.text) && (
+                  {(open || isMobile) && expandedMenus.includes(item.text) && (
                     <div className="bg-black/10">
                       {item.subItems.map((subItem, subIndex) => (
                         <button
                           key={`submenu-${index}-${subIndex}`}
                           onClick={() => subItem.path && handleNavigation(subItem.path)}
-                          className={`w-full flex items-center gap-2 pl-9 pr-3 py-1 mx-0.5 rounded-md transition-all duration-200 ${
+                          className={`w-full flex items-center gap-2 pl-9 pr-3 py-2 md:py-1 mx-0.5 rounded-md transition-all duration-200 ${
                             subItem.path && isActive(subItem.path)
                               ? 'bg-white/20 shadow-sm hover:bg-white/25'
-                              : 'hover:bg-white/[0.08] hover:translate-x-0.5'
+                              : 'hover:bg-white/[0.08] active:bg-white/15 hover:translate-x-0.5'
                           }`}
                         >
                           <div className="flex-shrink-0 text-white/60 transition-colors duration-200">
@@ -377,11 +427,11 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
                 // Item simples sem submenus
                 <button
                   onClick={() => item.path && handleNavigation(item.path)}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 mx-0.5 rounded-lg transition-all duration-200 relative ${
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 md:py-1.5 mx-0.5 rounded-lg transition-all duration-200 relative ${
                     item.path && isActive(item.path)
                       ? 'bg-white/20 shadow-md hover:bg-white/25'
-                      : 'hover:bg-white/10'
-                  } ${!open && 'justify-center'}`}
+                      : 'hover:bg-white/10 active:bg-white/20'
+                  } ${!open && !isMobile && 'justify-center'}`}
                 >
                   <div className="flex-shrink-0 text-white/70 relative transition-colors duration-200">
                     {item.badge && item.badge > 0 ? (
@@ -395,7 +445,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
                       item.icon
                     )}
                   </div>
-                  {open && (
+                  {(open || isMobile) && (
                     <span className="text-sm font-medium">
                       {item.text}
                     </span>

@@ -152,33 +152,65 @@ const MetricCard: React.FC<{
     sx={{
       cursor: onClick ? 'pointer' : 'default',
       transition: 'all 0.2s',
+      height: '100%',
       '&:hover': onClick ? {
         transform: 'translateY(-2px)',
         boxShadow: 4,
       } : {},
+      // Mobile optimizations
+      '@media (max-width: 600px)': {
+        '& .MuiCardContent-root': {
+          p: 1.5,
+        },
+      },
     }}
     onClick={onClick}
   >
-    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <CardContent sx={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: { xs: 1.5, sm: 2 },
+      p: { xs: 2, sm: 2 },
+    }}>
       <Box
         sx={{
-          width: 56,
-          height: 56,
-          borderRadius: 3,
+          width: { xs: 44, sm: 56 },
+          height: { xs: 44, sm: 56 },
+          borderRadius: { xs: 2, sm: 3 },
           background: color,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
+          flexShrink: 0,
+          '& svg': {
+            fontSize: { xs: 22, sm: 28 },
+          },
         }}
       >
         {icon}
       </Box>
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="h4" fontWeight="bold">
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography 
+          variant="h4" 
+          fontWeight="bold"
+          sx={{
+            fontSize: { xs: '1.5rem', sm: '2rem' },
+            lineHeight: 1.2,
+          }}
+        >
           {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography 
+          variant="body2" 
+          color="text.secondary"
+          sx={{
+            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
           {label}
         </Typography>
         {trend && (
@@ -432,8 +464,14 @@ const DashboardAnalytics: React.FC = () => {
         )}
 
         {/* Tabs de navegação */}
-        <Paper sx={{ mb: 3 }}>
-          <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
+        <Paper sx={{ mb: 3, overflow: 'auto' }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={(_, v) => setTabValue(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+          >
             <Tab label="Visão Geral" />
             <Tab label="Por Escola" />
           </Tabs>
@@ -442,8 +480,8 @@ const DashboardAnalytics: React.FC = () => {
         {tabValue === 0 && stats && (
           <>
             {/* Métricas Principais - Linha 1 */}
-            <Grid container spacing={2} sx={{ mb: 2 }}>
-              <Grid item xs={12} sm={6} md={4}>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 2 }}>
+              <Grid item xs={6} sm={6} md={4}>
                 <MetricCard
                   icon={<School sx={{ fontSize: 28 }} />}
                   value={stats.contadores.escolas}
@@ -452,7 +490,7 @@ const DashboardAnalytics: React.FC = () => {
                   onClick={() => navigate('/escolas')}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <MetricCard
                   icon={<Person sx={{ fontSize: 28 }} />}
                   value={stats.contadores.professores}
@@ -460,7 +498,7 @@ const DashboardAnalytics: React.FC = () => {
                   color="linear-gradient(135deg, #8b5cf6, #7c3aed)"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <MetricCard
                   icon={<Class sx={{ fontSize: 28 }} />}
                   value={stats.contadores.turmas}
@@ -472,8 +510,8 @@ const DashboardAnalytics: React.FC = () => {
             </Grid>
 
             {/* Métricas Principais - Linha 2 */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6} md={4}>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
+              <Grid item xs={6} sm={6} md={4}>
                 <MetricCard
                   icon={<Groups sx={{ fontSize: 28 }} />}
                   value={stats.contadores.alunos}
@@ -481,7 +519,7 @@ const DashboardAnalytics: React.FC = () => {
                   color="linear-gradient(135deg, #22c55e, #16a34a)"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <MetricCard
                   icon={<Assessment sx={{ fontSize: 28 }} />}
                   value={stats.contadores.avaliacoes}
@@ -489,7 +527,7 @@ const DashboardAnalytics: React.FC = () => {
                   color="linear-gradient(135deg, #ef4444, #dc2626)"
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={6} sm={6} md={4}>
                 <MetricCard
                   icon={<Psychology sx={{ fontSize: 28 }} />}
                   value={stats.contadores.diagnosticos}
@@ -504,31 +542,49 @@ const DashboardAnalytics: React.FC = () => {
             <Paper
               sx={{
                 background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                p: 3,
+                p: { xs: 2, sm: 3 },
                 mb: 3,
-                borderRadius: 3,
+                borderRadius: { xs: 2, sm: 3 },
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                <EmojiEvents sx={{ color: '#1e40af' }} />
-                <Typography variant="h6" fontWeight="600" color="#1e40af">
-                  Métricas SAEB - Rede Municipal
+                <EmojiEvents sx={{ color: '#1e40af', fontSize: { xs: 22, sm: 24 } }} />
+                <Typography 
+                  variant="h6" 
+                  fontWeight="600" 
+                  color="#1e40af"
+                  sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
+                  Métricas SAEB
                 </Typography>
               </Box>
-              <Grid container spacing={2}>
+              <Grid container spacing={{ xs: 1, sm: 2 }}>
                 {[
                   { value: stats.saeb.simulados, label: 'Simulados' },
                   { value: stats.saeb.participantes, label: 'Participantes' },
                   { value: stats.saeb.participacoes, label: 'Participações' },
-                  { value: `${stats.saeb.taxa_conclusao}%`, label: 'Taxa Conclusão' },
-                  { value: `${stats.saeb.media_rede}%`, label: 'Média Rede' },
+                  { value: `${stats.saeb.taxa_conclusao}%`, label: 'Conclusão' },
+                  { value: `${stats.saeb.media_rede}%`, label: 'Média' },
                 ].map((item, idx) => (
-                  <Grid item xs={6} sm={4} md={2.4} key={idx}>
-                    <Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2 }}>
-                      <Typography variant="h5" fontWeight="bold" color="#1e40af">
+                  <Grid item xs={4} sm={4} md={2.4} key={idx}>
+                    <Paper sx={{ p: { xs: 1.5, sm: 2 }, textAlign: 'center', borderRadius: 2 }}>
+                      <Typography 
+                        variant="h5" 
+                        fontWeight="bold" 
+                        color="#1e40af"
+                        sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}
+                      >
                         {typeof item.value === 'number' ? item.value.toLocaleString('pt-BR') : item.value}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+                      <Typography 
+                        variant="caption" 
+                        color="text.secondary" 
+                        sx={{ 
+                          textTransform: 'uppercase',
+                          fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                          display: 'block',
+                        }}
+                      >
                         {item.label}
                       </Typography>
                     </Paper>
@@ -538,20 +594,30 @@ const DashboardAnalytics: React.FC = () => {
             </Paper>
 
             {/* Grid de Gráficos e Alertas */}
-            <Grid container spacing={3} sx={{ mb: 3 }}>
+            <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
               {/* Gráfico de Bimestre */}
               <Grid item xs={12} md={8}>
-                <Paper sx={{ p: 3, height: '100%' }}>
-                  <Typography variant="h6" fontWeight="600" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight="600" 
+                    sx={{ 
+                      mb: 2, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      fontSize: { xs: '0.95rem', sm: '1.25rem' },
+                    }}
+                  >
                     <Assessment color="primary" />
                     Desempenho por Bimestre
                   </Typography>
-                  <Box sx={{ height: 280 }}>
+                  <Box sx={{ height: { xs: 220, sm: 280 } }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={stats.desempenho_bimestre}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="label" />
-                        <YAxis domain={[0, 10]} />
+                        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                        <YAxis domain={[0, 10]} tick={{ fontSize: 12 }} />
                         <Tooltip formatter={(value) => [`${value}`, 'Média']} />
                         <Bar dataKey="media" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -562,8 +628,18 @@ const DashboardAnalytics: React.FC = () => {
 
               {/* Alertas */}
               <Grid item xs={12} md={4}>
-                <Paper sx={{ p: 3, height: '100%' }}>
-                  <Typography variant="h6" fontWeight="600" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
+                  <Typography 
+                    variant="h6" 
+                    fontWeight="600" 
+                    sx={{ 
+                      mb: 2, 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      fontSize: { xs: '0.95rem', sm: '1.25rem' },
+                    }}
+                  >
                     <Warning color="warning" />
                     Alertas
                   </Typography>

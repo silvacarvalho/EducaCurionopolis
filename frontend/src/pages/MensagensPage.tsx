@@ -138,34 +138,39 @@ const MensagensPage: React.FC = () => {
   return (
     <MainLayout title="Mensagens">
       <Box sx={{ width: '100%', height: '100%' }}>
-        <Paper sx={{ p: 3 }}>
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
           {/* Header */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Typography variant="h5">Caixa de Mensagens</Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'space-between', 
+            alignItems: { xs: 'stretch', sm: 'center' }, 
+            gap: { xs: 1.5, sm: 2 },
+            mb: 2 
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Typography variant="h5" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                Mensagens
+              </Typography>
               <Tooltip title={isConnected ? 'Conectado em tempo real' : 'Clique para reconectar'}>
                 <Chip
                   size="small"
-                  icon={<OnlineIcon sx={{ fontSize: 12 }} />}
-                  label={isConnected ? 'Online' : 'Desconectado'}
+                  icon={<OnlineIcon sx={{ fontSize: 10 }} />}
+                  label={isConnected ? 'Online' : 'Offline'}
                   color={isConnected ? 'success' : 'default'}
                   variant={isConnected ? 'filled' : 'outlined'}
                   onClick={!isConnected ? reconnectWebSocket : undefined}
                   sx={{ cursor: !isConnected ? 'pointer' : 'default' }}
                 />
               </Tooltip>
-              {onlineUsers.length > 0 && (
-                <Chip
-                  size="small"
-                  label={`${onlineUsers.length} usuário(s) online`}
-                  color="info"
-                  variant="outlined"
-                />
-              )}
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'flex-end', sm: 'flex-start' } }}>
               <Tooltip title="Atualizar">
-                <IconButton onClick={() => { refreshInbox(); refreshSent(); }} disabled={isLoading}>
+                <IconButton 
+                  onClick={() => { refreshInbox(); refreshSent(); }} 
+                  disabled={isLoading}
+                  size="small"
+                >
                   <RefreshIcon />
                 </IconButton>
               </Tooltip>
@@ -174,8 +179,12 @@ const MensagensPage: React.FC = () => {
                   size="small"
                   startIcon={<MarkReadIcon />}
                   onClick={handleMarkAllRead}
+                  sx={{ 
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                    display: { xs: 'none', sm: 'flex' },
+                  }}
                 >
-                  Marcar todas como lidas
+                  Marcar lidas
                 </Button>
               )}
             </Box>
@@ -185,7 +194,17 @@ const MensagensPage: React.FC = () => {
 
           {/* Tabs */}
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange}
+              variant="fullWidth"
+              sx={{
+                '& .MuiTab-root': {
+                  minHeight: { xs: 56, sm: 48 },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                },
+              }}
+            >
               <Tab
                 icon={
                   <Badge badgeContent={unreadCount} color="error">
@@ -193,9 +212,15 @@ const MensagensPage: React.FC = () => {
                   </Badge>
                 }
                 iconPosition="start"
-                label="Caixa de Entrada"
+                label={<Box sx={{ display: { xs: 'none', sm: 'block' } }}>Caixa de Entrada</Box>}
+                aria-label="Caixa de Entrada"
               />
-              <Tab icon={<SendIcon />} iconPosition="start" label="Enviadas" />
+              <Tab 
+                icon={<SendIcon />} 
+                iconPosition="start" 
+                label={<Box sx={{ display: { xs: 'none', sm: 'block' } }}>Enviadas</Box>}
+                aria-label="Enviadas"
+              />
             </Tabs>
           </Box>
 
@@ -244,7 +269,14 @@ const MensagensPage: React.FC = () => {
       <Fab
         color="primary"
         aria-label="Nova mensagem"
-        sx={{ position: 'fixed', bottom: 24, right: 24 }}
+        sx={{ 
+          position: 'fixed', 
+          bottom: { xs: 16, sm: 24 }, 
+          right: { xs: 16, sm: 24 },
+          width: { xs: 56, sm: 56 },
+          height: { xs: 56, sm: 56 },
+          boxShadow: 3,
+        }}
         onClick={() => {
           setReplyTo(undefined);
           setComposeOpen(true);

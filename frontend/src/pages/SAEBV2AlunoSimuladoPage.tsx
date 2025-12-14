@@ -157,47 +157,47 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
     return (
       <Box>
         <AppBarWithUserMenu title="Resultado do Simulado" showBackButton />
-        <Box sx={{ width: '100%', height: '100%', mt: 4, mb: 4 }}>
-          <Paper sx={{ p: 4 }}>
+        <Box sx={{ width: '100%', height: '100%', mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+          <Paper sx={{ p: { xs: 2, sm: 4 } }}>
             <Box sx={{ textAlign: 'center' }}>
-              <CheckIcon sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
-              <Typography variant="h4" gutterBottom>
+              <CheckIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: 'success.main', mb: 2 }} />
+              <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
                 Simulado Finalizado!
               </Typography>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+              <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1.25rem' } }}>
                 {simuladoNome}
               </Typography>
 
-              <Grid container spacing={3} sx={{ mt: 3 }}>
-                <Grid item xs={12} sm={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h3" color="primary">
+              <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: { xs: 2, sm: 3 } }}>
+                <Grid item xs={6} sm={6}>
+                  <Card sx={{ height: '100%' }}>
+                    <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                      <Typography variant="h3" color="primary" sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}>
                         {resultado.porcentagem}%
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Porcentagem de Acertos
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                        Porcentagem
                       </Typography>
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h3" color="success.main">
+                <Grid item xs={6} sm={6}>
+                  <Card sx={{ height: '100%' }}>
+                    <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                      <Typography variant="h3" color="success.main" sx={{ fontSize: { xs: '2rem', sm: '3rem' } }}>
                         {resultado.total_acertos}/{resultado.total_questoes}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Acertos / Total
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}>
+                        Acertos
                       </Typography>
                     </CardContent>
                   </Card>
                 </Grid>
                 <Grid item xs={12}>
                   <Card>
-                    <CardContent>
-                      <Typography variant="h5" gutterBottom>
-                        Situação: <Chip label={resultado.situacao.toUpperCase()} color="primary" />
+                    <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.5rem' } }}>
+                        Situação: <Chip label={resultado.situacao.toUpperCase()} color="primary" size="small" />
                       </Typography>
                     </CardContent>
                   </Card>
@@ -207,7 +207,8 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
               <Button
                 variant="contained"
                 onClick={() => navigate('/saeb-v2/aluno')}
-                sx={{ mt: 4 }}
+                sx={{ mt: 4, py: { xs: 1.5, sm: 1 }, px: { xs: 4, sm: 3 } }}
+                fullWidth
               >
                 Voltar para Simulados
               </Button>
@@ -219,31 +220,31 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <Box sx={{ pb: { xs: 10, sm: 4 } }}> {/* Padding bottom for fixed navigation on mobile */}
       <AppBarWithUserMenu title={simuladoNome} showBackButton />
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
         {/* Progress Bar */}
-        <Paper sx={{ p: 2, mb: 2 }}>
+        <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
               Questão {currentIndex + 1} de {questoes.length}
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
               Respondidas: {totalRespondidas}/{questoes.length}
             </Typography>
           </Box>
-          <LinearProgress variant="determinate" value={progress} />
+          <LinearProgress variant="determinate" value={progress} sx={{ height: { xs: 6, sm: 4 }, borderRadius: 1 }} />
         </Paper>
 
         {/* Question */}
         {currentQuestao && currentQuestao.questao && (
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, mb: { xs: 10, sm: 0 } }}>
+            <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Questão {currentIndex + 1}
             </Typography>
 
-            <Typography variant="body1" sx={{ mb: 3, whiteSpace: 'pre-wrap' }}>
+            <Typography variant="body1" sx={{ mb: 3, whiteSpace: 'pre-wrap', fontSize: { xs: '0.95rem', sm: '1rem' }, lineHeight: 1.6 }}>
               {currentQuestao.questao.enunciado}
             </Typography>
 
@@ -252,16 +253,35 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
                 value={respostas[currentQuestao.id] || ''}
                 onChange={(e) => handleAnswer(currentQuestao.id, e.target.value)}
               >
-                <FormControlLabel value="A" control={<Radio />} label={`A) ${currentQuestao.questao.alternativa_a}`} />
-                <FormControlLabel value="B" control={<Radio />} label={`B) ${currentQuestao.questao.alternativa_b}`} />
-                <FormControlLabel value="C" control={<Radio />} label={`C) ${currentQuestao.questao.alternativa_c}`} />
-                <FormControlLabel value="D" control={<Radio />} label={`D) ${currentQuestao.questao.alternativa_d}`} />
-                <FormControlLabel value="E" control={<Radio />} label={`E) ${currentQuestao.questao.alternativa_e}`} />
+                {['A', 'B', 'C', 'D', 'E'].map((letter) => {
+                  const alternativeKey = `alternativa_${letter.toLowerCase()}` as keyof typeof currentQuestao.questao;
+                  const alternativeText = currentQuestao.questao?.[alternativeKey] ?? '';
+                  return (
+                    <FormControlLabel
+                      key={letter}
+                      value={letter}
+                      control={<Radio sx={{ '& .MuiSvgIcon-root': { fontSize: { xs: 24, sm: 20 } } }} />}
+                      label={`${letter}) ${alternativeText}`}
+                      sx={{
+                        mb: 1,
+                        p: { xs: 1, sm: 0.5 },
+                        mx: 0,
+                        borderRadius: 1,
+                        transition: 'background-color 0.2s',
+                        '&:active': { backgroundColor: 'action.selected' },
+                        '& .MuiFormControlLabel-label': {
+                          fontSize: { xs: '0.9rem', sm: '1rem' },
+                          lineHeight: 1.4,
+                        },
+                      }}
+                    />
+                  );
+                })}
               </RadioGroup>
             </FormControl>
 
-            {/* Navigation */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+            {/* Navigation - Desktop */}
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, justifyContent: 'space-between', mt: 4 }}>
               <Button
                 startIcon={<BackIcon />}
                 disabled={currentIndex === 0}
@@ -295,56 +315,116 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
           </Paper>
         )}
 
+        {/* Mobile Fixed Navigation */}
+        {currentQuestao && (
+          <Box
+            sx={{
+              display: { xs: 'flex', sm: 'none' },
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              p: 2,
+              backgroundColor: 'white',
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              gap: 2,
+              zIndex: 1000,
+              boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <Button
+              variant="outlined"
+              startIcon={<BackIcon />}
+              disabled={currentIndex === 0}
+              onClick={() => setCurrentIndex(currentIndex - 1)}
+              sx={{ flex: 1, py: 1.5 }}
+            >
+              Anterior
+            </Button>
+
+            {currentIndex < questoes.length - 1 ? (
+              <Button
+                variant="contained"
+                endIcon={<NextIcon />}
+                onClick={() => setCurrentIndex(currentIndex + 1)}
+                sx={{ flex: 1, py: 1.5 }}
+              >
+                Próxima
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleOpenConfirmDialog}
+                disabled={submitting}
+                sx={{ flex: 1, py: 1.5 }}
+              >
+                Finalizar
+              </Button>
+            )}
+          </Box>
+        )}
+
         {/* Confirmation Dialog */}
         <Dialog
           open={confirmDialogOpen}
           onClose={handleCloseConfirmDialog}
           maxWidth="sm"
           fullWidth
+          sx={{
+            '& .MuiDialog-paper': {
+              m: { xs: 2, sm: 4 },
+              width: { xs: 'calc(100% - 32px)', sm: 'auto' },
+              maxHeight: { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' },
+            },
+          }}
         >
-          <DialogTitle>
+          <DialogTitle sx={{ pb: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <SendIcon color="primary" />
-              <Typography variant="h6">Confirmar Envio do Simulado</Typography>
+              <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                Confirmar Envio
+              </Typography>
             </Box>
           </DialogTitle>
           <DialogContent>
             <Alert severity="warning" sx={{ mb: 2 }}>
-              <Typography variant="body2" fontWeight="bold" gutterBottom>
+              <Typography variant="body2" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 Atenção! Esta ação não pode ser desfeita.
               </Typography>
-              <Typography variant="body2">
+              <Typography variant="body2" sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 Após enviar o simulado, você não poderá mais alterar suas respostas.
               </Typography>
             </Alert>
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography variant="body1" gutterBottom>
+            <Typography variant="body1" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
               <strong>Resumo:</strong>
             </Typography>
             <Box sx={{ pl: 2, mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 • Total de questões: <strong>{questoes.length}</strong>
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 • Questões respondidas: <strong>{totalRespondidas}</strong>
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 • Questões em branco: <strong>{questoes.length - totalRespondidas}</strong>
               </Typography>
             </Box>
 
             {totalRespondidas < questoes.length && (
               <Alert severity="error" sx={{ mb: 2 }}>
-                <Typography variant="body2">
+                <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                   Você ainda tem <strong>{questoes.length - totalRespondidas}</strong> questão(ões) sem resposta.
                   Tem certeza que deseja enviar o simulado?
                 </Typography>
               </Alert>
             )}
 
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
               Deseja realmente finalizar e enviar o simulado?
             </Typography>
           </DialogContent>

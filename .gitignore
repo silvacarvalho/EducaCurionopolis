@@ -16,6 +16,8 @@ build/
 !frontend/dist/
 !frontend/dist/**
 
+GUIA-MOBILE-PWA.md
+
 # ============================================
 # ENVIRONMENT & SECRETS (CRITICAL!)
 # ============================================
