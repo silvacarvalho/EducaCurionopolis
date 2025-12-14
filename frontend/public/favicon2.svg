@@ -1,50 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 768" width="768" height="768" preserveAspectRatio="xMidYMid meet">
   
-  <!-- 
-    ╔═══════════════════════════════════════════════════════════════════╗
-    ║  VARIÁVEIS DE AJUSTE - ALTERE AQUI PARA REDIMENSIONAR A LOGO     ║
-    ╠═══════════════════════════════════════════════════════════════════╣
-    ║                                                                    ║
-    ║  escala: Tamanho da logo (1.0 = original, 2.0 = dobro)          ║
-    ║            Valores recomendados: 1.0 a 2.5                        ║
-    ║                                                                    ║
-    ║  offset-x: Deslocamento horizontal (valores negativos)          ║
-    ║              Ajuste para centralizar horizontalmente              ║
-    ║                                                                    ║
-    ║  offset-y: Deslocamento vertical (valores negativos)            ║
-    ║              Ajuste para centralizar verticalmente                ║
-    ║                                                                    ║
-    ║  margem: Espaço de respiro nas bordas (0 a 50)                 ║
-    ║            0 = sem margem, 50 = margem máxima                     ║
-    ║                                                                    ║
-    ╚═══════════════════════════════════════════════════════════════════╝
-  -->
-  
-  <defs>
-    <style>
-      :root {
-        /* ═══ VARIÁVEIS PRINCIPAIS - AJUSTE AQUI ═══ */
-        --escala: 1.52;        /* Escala da logo: 1.0 a 2.5 */
-        --offset-x: 0;      /* Posição horizontal: -250 a -100 */
-        --offset-y: 5.2;      /* Posição vertical: -150 a -50 */
-        --margem: 0;           /* Margem extra: 0 a 50 */
-        
-        /* ═══ CÁLCULOS AUTOMÁTICOS - NÃO ALTERE ═══ */
-        --ajuste-x: calc(var(--offset-x) + var(--margem));
-        --ajuste-y: calc(var(--offset-y) + var(--margem));
-        --escala-final: calc(var(--escala) - (var(--margem) * 0.002));
-      }
-      
-      /* Grupo principal com transformações */
-      .logo-group {
-        transform: scale(var(--escala-final)) 
-                   translate(calc(var(--ajuste-x) * 1px), 
-                            calc(var(--ajuste-y) * 1px));
-        transform-origin: center center;
-      }
-    </style>
-  </defs>
-  <g class="logo-group">
+  <!-- Background/Padding ajustado -->
+  <g transform="scale(1.35) translate(-145, -85)">
   
     <!-- Círculo externo azul -->
     <path fill="#054e85" d="M 367.5 130.5 L 399 130.5 L 415.5 132.75 L 433.5 137.25 L 450 143.25 L 462 149.25 L 475.5 156.75 L 486.75 165 L 494.25 171 L 504 180 L 509.25 185.25 L 516 193.5 L 523.5 203.25 L 529.5 213 L 537 226.5 L 544.5 245.25 L 549 261 L 552 277.5 L 553.5 294.75 L 553.5 309.75 L 552 325.5 L 548.25 344.25 L 543 360.75 L 537 376.5 L 535.5 376.5 L 530.25 364.5 L 524.25 351 L 526.5 342.75 L 530.25 328.5 L 531.75 318.75 L 532.5 309.75 L 532.5 291 L 531 277.5 L 526.5 258.75 L 521.25 243.75 L 513 226.5 L 504 213 L 495.75 202.5 L 490.5 197.25 L 486.75 192.75 L 480.75 187.5 L 469.5 178.5 L 456 170.25 L 444.75 164.25 L 426 157.5 L 410.25 153.75 L 400.5 152.25 L 391.5 151.5 L 374.25 151.5 L 356.25 153.75 L 340.5 157.5 L 326.25 162.75 L 310.5 170.25 L 300.75 176.25 L 288.75 185.25 L 279.75 193.5 L 270.75 202.5 L 261 215.25 L 252 230.25 L 246 243 L 240 261 L 236.25 279.75 L 234.75 295.5 L 234.75 307.5 L 237 327.75 L 241.5 346.5 L 242.25 349.5 L 234 367.5 L 231 374.25 L 229.5 374.25 L 225 363.75 L 219.75 347.25 L 216.75 333.75 L 214.5 317.25 L 214.5 288 L 216.75 270 L 221.25 251.25 L 226.5 236.25 L 231.75 224.25 L 238.5 211.5 L 244.5 202.5 L 254.25 189.75 L 263.25 180 L 269.25 174 L 277.5 167.25 L 287.25 159.75 L 303 150 L 317.25 143.25 L 336 136.5 L 355.5 132 Z M 367.5 130.5" fill-opacity="1" fill-rule="nonzero"/>
