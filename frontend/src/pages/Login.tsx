@@ -58,41 +58,29 @@ const Login: React.FC = () => {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Box 
             sx={{ 
-              width: { xs: 64, sm: 80 },
-              height: { xs: 64, sm: 80 },
+              width: { xs: 200, sm: 150 },
+              height: { xs: 200, sm: 150 },
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               mx: 'auto',
               mb: 2,
-              boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.3)',
+              boxShadow: '0 0 15px -3px rgba(59, 130, 246, 0.3)',
+              overflow: 'hidden',
             }}
           >
-            <Typography 
-              sx={{ 
-                color: 'white', 
-                fontWeight: 'bold',
-                fontSize: { xs: '1.5rem', sm: '2rem' },
+            <img 
+              src="/favicon.svg" 
+              alt="EDUCA+ Logo"
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'cover' 
               }}
-            >
-              E+
-            </Typography>
+            />
           </Box>
-          <Typography 
-            variant="h4" 
-            fontWeight="bold"
-            sx={{ 
-              fontSize: { xs: '1.5rem', sm: '2rem' },
-              background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            EDUCA+
-          </Typography>
+          
           <Typography 
             variant="subtitle1" 
             color="text.secondary" 
@@ -101,7 +89,7 @@ const Login: React.FC = () => {
               fontSize: { xs: '0.875rem', sm: '1rem' },
             }}
           >
-            Curionópolis - Sistema Educacional
+            Sistema de Gerenciamento Educacional
           </Typography>
         </Box>
 
