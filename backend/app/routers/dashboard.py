@@ -277,7 +277,9 @@ async def get_dashboard_stats(
                 'tipo': 'danger',
                 'titulo': f'{turmas_sem_professor} turma(s) sem professor',
                 'descricao': 'Precisam de atribuição',
-                'icone': 'warning'
+                'icone': 'warning',
+                'modal': 'turmas-sem-professor',
+                'acao': 'Ver detalhes'
             })
         
         # Escolas abaixo da média SAEB (< 50%) - apenas para gestão/diretor
@@ -309,7 +311,9 @@ async def get_dashboard_stats(
                 'tipo': 'warning',
                 'titulo': f'{escolas_baixo_saeb} escola(s) abaixo da média',
                 'descricao': 'SAEB menor que 50%',
-                'icone': 'trending_down'
+                'icone': 'trending_down',
+                'modal': 'escolas-baixo-saeb',
+                'acao': 'Ver detalhes'
             })
         
         # Alunos sem diagnóstico (baseado no escopo)
@@ -339,12 +343,26 @@ async def get_dashboard_stats(
             logger.warning(f"Erro ao calcular diagnósticos pendentes: {str(e)}")
         
         if alunos_sem_diagnostico > 0:
-            alertas.append({
-                'tipo': 'info',
-                'titulo': 'Diagnósticos pendentes',
-                'descricao': f'{alunos_sem_diagnostico} aluno(s) aguardam',
-                'icone': 'schedule'
-            })
+            # Professor: navega para aplicar diagnóstico
+            # Diretor/Gestão: abre modal com lista
+            if current_user.perfil == PerfilUsuario.PROFESSOR:
+                alertas.append({
+                    'tipo': 'info',
+                    'titulo': 'Diagnósticos pendentes',
+                    'descricao': f'{alunos_sem_diagnostico} aluno(s) aguardam',
+                    'icone': 'schedule',
+                    'link': '/diagnostico-avaliar',
+                    'acao': 'Aplicar diagnóstico'
+                })
+            else:
+                alertas.append({
+                    'tipo': 'info',
+                    'titulo': 'Diagnósticos pendentes',
+                    'descricao': f'{alunos_sem_diagnostico} aluno(s) aguardam',
+                    'icone': 'schedule',
+                    'modal': 'alunos-sem-diagnostico',
+                    'acao': 'Ver detalhes'
+                })
         
         # Progresso de avaliações lançadas (baseado no escopo)
         query_turmas_aval = db.query(func.count(distinct(AvaliacaoAgregada.turma_id))).filter(
@@ -365,7 +383,9 @@ async def get_dashboard_stats(
                     'tipo': 'success',
                     'titulo': 'Meta atingida!',
                     'descricao': f'{int(percentual_avaliacoes)}% avaliações lançadas',
-                    'icone': 'check_circle'
+                    'icone': 'check_circle',
+                    'link': '/relatorios',
+                    'acao': 'Ver relatórios'
                 })
         
         # ============================================
@@ -627,3 +647,202 @@ async def get_escola_stats(
             status_code=500,
             detail="Erro ao carregar estatísticas da escola"
         )
+
+
+# ============================================
+# ENDPOINTS DE ALERTAS DETALHADOS
+# ============================================
+
+@router.get("/alertas/turmas-sem-professor")
+async def get_turmas_sem_professor(
+    ano_letivo: int = Query(default=None, description="Ano letivo para filtrar"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Retorna lista detalhada de turmas sem professor atribuído.
+    """
+    if not ano_letivo:
+        ano_letivo = datetime.now().year
+    
+    # Determinar escopo baseado no perfil
+    query = db.query(
+        Turma.id,
+        Turma.nome,
+        Turma.ano_escolar,
+        Escola.id.label('escola_id'),
+        Escola.nome.label('escola_nome')
+    ).join(Escola, Turma.escola_id == Escola.id).filter(
+        Turma.ano_letivo == ano_letivo,
+        Turma.ativo == True,
+        Turma.professor_id == None
+    )
+    
+    # Aplicar filtro por perfil
+    if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
+        if current_user.escola_dirigida:
+            query = query.filter(Escola.id == current_user.escola_dirigida.id)
+    elif current_user.perfil == PerfilUsuario.PROFESSOR:
+        # Professor não deveria ver este alerta, mas por segurança
+        return {"turmas": [], "total": 0}
+    
+    turmas = query.order_by(Escola.nome, Turma.ano_escolar, Turma.nome).all()
+    
+    # Agrupar por escola
+    escolas_dict = {}
+    for turma in turmas:
+        if turma.escola_id not in escolas_dict:
+            escolas_dict[turma.escola_id] = {
+                'escola_id': turma.escola_id,
+                'escola_nome': turma.escola_nome,
+                'turmas': []
+            }
+        escolas_dict[turma.escola_id]['turmas'].append({
+            'id': turma.id,
+            'nome': turma.nome,
+            'ano_escolar': turma.ano_escolar,
+            'serie_ano': f"{turma.ano_escolar}º Ano"
+        })
+    
+    return {
+        "escolas": list(escolas_dict.values()),
+        "total": len(turmas)
+    }
+
+
+@router.get("/alertas/alunos-sem-diagnostico")
+async def get_alunos_sem_diagnostico(
+    ano_letivo: int = Query(default=None, description="Ano letivo para filtrar"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Retorna lista detalhada de alunos sem diagnóstico aplicado.
+    """
+    if not ano_letivo:
+        ano_letivo = datetime.now().year
+    
+    # Subquery para pegar IDs de alunos com diagnóstico no ano
+    alunos_com_diagnostico = db.query(DiagnosticoResultado.aluno_id).join(
+        Diagnostico, DiagnosticoResultado.diagnostico_id == Diagnostico.id
+    ).filter(
+        Diagnostico.ano_letivo == ano_letivo
+    ).subquery()
+    
+    # Query principal
+    query = db.query(
+        Aluno.id,
+        Aluno.nome_completo,
+        Turma.id.label('turma_id'),
+        Turma.nome.label('turma_nome'),
+        Turma.ano_escolar,
+        Escola.id.label('escola_id'),
+        Escola.nome.label('escola_nome')
+    ).join(Turma, Aluno.turma_id == Turma.id).join(
+        Escola, Turma.escola_id == Escola.id
+    ).filter(
+        Aluno.ativo == True,
+        Turma.ano_letivo == ano_letivo,
+        ~Aluno.id.in_(db.query(alunos_com_diagnostico.c.aluno_id))
+    )
+    
+    # Aplicar filtro por perfil
+    if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
+        if current_user.escola_dirigida:
+            query = query.filter(Escola.id == current_user.escola_dirigida.id)
+    elif current_user.perfil == PerfilUsuario.PROFESSOR:
+        # Professor vê apenas alunos das suas turmas
+        query = query.filter(Turma.professor_id == current_user.id)
+    
+    alunos = query.order_by(Escola.nome, Turma.nome, Aluno.nome_completo).all()
+    
+    # Agrupar por escola e turma
+    escolas_dict = {}
+    for aluno in alunos:
+        if aluno.escola_id not in escolas_dict:
+            escolas_dict[aluno.escola_id] = {
+                'escola_id': aluno.escola_id,
+                'escola_nome': aluno.escola_nome,
+                'turmas': {}
+            }
+        
+        if aluno.turma_id not in escolas_dict[aluno.escola_id]['turmas']:
+            escolas_dict[aluno.escola_id]['turmas'][aluno.turma_id] = {
+                'turma_id': aluno.turma_id,
+                'turma_nome': aluno.turma_nome,
+                'ano_escolar': aluno.ano_escolar,
+                'alunos': []
+            }
+        
+        escolas_dict[aluno.escola_id]['turmas'][aluno.turma_id]['alunos'].append({
+            'id': aluno.id,
+            'nome': aluno.nome_completo
+        })
+    
+    # Converter para lista
+    result = []
+    for escola in escolas_dict.values():
+        escola_item = {
+            'escola_id': escola['escola_id'],
+            'escola_nome': escola['escola_nome'],
+            'turmas': list(escola['turmas'].values())
+        }
+        result.append(escola_item)
+    
+    return {
+        "escolas": result,
+        "total": len(alunos),
+        "perfil": current_user.perfil.value
+    }
+
+
+@router.get("/alertas/escolas-baixo-saeb")
+async def get_escolas_baixo_saeb(
+    ano_letivo: int = Query(default=None, description="Ano letivo para filtrar"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_active_user)
+):
+    """
+    Retorna lista de escolas com média SAEB abaixo de 50%.
+    """
+    if not ano_letivo:
+        ano_letivo = datetime.now().year
+    
+    if current_user.perfil == PerfilUsuario.PROFESSOR:
+        return {"escolas": [], "total": 0}
+    
+    query = db.query(
+        Escola.id,
+        Escola.nome,
+        func.avg(ResultadoSAEB.nota_percentual).label('media'),
+        func.count(distinct(Aluno.id)).label('total_alunos')
+    ).join(Turma, Escola.id == Turma.escola_id).join(
+        Aluno, Turma.id == Aluno.turma_id
+    ).join(
+        ResultadoSAEB, Aluno.id == ResultadoSAEB.aluno_id
+    ).join(
+        ProvaSimuladoSAEB, ResultadoSAEB.prova_id == ProvaSimuladoSAEB.id
+    ).filter(
+        ProvaSimuladoSAEB.ano_letivo == ano_letivo
+    )
+    
+    if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
+        if current_user.escola_dirigida:
+            query = query.filter(Escola.id == current_user.escola_dirigida.id)
+    
+    escolas = query.group_by(Escola.id, Escola.nome).having(
+        func.avg(ResultadoSAEB.nota_percentual) < 50
+    ).order_by(func.avg(ResultadoSAEB.nota_percentual)).all()
+    
+    return {
+        "escolas": [
+            {
+                "id": e.id,
+                "nome": e.nome,
+                "media_saeb": round(float(e.media), 1) if e.media else 0,
+                "total_alunos": e.total_alunos
+            }
+            for e in escolas
+        ],
+        "total": len(escolas)
+    }

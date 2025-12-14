@@ -544,6 +544,12 @@ async def avaliacoes_agregadas_drill_down_escolas(
     if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
         if current_user.escola_dirigida:
             query = query.filter(Escola.id == current_user.escola_dirigida.id)
+    elif current_user.perfil == PerfilUsuario.PROFESSOR:
+        # Professor só vê escolas das turmas que ele leciona
+        turmas_professor = db.query(Turma.escola_id).filter(
+            Turma.professor_id == current_user.id
+        ).distinct().subquery()
+        query = query.filter(Escola.id.in_(db.query(turmas_professor.c.escola_id)))
 
     if escola_id:
         query = query.filter(Escola.id == escola_id)

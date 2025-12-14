@@ -27,6 +27,17 @@ import {
   Tab,
   Skeleton,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Collapse,
+  ListItemButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   School,
@@ -46,6 +57,9 @@ import {
   Quiz,
   Mail,
   Grading,
+  ExpandLess,
+  ExpandMore,
+  Close,
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -98,6 +112,9 @@ interface DashboardStats {
     titulo: string;
     descricao: string;
     icone: string;
+    link?: string;
+    modal?: string;
+    acao?: string;
   }>;
   desempenho_bimestre: Array<{
     bimestre: number;
@@ -175,13 +192,18 @@ const MetricCard: React.FC<{
   </Card>
 );
 
-// Componente de Alerta
+// Componente de Alerta com suporte a navegação e modal
 const AlertItem: React.FC<{
   tipo: 'danger' | 'warning' | 'info' | 'success';
   titulo: string;
   descricao: string;
   icone: string;
-}> = ({ tipo, titulo, descricao, icone }) => {
+  link?: string;
+  modal?: string;
+  acao?: string;
+  onNavigate?: (link: string) => void;
+  onOpenModal?: (modalType: string) => void;
+}> = ({ tipo, titulo, descricao, icone, link, modal, acao, onNavigate, onOpenModal }) => {
   const colors = {
     danger: { bg: '#fef2f2', border: '#ef4444', icon: '#ef4444' },
     warning: { bg: '#fffbeb', border: '#f59e0b', icon: '#f59e0b' },
@@ -199,8 +221,19 @@ const AlertItem: React.FC<{
     }
   };
 
+  const handleClick = () => {
+    if (modal && onOpenModal) {
+      onOpenModal(modal);
+    } else if (link && onNavigate) {
+      onNavigate(link);
+    }
+  };
+
+  const isClickable = link || modal;
+
   return (
     <Box
+      onClick={handleClick}
       sx={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -210,17 +243,41 @@ const AlertItem: React.FC<{
         borderRadius: 2,
         bgcolor: colors[tipo].bg,
         borderLeft: `4px solid ${colors[tipo].border}`,
+        cursor: isClickable ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        '&:hover': isClickable ? {
+          transform: 'translateX(4px)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        } : {},
       }}
     >
       <Box sx={{ color: colors[tipo].icon, mt: 0.25 }}>{getIcon()}</Box>
-      <Box>
+      <Box sx={{ flex: 1 }}>
         <Typography variant="subtitle2" fontWeight="600">
           {titulo}
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {descricao}
         </Typography>
+        {isClickable && acao && (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              display: 'block', 
+              mt: 0.5, 
+              color: colors[tipo].icon,
+              fontWeight: 600,
+            }}
+          >
+            {acao} →
+          </Typography>
+        )}
       </Box>
+      {isClickable && (
+        <Box sx={{ color: colors[tipo].icon, opacity: 0.5 }}>
+          <ArrowForward fontSize="small" />
+        </Box>
+      )}
     </Box>
   );
 };
@@ -234,6 +291,16 @@ const DashboardAnalytics: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [anoLetivo, setAnoLetivo] = useState(new Date().getFullYear());
   const [tabValue, setTabValue] = useState(0);
+  
+  // Estados dos modais de alertas
+  const [modalTurmasSemProfessor, setModalTurmasSemProfessor] = useState(false);
+  const [modalAlunosSemDiagnostico, setModalAlunosSemDiagnostico] = useState(false);
+  const [modalEscolasBaixoSaeb, setModalEscolasBaixoSaeb] = useState(false);
+  const [dataTurmasSemProfessor, setDataTurmasSemProfessor] = useState<any>(null);
+  const [dataAlunosSemDiagnostico, setDataAlunosSemDiagnostico] = useState<any>(null);
+  const [dataEscolasBaixoSaeb, setDataEscolasBaixoSaeb] = useState<any>(null);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardStats();
@@ -249,6 +316,37 @@ const DashboardAnalytics: React.FC = () => {
       setError(err.response?.data?.detail || 'Erro ao carregar estatísticas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para abrir modais de alerta
+  const handleOpenAlertModal = async (modalType: string) => {
+    setModalLoading(true);
+    setModalError(null);
+    try {
+      let response;
+      switch (modalType) {
+        case 'turmas-sem-professor':
+          setModalTurmasSemProfessor(true);
+          response = await dashboardAPI.getTurmasSemProfessor(anoLetivo);
+          setDataTurmasSemProfessor(response.data);
+          break;
+        case 'alunos-sem-diagnostico':
+          setModalAlunosSemDiagnostico(true);
+          response = await dashboardAPI.getAlunosSemDiagnostico(anoLetivo);
+          setDataAlunosSemDiagnostico(response.data);
+          break;
+        case 'escolas-baixo-saeb':
+          setModalEscolasBaixoSaeb(true);
+          response = await dashboardAPI.getEscolasBaixoSaeb(anoLetivo);
+          setDataEscolasBaixoSaeb(response.data);
+          break;
+      }
+    } catch (err: any) {
+      console.error('Erro ao carregar dados do modal:', err);
+      setModalError(err.response?.data?.detail || 'Erro ao carregar dados');
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -471,7 +569,12 @@ const DashboardAnalytics: React.FC = () => {
                   </Typography>
                   {stats.alertas.length > 0 ? (
                     stats.alertas.map((alerta, idx) => (
-                      <AlertItem key={idx} {...alerta} />
+                      <AlertItem 
+                        key={idx} 
+                        {...alerta} 
+                        onNavigate={navigate} 
+                        onOpenModal={handleOpenAlertModal}
+                      />
                     ))
                   ) : (
                     <Alert severity="success">
@@ -642,6 +745,216 @@ const DashboardAnalytics: React.FC = () => {
           </>
         )}
       </Box>
+
+      {/* Modal: Turmas sem Professor */}
+      <Dialog 
+        open={modalTurmasSemProfessor} 
+        onClose={() => setModalTurmasSemProfessor(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Warning color="error" />
+            Turmas sem Professor Atribuído
+          </Box>
+          <IconButton onClick={() => setModalTurmasSemProfessor(false)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {modalLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : modalError ? (
+            <Alert severity="error">{modalError}</Alert>
+          ) : dataTurmasSemProfessor?.escolas?.length > 0 ? (
+            <>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {dataTurmasSemProfessor.total} turma(s) sem professor atribuído
+              </Alert>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'grey.100' }}>
+                      <TableCell><strong>Escola</strong></TableCell>
+                      <TableCell><strong>Turma</strong></TableCell>
+                      <TableCell><strong>Série/Ano</strong></TableCell>
+                      <TableCell align="center"><strong>Status</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dataTurmasSemProfessor.escolas.map((escola: any) => (
+                      escola.turmas.map((turma: any, idx: number) => (
+                        <TableRow key={turma.id} hover>
+                          <TableCell>
+                            {idx === 0 ? (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <School fontSize="small" color="primary" />
+                                {escola.escola_nome}
+                              </Box>
+                            ) : ''}
+                          </TableCell>
+                          <TableCell>{turma.nome}</TableCell>
+                          <TableCell>{turma.serie_ano}</TableCell>
+                          <TableCell align="center">
+                            <Chip label="Sem professor" size="small" color="error" variant="outlined" />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          ) : (
+            <Alert severity="success">Todas as turmas possuem professor atribuído!</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalTurmasSemProfessor(false)}>Fechar</Button>
+          <Button variant="contained" onClick={() => { setModalTurmasSemProfessor(false); navigate('/escolas'); }}>
+            Gerenciar Escolas
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal: Alunos sem Diagnóstico */}
+      <Dialog 
+        open={modalAlunosSemDiagnostico} 
+        onClose={() => setModalAlunosSemDiagnostico(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Schedule color="info" />
+            Diagnósticos Pendentes
+          </Box>
+          <IconButton onClick={() => setModalAlunosSemDiagnostico(false)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {modalLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : modalError ? (
+            <Alert severity="error">{modalError}</Alert>
+          ) : dataAlunosSemDiagnostico?.escolas?.length > 0 ? (
+            <>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Total de <strong>{dataAlunosSemDiagnostico.total}</strong> aluno(s) aguardando diagnóstico
+              </Alert>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'grey.100' }}>
+                      <TableCell><strong>Escola</strong></TableCell>
+                      <TableCell><strong>Turma</strong></TableCell>
+                      <TableCell><strong>Série/Ano</strong></TableCell>
+                      <TableCell align="center"><strong>Alunos Pendentes</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dataAlunosSemDiagnostico.escolas.map((escola: any) => {
+                      let escolaRowSpan = escola.turmas.length;
+                      return escola.turmas.map((turma: any, idx: number) => (
+                        <TableRow key={`${escola.escola_id}-${turma.turma_id}`} hover>
+                          {idx === 0 && (
+                            <TableCell rowSpan={escolaRowSpan}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <School fontSize="small" color="primary" />
+                                {escola.escola_nome}
+                              </Box>
+                            </TableCell>
+                          )}
+                          <TableCell>{turma.turma_nome}</TableCell>
+                          <TableCell>{turma.ano_escolar}º Ano</TableCell>
+                          <TableCell align="center">
+                            <Chip 
+                              label={`${turma.alunos.length} aluno(s)`} 
+                              size="small" 
+                              color={turma.alunos.length > 10 ? 'error' : turma.alunos.length > 5 ? 'warning' : 'info'}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ));
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          ) : (
+            <Alert severity="success">Todos os alunos já foram avaliados!</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalAlunosSemDiagnostico(false)}>Fechar</Button>
+          <Button variant="contained" onClick={() => { setModalAlunosSemDiagnostico(false); navigate('/diagnostico-avaliar'); }}>
+            Aplicar Diagnóstico
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal: Escolas Abaixo do SAEB */}
+      <Dialog 
+        open={modalEscolasBaixoSaeb} 
+        onClose={() => setModalEscolasBaixoSaeb(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TrendingDown color="warning" />
+            Escolas Abaixo da Média SAEB
+          </Box>
+          <IconButton onClick={() => setModalEscolasBaixoSaeb(false)}>
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {modalLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : modalError ? (
+            <Alert severity="error">{modalError}</Alert>
+          ) : dataEscolasBaixoSaeb?.escolas?.length > 0 ? (
+            <>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {dataEscolasBaixoSaeb.total} escola(s) com média SAEB inferior a 50%
+              </Alert>
+              <List>
+                {dataEscolasBaixoSaeb.escolas.map((escola: any) => (
+                  <ListItem key={escola.id} divider>
+                    <ListItemText 
+                      primary={escola.nome}
+                      secondary={`${escola.total_alunos} alunos avaliados`}
+                    />
+                    <Chip 
+                      label={`${escola.media_saeb}%`} 
+                      color="error" 
+                      size="small"
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          ) : (
+            <Alert severity="success">Todas as escolas estão com média SAEB adequada!</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setModalEscolasBaixoSaeb(false)}>Fechar</Button>
+          <Button variant="contained" onClick={() => { setModalEscolasBaixoSaeb(false); navigate('/saeb-v2/dashboard'); }}>
+            Ver Dashboard SAEB
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </MainLayout>
   );
 };

@@ -490,4 +490,14 @@ export const dashboardAPI = {
   // Estatísticas de uma escola específica (drill-down)
   getEscolaStats: (escolaId: number, anoLetivo?: number) =>
     api.get(`/dashboard/escolas/${escolaId}/stats`, { params: { ano_letivo: anoLetivo } }),
+  
+  // Alertas detalhados
+  getTurmasSemProfessor: (anoLetivo?: number) =>
+    api.get('/dashboard/alertas/turmas-sem-professor', { params: { ano_letivo: anoLetivo } }),
+  
+  getAlunosSemDiagnostico: (anoLetivo?: number) =>
+    api.get('/dashboard/alertas/alunos-sem-diagnostico', { params: { ano_letivo: anoLetivo } }),
+  
+  getEscolasBaixoSaeb: (anoLetivo?: number) =>
+    api.get('/dashboard/alertas/escolas-baixo-saeb', { params: { ano_letivo: anoLetivo } }),
 };
