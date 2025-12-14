@@ -26,6 +26,8 @@ import {
   alpha,
   Fade,
   Grow,
+  Autocomplete,
+  TextField,
 } from '@mui/material';
 import {
   AccountCircle as AccountCircleIcon,
@@ -518,21 +520,24 @@ const RelatoriosPage: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <FormControl fullWidth>
-                <InputLabel>Escola</InputLabel>
-                <Select
-                  value={escolaId}
-                  label="Escola"
-                  onChange={(e) => setEscolaId(e.target.value as number | '')}
-                >
-                  <MenuItem value="">Todas</MenuItem>
-                  {escolas.map((escola) => (
-                    <MenuItem key={escola.id} value={escola.id}>
-                      {escola.nome}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                options={escolas}
+                getOptionLabel={(option) => option.nome || ''}
+                value={escolas.find((e) => e.id === escolaId) || null}
+                onChange={(_, newValue) => setEscolaId(newValue?.id || '')}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Escola"
+                    placeholder="Pesquisar escola..."
+                  />
+                )}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
+                noOptionsText="Nenhuma escola encontrada"
+                clearText="Limpar"
+                openText="Abrir"
+                closeText="Fechar"
+              />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <FormControl fullWidth disabled={!escolaId}>
@@ -839,7 +844,11 @@ const RelatoriosPage: React.FC = () => {
 
         {/* Diagnósticos Tab */}
         <TabPanel value={tabValue} index={1}>
-          <RelatorioDiagnosticoPorEixo />
+          <RelatorioDiagnosticoPorEixo 
+            turmaId={turmaId as number | ''}
+            escolaId={escolaId as number | ''}
+            anoLetivo={anoLetivo}
+          />
         </TabPanel>
 
         {/* Modal de Detalhamento */}

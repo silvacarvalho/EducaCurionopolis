@@ -201,6 +201,26 @@ export interface DiagnosticoCreate {
   data_limite?: string;
 }
 
+export interface DiagnosticoUpdate {
+  nome?: string;
+  descricao?: string;
+  objetivo_avaliacao?: string;
+  genero_textual?: string;
+  data_disponivel?: string | null;
+  data_limite?: string | null;
+  ativo?: boolean;
+  tipo?: TipoDiagnostico;
+  bimestre_referencia?: Bimestre | null;
+  aplicavel_ano_inicial?: number;
+  aplicavel_ano_final?: number;
+}
+
+export interface DiagnosticoResultadoUpdate {
+  hipotese_escrita?: HipoteseEscrita;
+  avaliacoes_itens?: AvaliacaoItem[];
+  observacoes?: string;
+}
+
 export interface AvaliacaoItem {
   item_diagnostico_id: number;
   resposta: NivelEvolucao; // SIM, NAO, EM_PARTE

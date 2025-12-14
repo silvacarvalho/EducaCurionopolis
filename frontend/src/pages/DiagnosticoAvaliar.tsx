@@ -34,6 +34,7 @@ import {
   NavigateNext,
   NavigateBefore,
   PersonOff,
+  Edit,
 } from '@mui/icons-material';
 import { diagnosticosAPI, alunosAPI, turmasAPI } from '../services/api';
 import {
@@ -68,6 +69,10 @@ const DiagnosticoAvaliar: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Modo de edição
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingResultadoId, setEditingResultadoId] = useState<number | null>(null);
 
   useEffect(() => {
     loadDiagnosticos();
@@ -194,6 +199,73 @@ const DiagnosticoAvaliar: React.FC = () => {
     setHipoteseEscrita('');
     setObservacoes('');
     setError('');
+    setIsEditing(false);
+    setEditingResultadoId(null);
+  };
+
+  // Função para iniciar edição de resultado existente
+  const handleStartEdit = (alunoStatus: AlunoStatus) => {
+    if (!alunoStatus.resultado) return;
+
+    const resultado = alunoStatus.resultado;
+    
+    // Carregar hipótese e observações
+    setHipoteseEscrita(resultado.hipotese_escrita);
+    setObservacoes(resultado.observacoes || '');
+    
+    // Carregar avaliações dos itens
+    const avaliacoesMap = new Map<number, NivelEvolucao>();
+    resultado.avaliacoes_itens?.forEach((av) => {
+      avaliacoesMap.set(av.item_diagnostico_id, av.resposta);
+    });
+    setAvaliacoes(avaliacoesMap);
+    
+    // Ativar modo de edição
+    setIsEditing(true);
+    setEditingResultadoId(resultado.id);
+    setError('');
+    setSuccess('');
+  };
+
+  // Função para cancelar edição
+  const handleCancelEdit = () => {
+    clearForm();
+  };
+
+  // Função para salvar edição
+  const handleUpdateResultado = async () => {
+    if (!editingResultadoId) return;
+
+    if (avaliacoes.size === 0) {
+      setError('Avalie pelo menos um item');
+      return;
+    }
+
+    if (!hipoteseEscrita) {
+      setError('Defina a hipótese de escrita do aluno');
+      return;
+    }
+
+    const avaliacoes_itens: AvaliacaoItem[] = Array.from(avaliacoes.entries()).map(
+      ([item_diagnostico_id, resposta]) => ({ item_diagnostico_id, resposta })
+    );
+
+    try {
+      setLoading(true);
+      await diagnosticosAPI.updateResultado(editingResultadoId, {
+        hipotese_escrita: hipoteseEscrita,
+        avaliacoes_itens,
+        observacoes,
+      });
+
+      setSuccess('Avaliação atualizada com sucesso!');
+      clearForm();
+      await loadResultados();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao atualizar avaliação');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -379,19 +451,38 @@ const DiagnosticoAvaliar: React.FC = () => {
 
                   <Box sx={{ textAlign: 'center', flex: 1 }}>
                     <Typography variant="overline" color="text.secondary">
-                      Avaliando ({currentAlunoIndex + 1}/{alunosStatus.length})
+                      {isEditing ? 'Editando' : 'Avaliando'} ({currentAlunoIndex + 1}/{alunosStatus.length})
                     </Typography>
                     <Typography variant="h5" fontWeight="bold">
                       {currentAluno.aluno.nome_completo}
                     </Typography>
-                    {currentAluno.avaliado && (
-                      <Chip
-                        label="Já Avaliado"
-                        color="success"
-                        size="small"
-                        icon={<CheckCircle />}
-                        sx={{ mt: 1 }}
-                      />
+                    {currentAluno.avaliado && !isEditing && (
+                      <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                        <Chip
+                          label="Já Avaliado"
+                          color="success"
+                          size="small"
+                          icon={<CheckCircle />}
+                        />
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<Edit />}
+                          onClick={() => handleStartEdit(currentAluno)}
+                        >
+                          Editar
+                        </Button>
+                      </Box>
+                    )}
+                    {isEditing && (
+                      <Box sx={{ mt: 1 }}>
+                        <Chip
+                          label="Modo Edição"
+                          color="warning"
+                          size="small"
+                          icon={<Edit />}
+                        />
+                      </Box>
                     )}
                   </Box>
 
@@ -401,21 +492,33 @@ const DiagnosticoAvaliar: React.FC = () => {
                 </Box>
 
                 {/* Botão Não Avaliado */}
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  fullWidth
-                  startIcon={<PersonOff />}
-                  onClick={handleNaoAvaliado}
-                  disabled={loading || currentAluno.avaliado}
-                >
-                  Marcar como Não Avaliado
-                </Button>
+                {!isEditing && (
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    fullWidth
+                    startIcon={<PersonOff />}
+                    onClick={handleNaoAvaliado}
+                    disabled={loading || currentAluno.avaliado}
+                  >
+                    Marcar como Não Avaliado
+                  </Button>
+                )}
+                {isEditing && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    fullWidth
+                    onClick={handleCancelEdit}
+                  >
+                    Cancelar Edição
+                  </Button>
+                )}
               </Paper>
             )}
 
             {/* Tabela de Itens de Avaliação */}
-            {itens.length > 0 && currentAluno && !currentAluno.avaliado && (
+            {itens.length > 0 && currentAluno && (!currentAluno.avaliado || isEditing) && (
               <Paper sx={{ p: 3, mb: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   Avaliação dos Itens
@@ -531,16 +634,40 @@ const DiagnosticoAvaliar: React.FC = () => {
                   sx={{ mb: 3 }}
                 />
 
-                {/* Botão Salvar */}
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
-                  Salvar Avaliação
-                </Button>
+                {/* Botões de Ação */}
+                {isEditing ? (
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      fullWidth
+                      size="large"
+                      onClick={handleCancelEdit}
+                      disabled={loading}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      onClick={handleUpdateResultado}
+                      disabled={loading}
+                    >
+                      Atualizar Avaliação
+                    </Button>
+                  </Box>
+                ) : (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    onClick={handleSubmit}
+                    disabled={loading}
+                  >
+                    Salvar Avaliação
+                  </Button>
+                )}
               </Paper>
             )}
 
@@ -569,11 +696,26 @@ const DiagnosticoAvaliar: React.FC = () => {
                     }}
                   >
                     <Typography variant="body2">{alunoStatus.aluno.nome_completo}</Typography>
-                    {alunoStatus.avaliado ? (
-                      <CheckCircle color="success" fontSize="small" />
-                    ) : (
-                      <RadioButtonUnchecked color="disabled" fontSize="small" />
-                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {alunoStatus.avaliado && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentAlunoIndex(index);
+                            handleStartEdit(alunoStatus);
+                          }}
+                          title="Editar avaliação"
+                        >
+                          <Edit fontSize="small" color="primary" />
+                        </IconButton>
+                      )}
+                      {alunoStatus.avaliado ? (
+                        <CheckCircle color="success" fontSize="small" />
+                      ) : (
+                        <RadioButtonUnchecked color="disabled" fontSize="small" />
+                      )}
+                    </Box>
                   </Box>
                 ))}
               </Stack>

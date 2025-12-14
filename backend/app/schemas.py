@@ -396,6 +396,10 @@ class DiagnosticoUpdate(BaseSchema):
     data_disponivel: Optional[datetime] = None
     data_limite: Optional[datetime] = None
     ativo: Optional[bool] = None
+    tipo: Optional[TipoDiagnostico] = None
+    bimestre_referencia: Optional[Bimestre] = None
+    aplicavel_ano_inicial: Optional[int] = Field(default=None, ge=1, le=5)
+    aplicavel_ano_final: Optional[int] = Field(default=None, ge=1, le=5)
 
 
 class DiagnosticoResponse(DiagnosticoBase):

@@ -478,3 +478,16 @@ export const saebV2API = {
   dashboardMetricas: (anoLetivo?: number) =>
     apiV2.get('/saeb/dashboard/metricas', { params: { ano_letivo: anoLetivo } }),
 };
+
+// ============================================
+// DASHBOARD ANALYTICS API
+// ============================================
+export const dashboardAPI = {
+  // Estatísticas gerais do dashboard
+  getStats: (anoLetivo?: number) =>
+    api.get('/dashboard/stats', { params: { ano_letivo: anoLetivo } }),
+  
+  // Estatísticas de uma escola específica (drill-down)
+  getEscolaStats: (escolaId: number, anoLetivo?: number) =>
+    api.get(`/dashboard/escolas/${escolaId}/stats`, { params: { ano_letivo: anoLetivo } }),
+};

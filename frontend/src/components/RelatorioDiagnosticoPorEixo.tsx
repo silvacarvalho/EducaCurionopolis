@@ -21,7 +21,17 @@ const getHipoteseLabel = (hip: HipoteseEscrita) => {
   return labels[hip];
 };
 
-const RelatorioDiagnostico: React.FC = () => {
+interface RelatorioDiagnosticoProps {
+  turmaId?: number | '';
+  escolaId?: number | '';
+  anoLetivo?: number;
+}
+
+const RelatorioDiagnostico: React.FC<RelatorioDiagnosticoProps> = ({
+  turmaId,
+  escolaId,
+  anoLetivo,
+}) => {
   const [diagnosticos, setDiagnosticos] = useState<Diagnostico[]>([]);
   const [selectedDiagnostico, setSelectedDiagnostico] = useState<number | ''>('');
   const [relatorio, setRelatorio] = useState<RelatorioDiagnosticoPorEixo | null>(null);
@@ -44,7 +54,10 @@ const RelatorioDiagnostico: React.FC = () => {
   const loadRelatorio = async (diagnosticoId: number) => {
     try {
       setLoading(true);
-      const response = await diagnosticosAPI.relatorioPorEixo(diagnosticoId);
+      const params: any = {};
+      if (turmaId) params.turma_id = turmaId;
+      if (escolaId) params.escola_id = escolaId;
+      const response = await diagnosticosAPI.relatorioPorEixo(diagnosticoId, params);
       setRelatorio(response.data);
       setError('');
     } catch (err: any) {
@@ -60,6 +73,13 @@ const RelatorioDiagnostico: React.FC = () => {
     loadRelatorio(diagnosticoId);
   };
 
+  // Recarregar relatório quando os filtros mudarem
+  useEffect(() => {
+    if (selectedDiagnostico) {
+      loadRelatorio(selectedDiagnostico as number);
+    }
+  }, [turmaId, escolaId]);
+
   const chartData = relatorio?.estatisticas_por_eixo.map((est, index) => ({
     name: getHipoteseLabel(est.eixo),
     quantidade: est.quantidade,
@@ -69,6 +89,14 @@ const RelatorioDiagnostico: React.FC = () => {
 
   return (
     <Box>
+      {/* Indicador de filtros ativos */}
+      {(turmaId || escolaId) && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Filtros aplicados: {turmaId ? 'Turma selecionada' : ''}{turmaId && escolaId ? ' • ' : ''}{escolaId && !turmaId ? 'Escola selecionada' : ''}
+          {' - Os dados abaixo refletem apenas a seleção feita nos filtros acima.'}
+        </Alert>
+      )}
+
       <FormControl fullWidth sx={{ mb: 3 }}>
         <InputLabel>Selecione o Diagnóstico</InputLabel>
         <Select

@@ -12,9 +12,10 @@ import api from '../../services/api';
 interface MainLayoutProps {
   children: React.ReactNode;
   title?: string;
+  headerExtra?: React.ReactNode;
 }
 
-const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children, title, headerExtra }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { searchQuery, setSearchQuery } = useContextualSearch();
@@ -166,18 +167,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title }) => {
         >
           <Toolbar>
             {/* Breadcrumb / Title */}
-            <Typography
-              variant="h6"
-              noWrap
-              component="div"
-              sx={{
-                flexGrow: 1,
-                fontWeight: 600,
-                color: '#1e293b',
-              }}
-            >
-              {title || 'EDUCA+ Curionópolis'}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1 }}>
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{
+                  fontWeight: 600,
+                  color: '#1e293b',
+                }}
+              >
+                {title || 'EDUCA+ Curionópolis'}
+              </Typography>
+              {headerExtra}
+            </Box>
 
             {/* Search Bar */}
             <Box

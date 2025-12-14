@@ -53,6 +53,7 @@ import { diagnosticosAPI } from '../services/api';
 import {
   Diagnostico,
   DiagnosticoCreate,
+  DiagnosticoUpdate,
   TipoDiagnostico,
   Bimestre,
   ItemDiagnostico,
@@ -75,8 +76,12 @@ const DiagnosticosPage: React.FC = () => {
   // Dialog states
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openVincularDialog, setOpenVincularDialog] = useState(false);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
   const [selectedDiagnostico, setSelectedDiagnostico] = useState<Diagnostico | null>(null);
   const [selectedItens, setSelectedItens] = useState<number[]>([]);
+
+  // Edit form state
+  const [editFormData, setEditFormData] = useState<DiagnosticoUpdate>({});
 
   // Form state
   const [formData, setFormData] = useState<DiagnosticoCreate>({
@@ -251,6 +256,62 @@ const DiagnosticosPage: React.FC = () => {
     }
   };
 
+  // ============================================
+  // EDITAR DIAGNÓSTICO
+  // ============================================
+  const handleOpenEditDialog = (diagnostico: Diagnostico) => {
+    setSelectedDiagnostico(diagnostico);
+    setEditFormData({
+      nome: diagnostico.nome,
+      descricao: diagnostico.descricao || '',
+      objetivo_avaliacao: diagnostico.objetivo_avaliacao,
+      genero_textual: diagnostico.genero_textual,
+      tipo: diagnostico.tipo,
+      bimestre_referencia: diagnostico.bimestre_referencia,
+      aplicavel_ano_inicial: diagnostico.aplicavel_ano_inicial,
+      aplicavel_ano_final: diagnostico.aplicavel_ano_final,
+      data_disponivel: diagnostico.data_disponivel 
+        ? new Date(diagnostico.data_disponivel).toISOString().slice(0, 16) 
+        : undefined,
+      data_limite: diagnostico.data_limite 
+        ? new Date(diagnostico.data_limite).toISOString().slice(0, 16) 
+        : undefined,
+    });
+    setOpenEditDialog(true);
+    setError('');
+  };
+
+  const handleCloseEditDialog = () => {
+    setOpenEditDialog(false);
+    setSelectedDiagnostico(null);
+    setEditFormData({});
+  };
+
+  const handleEditFormChange = (field: keyof DiagnosticoUpdate, value: any) => {
+    setEditFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleUpdateDiagnostico = async () => {
+    if (!selectedDiagnostico) return;
+
+    if (!editFormData.nome || !editFormData.objetivo_avaliacao || !editFormData.genero_textual) {
+      setError('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await diagnosticosAPI.update(selectedDiagnostico.id, editFormData);
+      setSuccess(`Diagnóstico "${editFormData.nome}" atualizado com sucesso!`);
+      handleCloseEditDialog();
+      loadDiagnosticos();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Erro ao atualizar diagnóstico');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getTipoLabel = (tipo: TipoDiagnostico) => {
     return tipo === TipoDiagnostico.INICIAL ? 'Inicial' : 'Final de Bimestre';
   };
@@ -401,7 +462,18 @@ const DiagnosticosPage: React.FC = () => {
                   </TableCell>
                   <TableCell align="right">
                     <PermissionGate allowedProfiles={[PerfilUsuario.GESTAO_MUNICIPAL]}>
-                      <IconButton size="small" onClick={() => handleOpenVincularDialog(diag)}>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleOpenEditDialog(diag)}
+                        title="Editar Diagnóstico"
+                      >
+                        <Edit />
+                      </IconButton>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleOpenVincularDialog(diag)}
+                        title="Vincular Itens"
+                      >
                         <LinkIcon />
                       </IconButton>
                     </PermissionGate>
@@ -734,6 +806,142 @@ const DiagnosticosPage: React.FC = () => {
           <Button onClick={() => setOpenVincularDialog(false)}>Cancelar</Button>
           <Button onClick={handleVincularItens} variant="contained" disabled={loading}>
             Vincular Itens
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog: Editar Diagnóstico */}
+      <Dialog open={openEditDialog} onClose={handleCloseEditDialog} maxWidth="md" fullWidth>
+        <DialogTitle>Editar Diagnóstico</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Nome do Diagnóstico *"
+                  value={editFormData.nome || ''}
+                  onChange={(e) => handleEditFormChange('nome', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Descrição"
+                  multiline
+                  rows={2}
+                  value={editFormData.descricao || ''}
+                  onChange={(e) => handleEditFormChange('descricao', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Tipo *</InputLabel>
+                  <Select
+                    value={editFormData.tipo || TipoDiagnostico.INICIAL}
+                    onChange={(e) => handleEditFormChange('tipo', e.target.value)}
+                    label="Tipo *"
+                  >
+                    <MenuItem value={TipoDiagnostico.INICIAL}>Inicial</MenuItem>
+                    <MenuItem value={TipoDiagnostico.FINAL_BIMESTRE}>Final de Bimestre</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth disabled={editFormData.tipo === TipoDiagnostico.INICIAL}>
+                  <InputLabel>Bimestre</InputLabel>
+                  <Select
+                    value={editFormData.bimestre_referencia || ''}
+                    onChange={(e) => handleEditFormChange('bimestre_referencia', e.target.value || null)}
+                    label="Bimestre"
+                  >
+                    <MenuItem value="">Nenhum</MenuItem>
+                    <MenuItem value={Bimestre.PRIMEIRO}>1º Bimestre</MenuItem>
+                    <MenuItem value={Bimestre.SEGUNDO}>2º Bimestre</MenuItem>
+                    <MenuItem value={Bimestre.TERCEIRO}>3º Bimestre</MenuItem>
+                    <MenuItem value={Bimestre.QUARTO}>4º Bimestre</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Objetivo da Avaliação *"
+                  multiline
+                  rows={2}
+                  value={editFormData.objetivo_avaliacao || ''}
+                  onChange={(e) => handleEditFormChange('objetivo_avaliacao', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Gênero Textual *"
+                  value={editFormData.genero_textual || ''}
+                  onChange={(e) => handleEditFormChange('genero_textual', e.target.value)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Data Disponível"
+                  type="datetime-local"
+                  value={editFormData.data_disponivel || ''}
+                  onChange={(e) => handleEditFormChange('data_disponivel', e.target.value || null)}
+                  InputLabelProps={{ shrink: true }}
+                  helperText="Data em que o diagnóstico estará disponível"
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Data Limite"
+                  type="datetime-local"
+                  value={editFormData.data_limite || ''}
+                  onChange={(e) => handleEditFormChange('data_limite', e.target.value || null)}
+                  InputLabelProps={{ shrink: true }}
+                  helperText="Data limite para aplicação"
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Ano Inicial</InputLabel>
+                  <Select
+                    value={editFormData.aplicavel_ano_inicial || 1}
+                    onChange={(e) => handleEditFormChange('aplicavel_ano_inicial', e.target.value)}
+                    label="Ano Inicial"
+                  >
+                    {[1, 2, 3, 4, 5].map((ano) => (
+                      <MenuItem key={ano} value={ano}>
+                        {ano}º ano
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Ano Final</InputLabel>
+                  <Select
+                    value={editFormData.aplicavel_ano_final || 5}
+                    onChange={(e) => handleEditFormChange('aplicavel_ano_final', e.target.value)}
+                    label="Ano Final"
+                  >
+                    {[1, 2, 3, 4, 5].map((ano) => (
+                      <MenuItem key={ano} value={ano}>
+                        {ano}º ano
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditDialog}>Cancelar</Button>
+          <Button onClick={handleUpdateDiagnostico} variant="contained" disabled={loading}>
+            Salvar Alterações
           </Button>
         </DialogActions>
       </Dialog>

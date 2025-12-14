@@ -761,10 +761,12 @@ async def relatorio_diagnostico_por_eixo(
         DiagnosticoResultado.diagnostico_id == diagnostico_id
     )
 
+    # Aplicar filtros de turma e/ou escola
     if turma_id:
+        # Se tem turma_id, fazemos join com Aluno e filtramos pela turma
         resultados_query = resultados_query.join(Aluno).filter(Aluno.turma_id == turma_id)
-
-    if escola_id:
+    elif escola_id:
+        # Se tem apenas escola_id (sem turma_id), fazemos join com Aluno e Turma
         resultados_query = resultados_query.join(Aluno).join(Turma).filter(Turma.escola_id == escola_id)
 
     resultados = resultados_query.all()

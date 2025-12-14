@@ -9,6 +9,7 @@ import { PerfilUsuario } from './types';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import DashboardNew from './pages/DashboardNew';
+import DashboardAnalytics from './pages/DashboardAnalytics';
 import RelatoriosPage from './pages/RelatoriosPage';
 import EscolasPage from './pages/EscolasPage';
 import ProfessoresPage from './pages/ProfessoresPage';
@@ -61,7 +62,7 @@ function App() {
         path="/"
         element={
           <AuthenticatedRoute>
-            <DashboardNew />
+            <DashboardAnalytics />
           </AuthenticatedRoute>
         }
       />
@@ -70,6 +71,22 @@ function App() {
         element={
           <AuthenticatedRoute>
             <Dashboard />
+          </AuthenticatedRoute>
+        }
+      />
+      <Route
+        path="/dashboard-new"
+        element={
+          <AuthenticatedRoute>
+            <DashboardNew />
+          </AuthenticatedRoute>
+        }
+      />
+      <Route
+        path="/dashboard-analytics"
+        element={
+          <AuthenticatedRoute>
+            <DashboardAnalytics />
           </AuthenticatedRoute>
         }
       />

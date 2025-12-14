@@ -35,7 +35,8 @@ from .routers import (
     relatorios,
     importacao,
     importacao_escolas_diretores,
-    configuracoes_grafico
+    configuracoes_grafico,
+    dashboard
 )
 
 
@@ -333,6 +334,13 @@ app.include_router(
     configuracoes_grafico.router,
     prefix="/api/v1/configuracoes-grafico",
     tags=["Configurações de Gráficos"]
+)
+
+# Dashboard Analytics
+app.include_router(
+    dashboard.router,
+    prefix="/api/v1",
+    tags=["Dashboard Analytics"]
 )
 
 # ============================================
