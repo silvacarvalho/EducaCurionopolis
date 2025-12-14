@@ -672,7 +672,7 @@ async def avaliacoes_agregadas_drill_down_turmas(
 async def detalhamento_avaliacao_turma(
     turma_id: int,
     ano_letivo: int,
-    bimestre: int,
+    bimestre: int = None,
     disciplina_id: int = None,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
@@ -702,9 +702,11 @@ async def detalhamento_avaliacao_turma(
     # Get the aggregated evaluation
     query = db.query(AvaliacaoAgregada).filter(
         AvaliacaoAgregada.turma_id == turma_id,
-        AvaliacaoAgregada.ano_letivo == ano_letivo,
-        AvaliacaoAgregada.bimestre == bimestre
+        AvaliacaoAgregada.ano_letivo == ano_letivo
     )
+
+    if bimestre:
+        query = query.filter(AvaliacaoAgregada.bimestre == bimestre)
 
     if disciplina_id:
         query = query.filter(AvaliacaoAgregada.disciplina_id == disciplina_id)

@@ -858,8 +858,8 @@ const RelatoriosPage: React.FC = () => {
           turmaId={selectedTurmaId}
           turmaNome={selectedTurmaNome}
           anoLetivo={anoLetivo}
-          bimestre={bimestre as number || 1}
-          disciplinaId={disciplinaId as number || undefined}
+          bimestre={typeof bimestre === 'number' ? bimestre : undefined}
+          disciplinaId={typeof disciplinaId === 'number' ? disciplinaId : undefined}
         />
         </Box>
       </Box>

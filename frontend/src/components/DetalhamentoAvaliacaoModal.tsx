@@ -34,7 +34,7 @@ interface DetalhamentoAvaliacaoModalProps {
   turmaId: number | null;
   turmaNome?: string;
   anoLetivo: number;
-  bimestre: number;
+  bimestre?: number;
   disciplinaId?: number;
 }
 
@@ -93,7 +93,7 @@ const DetalhamentoAvaliacaoModal: React.FC<DetalhamentoAvaliacaoModalProps> = ({
     try {
       const response = await relatoriosAPI.avaliacaoAgregadaDetalhamento(turmaId, {
         ano_letivo: anoLetivo,
-        bimestre: bimestre,
+        bimestre: bimestre || undefined,
         disciplina_id: disciplinaId,
       });
 
@@ -110,7 +110,7 @@ const DetalhamentoAvaliacaoModal: React.FC<DetalhamentoAvaliacaoModalProps> = ({
       <DialogTitle>
         Detalhamento da Avaliação - {turmaNome || 'Turma'}
         <Typography variant="caption" display="block" color="text.secondary">
-          {bimestre}º Bimestre / {anoLetivo}
+          {bimestre ? `${bimestre}º Bimestre` : 'Todos os Bimestres'} / {anoLetivo}
         </Typography>
       </DialogTitle>
 
@@ -128,6 +128,9 @@ const DetalhamentoAvaliacaoModal: React.FC<DetalhamentoAvaliacaoModalProps> = ({
             {!data.avaliacao_existe ? (
               <Alert severity="info">
                 Não há avaliação registrada para esta turma no período selecionado.
+                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                  Parâmetros usados: Turma ID: {turmaId}, Ano: {anoLetivo}, Bimestre: {bimestre || 'Todos'}, Disciplina: {disciplinaId || 'Todas'}
+                </Typography>
               </Alert>
             ) : (
               <>
