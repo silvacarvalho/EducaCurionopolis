@@ -1,34 +1,105 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128">
-  <script xmlns=""/>
-  <!-- Modern flat favicon: blue outer circle, soft-yellow inner circle, green plus -->
-  <defs>
-    <!-- Gradiente original do círculo interno -->
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#1E88E5"/>
-      <stop offset="1" stop-color="#1565C0"/>
-    </linearGradient>
-
-    <!-- NOVO: Gradiente Verde para o sinal de mais -->
-    <linearGradient id="gradienteVerde" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="#388E3C"/>
-        <stop offset="100%" stop-color="#81C784"/>
-    </linearGradient>
-
-  </defs>
-  <!-- Outer circle back to blue -->
-  <circle cx="32" cy="32" r="32" fill="#FFD200"/>
-  <!-- Central circle slightly large and soft yellow -->
-  <circle xmlns="http://www.w3.org/2000/svg" cx="32" cy="32" r="26" fill="#FFEDC0"/>
-  <circle xmlns="http://www.w3.org/2000/svg" cx="32" cy="32" r="22" fill="url(#bg)"/>
-
-  <!-- Stylized E (white for contrast) -->
-  <path d="M22 20 H42 V24 H28 V30 H39 V34 H28 V40 H42 V44 H22 Z" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" zoomAndPan="magnify" viewBox="0 0 768 767.999994" height="1024" preserveAspectRatio="xMidYMid meet" version="1.0">
   
-  <!-- Plus sign using a green gradient now -->
-  <!-- AQUI ESTÁ A MUDANÇA: fill="url(#gradienteVerde)" -->
-  <g fill="url(#gradienteVerde)">
-    <rect x="47" y="-8" width="5" height="25" rx="1"/>
-    <rect x="39" y="6" width="20" height="5" rx="1"/>
-  </g>
-  <title>Educa+ Curionópolis</title>
+  <!-- Círculo externo azul -->
+  <path fill="#054e85" d="M 367.5 130.5 L 399 130.5 L 415.5 132.75 L 433.5 137.25 L 450 143.25 L 462 149.25 L 475.5 156.75 L 486.75 165 L 494.25 171 L 504 180 L 509.25 185.25 L 516 193.5 L 523.5 203.25 L 529.5 213 L 537 226.5 L 544.5 245.25 L 549 261 L 552 277.5 L 553.5 294.75 L 553.5 309.75 L 552 325.5 L 548.25 344.25 L 543 360.75 L 537 376.5 L 535.5 376.5 L 530.25 364.5 L 524.25 351 L 526.5 342.75 L 530.25 328.5 L 531.75 318.75 L 532.5 309.75 L 532.5 291 L 531 277.5 L 526.5 258.75 L 521.25 243.75 L 513 226.5 L 504 213 L 495.75 202.5 L 490.5 197.25 L 486.75 192.75 L 480.75 187.5 L 469.5 178.5 L 456 170.25 L 444.75 164.25 L 426 157.5 L 410.25 153.75 L 400.5 152.25 L 391.5 151.5 L 374.25 151.5 L 356.25 153.75 L 340.5 157.5 L 326.25 162.75 L 310.5 170.25 L 300.75 176.25 L 288.75 185.25 L 279.75 193.5 L 270.75 202.5 L 261 215.25 L 252 230.25 L 246 243 L 240 261 L 236.25 279.75 L 234.75 295.5 L 234.75 307.5 L 237 327.75 L 241.5 346.5 L 242.25 349.5 L 234 367.5 L 231 374.25 L 229.5 374.25 L 225 363.75 L 219.75 347.25 L 216.75 333.75 L 214.5 317.25 L 214.5 288 L 216.75 270 L 221.25 251.25 L 226.5 236.25 L 231.75 224.25 L 238.5 211.5 L 244.5 202.5 L 254.25 189.75 L 263.25 180 L 269.25 174 L 277.5 167.25 L 287.25 159.75 L 303 150 L 317.25 143.25 L 336 136.5 L 355.5 132 Z M 367.5 130.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Barra azul escura 1 -->
+  <path fill="#1694cd" d="M 390.75 183 L 427.5 183 L 428.25 183.75 L 428.25 334.5 L 422.25 339.75 L 412.5 347.25 L 402.75 356.25 L 395.25 363.75 L 390.75 369 L 390 369 L 390 183.75 Z M 390.75 183" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Livro - parte azul claro inferior -->
+  <path fill="#19ace4" d="M 261 413.25 L 291.75 413.25 L 307.5 414.75 L 329.25 418.5 L 356.25 425.25 L 387.75 435 L 409.5 440.25 L 420 441.75 L 434.25 442.5 L 451.5 441 L 465 438 L 479.25 432.75 L 486 430.5 L 482.25 434.25 L 471 443.25 L 456.75 451.5 L 439.5 459 L 425.25 463.5 L 412.5 466.5 L 395.25 468.75 L 372 468.75 L 354.75 466.5 L 341.25 463.5 L 324.75 458.25 L 310.5 452.25 L 296.25 444.75 L 285 437.25 L 275.25 429.75 L 264 419.25 L 258.75 414.75 Z M 261 413.25" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Barra verde 1 -->
+  <path fill="#89c035" d="M 336.75 238.5 L 375 238.5 L 375 369.75 L 369.75 365.25 L 361.5 356.25 L 354 349.5 L 346.5 343.5 L 336.75 336 Z M 336.75 238.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Barra amarela -->
+  <path fill="#ecc320" d="M 444 227.25 L 481.5 227.25 L 481.5 315 L 459.75 321.75 L 446.25 327 L 444 327 Z M 444 227.25" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Livro - camada azul média -->
+  <path fill="#19ade4" d="M 297 400.5 L 321.75 400.5 L 344.25 402.75 L 368.25 407.25 L 405.75 416.25 L 422.25 419.25 L 436.5 420.75 L 454.5 420.75 L 473.25 418.5 L 491.25 414 L 508.5 408 L 510 408.75 L 501 415.5 L 491.25 421.5 L 480 426.75 L 465 431.25 L 452.25 433.5 L 445.5 434.25 L 425.25 434.25 L 406.5 432 L 387 427.5 L 356.25 417.75 L 332.25 411.75 L 313.5 408.75 L 295.5 407.25 L 258.75 407.25 L 261 405.75 L 274.5 402.75 L 285 401.25 Z M 297 400.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Letra E (Educa) -->
+  <path id="letra_E" fill="#064c82" d="M 216 498.75 L 265.5 498.75 L 265.5 512.25 L 233.25 512.25 L 231.75 511.5 L 231 524.25 L 260.25 524.25 L 261 525 L 261 537 L 231 537 L 231.75 547.5 L 231 550.5 L 265.5 550.5 L 265.5 563.25 L 216.75 563.25 L 216 562.5 Z M 216 498.75" fill-opacity="1" fill-rule="nonzero" transform="translate(23, 0)"/>
+  
+  <!-- Letra d (educa) -->
+  <path id="letra_d" fill="#054c82" d="M 311.25 497.25 L 326.25 497.25 L 326.25 563.25 L 313.5 563.25 L 312 562.5 L 312 558 L 303.75 562.5 L 301.5 563.25 L 291 563.25 L 283.5 560.25 L 278.25 555.75 L 273.75 548.25 L 272.25 543 L 272.25 533.25 L 275.25 525 L 280.5 518.25 L 287.25 514.5 L 294 513 L 303 513.75 L 307.5 516 L 310.5 518.25 Z M 295.5 525.75 L 291 528.75 L 288 533.25 L 287.25 539.25 L 289.5 546 L 294 549.75 L 296.25 550.5 L 302.25 550.5 L 306.75 548.25 L 310.5 543.75 L 311.25 541.5 L 311.25 534 L 307.5 528 L 303 525.75 Z M 295.5 525.75" fill-opacity="1" fill-rule="nonzero" transform="translate(20.5, 0)"/>
+  
+  <!-- Onda esquerda 1 -->
+  <path fill="#18ade5" d="M 262.5 322.5 L 269.25 323.25 L 283.5 326.25 L 306 333.75 L 321 340.5 L 335.25 348.75 L 349.5 359.25 L 358.5 367.5 L 364.5 372.75 L 372 381 L 381 394.5 L 381.75 398.25 L 380.25 398.25 L 375 391.5 L 369 385.5 L 357 376.5 L 344.25 369 L 331.5 363 L 312.75 356.25 L 294.75 351.75 L 276.75 348.75 L 252 346.5 L 252.75 342.75 Z M 262.5 322.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Onda direita 1 -->
+  <path fill="#18ace4" d="M 502.5 322.5 L 504 322.5 L 514.5 345 L 514.5 346.5 L 486.75 348.75 L 465.75 352.5 L 446.25 357.75 L 429.75 364.5 L 414 372.75 L 405 378.75 L 396.75 385.5 L 389.25 392.25 L 384 399 L 382.5 402 L 381.75 398.25 L 383.25 398.25 L 384.75 393.75 L 393 381.75 L 403.5 370.5 L 412.5 361.5 L 422.25 354 L 433.5 346.5 L 447 339 L 461.25 333 L 477.75 327.75 L 494.25 324 Z M 502.5 322.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Símbolo + (amarelo) -->
+  <path id="plus_symbol" fill="#ceca2c" d="M 525 504.75 L 542.25 504.75 L 542.25 523.5 L 564.75 523.5 L 564.75 543 L 542.25 543 L 542.25 558 L 541.5 563.25 L 525 563.25 L 525 543 L 504.75 543 L 504.75 523.5 L 525 523.5 Z M 525 504.75" fill-opacity="1" fill-rule="nonzero" transform="translate(-0.25, -28.25)"/>
+  
+  <!-- Barra azul clara 2 -->
+  <path fill="#169dd7" d="M 281.25 273 L 318.75 273 L 318.75 327 L 315 326.25 L 303.75 321.75 L 287.25 316.5 L 280.5 315 L 280.5 273.75 Z M 281.25 273" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Letra u (educa) -->
+  <path id="letra_u_educa" fill="#054b80" d="M 338.25 513.75 L 353.25 513.75 L 354 541.5 L 356.25 546.75 L 357.75 548.25 L 364.5 549 L 369.75 546 L 371.25 543 L 372 513.75 L 387 513.75 L 387 563.25 L 379.5 563.25 L 372.75 562.5 L 372 558 L 366.75 561.75 L 362.25 563.25 L 352.5 563.25 L 346.5 561 L 342 557.25 L 339 551.25 L 338.25 549 Z M 338.25 513.75" fill-opacity="1" fill-rule="nonzero" transform="translate(15.25, 0)"/>
+  
+  <!-- Letra a (educa) -->
+  <path id="letra_a_educa" fill="#064c82" d="M 469.5 513 L 477 513 L 486 515.25 L 492 519.75 L 495 525 L 496.5 529.5 L 496.5 563.25 L 483.75 563.25 L 483 562.5 L 483 558 L 475.5 562.5 L 473.25 563.25 L 462 563.25 L 454.5 559.5 L 451.5 555.75 L 450 552.75 L 450 545.25 L 452.25 540 L 456.75 536.25 L 462.75 534 L 466.5 533.25 L 481.5 533.25 L 479.25 528 L 477 526.5 L 470.25 525.75 L 461.25 528 L 456.75 529.5 L 453 522 L 452.25 519 L 456.75 516 L 464.25 513.75 Z M 471 541.5 L 465.75 543.75 L 465 545.25 L 465 549.75 L 467.25 552 L 474 552.75 L 480 549.75 L 482.25 544.5 L 481.5 541.5 Z M 471 541.5" fill-opacity="1" fill-rule="nonzero" transform="translate(11.25, 0)"/>
+  
+  <!-- Onda superior -->
+  <path fill="#0a6097" d="M 470.25 377.25 L 507.75 377.25 L 525 378.75 L 528.75 380.25 L 534 390.75 L 537 399 L 531.75 398.25 L 512.25 393.75 L 498 391.5 L 480.75 390 L 443.25 390 L 423.75 392.25 L 404.25 396 L 386.25 401.25 L 384.75 400.5 L 390.75 396.75 L 406.5 390 L 420 385.5 L 440.25 381 L 460.5 378 Z M 470.25 377.25" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Onda esquerda 2 -->
+  <path fill="#19ade5" d="M 249.75 352.5 L 272.25 354 L 294.75 357.75 L 315 363 L 331.5 369 L 349.5 377.25 L 364.5 386.25 L 372 392.25 L 374.25 395.25 L 370.5 393.75 L 358.5 387.75 L 345 382.5 L 326.25 377.25 L 305.25 373.5 L 289.5 372 L 276 371.25 L 240.75 371.25 L 247.5 357 Z M 249.75 352.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Onda direita 2 -->
+  <path fill="#19ace4" d="M 513.75 352.5 L 516 353.25 L 524.25 370.5 L 524.25 371.25 L 490.5 371.25 L 467.25 372.75 L 447 375.75 L 429.75 379.5 L 409.5 386.25 L 397.5 392.25 L 390.75 396 L 389.25 395.25 L 399.75 387 L 414 378 L 431.25 369.75 L 447.75 363.75 L 464.25 359.25 L 483.75 355.5 L 501 353.25 Z M 513.75 352.5" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Onda base esquerda -->
+  <path fill="#0a6198" d="M 255 377.25 L 294 377.25 L 315.75 379.5 L 334.5 383.25 L 351 387.75 L 366 393 L 374.25 396.75 L 375 395.25 L 379.5 399 L 378 400.5 L 371.25 399 L 353.25 394.5 L 335.25 391.5 L 320.25 390 L 306 389.25 L 294 389.25 L 270.75 390.75 L 251.25 393.75 L 232.5 398.25 L 230.25 398.25 L 232.5 390.75 L 238.5 378.75 Z M 255 377.25" fill-opacity="1" fill-rule="nonzero"/>
+  
+  <!-- Letra c (educa) -->
+  <path id="letra_c_educa" fill="#054c81" d="M 420.75 513 L 429.75 513.75 L 437.25 516.75 L 442.5 521.25 L 445.5 527.25 L 435 531.75 L 432 531 L 429 527.25 L 426.75 526.5 L 419.25 526.5 L 414.75 529.5 L 412.5 532.5 L 411.75 540 L 414 545.25 L 417 548.25 L 420.75 549.75 L 426.75 549.75 L 431.25 546.75 L 433.5 544.5 L 441 546.75 L 445.5 549 L 444 553.5 L 440.25 558 L 434.25 561.75 L 429.75 563.25 L 416.25 563.25 L 407.25 559.5 L 401.25 554.25 L 397.5 547.5 L 396 538.5 L 397.5 530.25 L 401.25 522.75 L 408 516.75 L 415.5 513.75 Z M 420.75 513" fill-opacity="1" fill-rule="nonzero" transform="translate(11.5, 0)"/>
+  
+  <!-- Letra p (Curionópolois) -->
+  <path id="letra_p_curio" fill="#19aae2" d="M 423 585 L 429.75 585 L 430.5 588 L 435 585 L 444 585 L 449.25 588 L 453 594 L 453.75 601.5 L 451.5 609 L 445.5 614.25 L 444 615 L 435.75 615 L 429.75 612 L 429.75 625.5 L 423 625.5 Z M 435.75 591 L 431.25 594.75 L 429.75 600 L 431.25 605.25 L 435.75 609 L 440.25 609 L 444.75 606 L 446.25 602.25 L 446.25 596.25 L 442.5 591.75 L 441 591 Z M 435.75 591" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra C (Curionópolois) -->
+  <path id="letra_C_curio" fill="#1aa9e1" d="M 223.5 575.25 L 231.75 576 L 237 579 L 240.75 582.75 L 239.25 585.75 L 237 587.25 L 234 586.5 L 229.5 583.5 L 221.25 583.5 L 216.75 586.5 L 213.75 591 L 213.75 600 L 216.75 604.5 L 221.25 607.5 L 229.5 607.5 L 234.75 604.5 L 238.5 605.25 L 240.75 608.25 L 234.75 613.5 L 230.25 615 L 220.5 615 L 214.5 612.75 L 210 609 L 207 604.5 L 205.5 599.25 L 205.5 591.75 L 207.75 585 L 211.5 580.5 L 219 576 Z M 223.5 575.25" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra o (Curionópolois) - primeira -->
+  <path id="letra_o1_curio" fill="#1aaae3" d="M 327 585 L 336.75 585 L 342.75 588.75 L 345.75 592.5 L 347.25 596.25 L 347.25 603 L 345 608.25 L 342 612 L 336 615 L 327 615 L 321 612 L 317.25 606.75 L 316.5 604.5 L 316.5 595.5 L 320.25 588.75 L 324.75 585.75 Z M 329.25 591 L 324.75 594 L 323.25 597 L 323.25 603 L 326.25 607.5 L 329.25 609 L 334.5 609 L 339 605.25 L 339.75 603.75 L 339.75 595.5 L 334.5 591 Z M 329.25 591" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra ó (Curionópolois) -->
+  <path id="letra_o_acento" fill="#1aaae2" d="M 397.5 585 L 406.5 585 L 412.5 588 L 416.25 592.5 L 417.75 601.5 L 415.5 608.25 L 409.5 613.5 L 405.75 615 L 397.5 615 L 391.5 612 L 387 606 L 386.25 603 L 386.25 597 L 388.5 591.75 L 392.25 587.25 Z M 399 591 L 394.5 594.75 L 393.75 596.25 L 393.75 603.75 L 397.5 608.25 L 399 609 L 405 609 L 409.5 605.25 L 410.25 603.75 L 410.25 597 L 408 593.25 L 405 591 Z M 399 591" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra u (Curionópolois) -->
+  <path id="letra_u_curio" fill="#1babe3" d="M 246 585 L 252.75 585 L 253.5 604.5 L 257.25 608.25 L 261.75 608.25 L 265.5 605.25 L 266.25 603.75 L 267 585 L 274.5 585 L 274.5 614.25 L 270.75 615 L 267 614.25 L 266.25 611.25 L 262.5 614.25 L 261 615 L 253.5 615 L 249 612 L 246 607.5 L 245.25 585.75 Z M 246 585" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra n (Curionópolois) -->
+  <path id="letra_n_curio" fill="#1aaae3" d="M 353.25 585 L 359.25 585 L 360.75 587.25 L 364.5 585 L 373.5 585 L 378 588 L 380.25 591.75 L 381 614.25 L 380.25 615 L 373.5 615 L 372.75 595.5 L 372 593.25 L 369 591.75 L 363.75 592.5 L 360.75 595.5 L 360 614.25 L 359.25 615 L 353.25 615 L 352.5 614.25 L 352.5 585.75 Z M 353.25 585" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra o (Curionópolois) - segunda -->
+  <path id="letra_o2_curio" fill="#19aae3" d="M 468 585 L 477 585 L 483 588 L 486 591.75 L 487.5 596.25 L 487.5 604.5 L 485.25 609 L 481.5 612.75 L 477 615 L 468 615 L 462 612 L 458.25 606 L 457.5 603.75 L 457.5 596.25 L 459.75 591 L 465.75 585.75 Z M 469.5 591 L 465.75 594 L 464.25 597 L 464.25 603 L 466.5 606.75 L 470.25 609 L 475.5 609 L 479.25 606 L 480.75 602.25 L 480.75 597 L 477.75 592.5 L 475.5 591 Z M 469.5 591" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra s (Curionópolois) -->
+  <path id="letra_s_curio" fill="#19aae1" d="M 540.75 585 L 551.25 585 L 556.5 587.25 L 555 592.5 L 552.75 592.5 L 548.25 591 L 542.25 591.75 L 541.5 594.75 L 546 596.25 L 554.25 598.5 L 557.25 601.5 L 558 606.75 L 555 612.75 L 549.75 615 L 540 615 L 533.25 612 L 534 607.5 L 535.5 606 L 540.75 608.25 L 549 608.25 L 549.75 604.5 L 537.75 600.75 L 534.75 598.5 L 534 596.25 L 534 591 L 537.75 586.5 Z M 540.75 585" fill-opacity="1" fill-rule="nonzero" transform="translate(-14.25, 0)"/>
+  
+  <!-- Letra r (Curionópolois) -->
+  <path id="letra_r_curio" fill="#19aae3" d="M 282 585 L 287.25 585 L 288 588.75 L 289.5 588.75 L 289.5 587.25 L 294 585 L 298.5 585 L 298.5 591.75 L 291 594 L 288.75 597.75 L 288 615 L 281.25 615 L 281.25 585.75 Z M 282 585" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra l (Curionópolois) -->
+  <path id="letra_l_curio" fill="#1aade5" d="M 498 575.25 L 499.5 575.25 L 499.5 615 L 492.75 615 L 492.75 576 Z M 498 575.25" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Letra i (Curionópolois) - segunda (corpo) -->
+  <path id="letra_i2_corpo" fill="#19abe4" d="M 521.25 585 L 528 585 L 528 615 L 521.25 615 Z M 521.25 585" fill-opacity="1" fill-rule="nonzero" transform="translate(-14.5, 0)"/>
+  
+  <!-- Letra i (Curionópolois) - primeira (corpo) -->
+  <path id="letra_i1_corpo" fill="#18aae4" d="M 303.75 585 L 310.5 585 L 310.5 615 L 303.75 615 Z M 303.75 585" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Ponto do i - primeiro -->
+  <path id="letra_i1_ponto" fill="#16a2dc" d="M 305.25 573.75 L 309.75 573.75 L 311.25 575.25 L 311.25 579.75 L 308.25 582 L 304.5 581.25 L 303 579.75 L 303.75 574.5 Z M 305.25 573.75" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
+  <!-- Ponto do i - segundo -->
+  <path id="letra_i2_ponto" fill="#19a9e1" d="M 522 573.75 L 526.5 573.75 L 528.75 576 L 528 580.5 L 525.75 582 L 522 581.25 L 520.5 579.75 L 521.25 574.5 Z M 522 573.75" fill-opacity="1" fill-rule="nonzero" transform="translate(-14.5, 0)"/>
+  
+  <!-- Acento do ó -->
+  <path id="acento_o" fill="#19a4dc" d="M 405.75 573.75 L 412.5 573.75 L 412.5 575.25 L 411 575.25 L 411 576.75 L 405 581.25 L 401.25 581.25 L 401.25 579 Z M 405.75 573.75" fill-opacity="1" fill-rule="nonzero" transform="translate(0, 0)"/>
+  
 </svg>
