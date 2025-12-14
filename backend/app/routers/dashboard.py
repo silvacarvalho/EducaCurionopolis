@@ -15,7 +15,7 @@ from app.auth import get_current_active_user
 from app.models import (
     Usuario, Escola, Professor, Turma, Aluno,
     Diagnostico, DiagnosticoResultado, AvaliacaoItemDiagnostico,
-    ProvaSimuladoSAEB, ResultadoSAEB, AvaliacaoAgregada
+    ProvaSimuladoSAEB, ResultadoSAEB, AvaliacaoAgregada, PerfilUsuario
 )
 from app.schemas import HipoteseEscrita, Bimestre
 
@@ -39,39 +39,100 @@ async def get_dashboard_stats(
             ano_letivo = datetime.now().year
         
         # ============================================
+        # DETERMINAR ESCOPO BASEADO NO PERFIL
+        # ============================================
+        
+        # IDs de escolas e turmas que o usuário pode ver
+        escola_ids = None  # None = todas
+        turma_ids = None   # None = todas
+        professor_id = None
+        
+        if current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR:
+            # Diretor vê apenas sua escola
+            if current_user.escola_dirigida:
+                escola_ids = [current_user.escola_dirigida.id]
+            else:
+                # Sem escola associada, não vê nada
+                escola_ids = []
+                
+        elif current_user.perfil == PerfilUsuario.PROFESSOR:
+            # Professor vê apenas suas turmas
+            professor = db.query(Professor).filter(Professor.usuario_id == current_user.id).first()
+            if professor:
+                professor_id = professor.id
+                turmas_professor = db.query(Turma.id).filter(
+                    Turma.professor_id == professor.id,
+                    Turma.ano_letivo == ano_letivo
+                ).all()
+                turma_ids = [t.id for t in turmas_professor]
+                # Descobrir escola(s) do professor
+                escola_ids_query = db.query(distinct(Turma.escola_id)).filter(
+                    Turma.professor_id == professor.id,
+                    Turma.ano_letivo == ano_letivo
+                ).all()
+                escola_ids = [e[0] for e in escola_ids_query]
+            else:
+                turma_ids = []
+                escola_ids = []
+        
+        # Para GESTAO_MUNICIPAL e COMUNIDADE, escola_ids e turma_ids permanecem None (vê tudo)
+        
+        # ============================================
         # CONTADORES GERAIS
         # ============================================
         
-        # Escolas ativas
-        total_escolas = db.query(func.count(Escola.id)).filter(
-            Escola.ativo == True
-        ).scalar() or 0
+        # Escolas ativas (baseado no escopo do usuário)
+        query_escolas = db.query(func.count(Escola.id)).filter(Escola.ativo == True)
+        if escola_ids is not None:
+            query_escolas = query_escolas.filter(Escola.id.in_(escola_ids))
+        total_escolas = query_escolas.scalar() or 0
         
-        # Professores ativos
-        total_professores = db.query(func.count(Professor.id)).filter(
-            Professor.ativo == True
-        ).scalar() or 0
+        # Professores ativos (baseado no escopo)
+        query_professores = db.query(func.count(Professor.id)).filter(Professor.ativo == True)
+        if escola_ids is not None:
+            query_professores = query_professores.filter(Professor.escola_id.in_(escola_ids))
+        if professor_id is not None:
+            # Professor vê apenas ele mesmo
+            query_professores = query_professores.filter(Professor.id == professor_id)
+        total_professores = query_professores.scalar() or 0
         
-        # Turmas do ano letivo
-        total_turmas = db.query(func.count(Turma.id)).filter(
+        # Turmas do ano letivo (baseado no escopo)
+        query_turmas = db.query(func.count(Turma.id)).filter(
             Turma.ano_letivo == ano_letivo,
             Turma.ativo == True
-        ).scalar() or 0
+        )
+        if turma_ids is not None:
+            query_turmas = query_turmas.filter(Turma.id.in_(turma_ids))
+        elif escola_ids is not None:
+            query_turmas = query_turmas.filter(Turma.escola_id.in_(escola_ids))
+        total_turmas = query_turmas.scalar() or 0
         
-        # Alunos ativos do ano letivo (via turma)
-        total_alunos = db.query(func.count(Aluno.id)).join(
+        # Alunos ativos do ano letivo (via turma, baseado no escopo)
+        query_alunos = db.query(func.count(Aluno.id)).join(
             Turma, Aluno.turma_id == Turma.id
         ).filter(
             Aluno.ativo == True,
             Turma.ano_letivo == ano_letivo
-        ).scalar() or 0
+        )
+        if turma_ids is not None:
+            query_alunos = query_alunos.filter(Turma.id.in_(turma_ids))
+        elif escola_ids is not None:
+            query_alunos = query_alunos.filter(Turma.escola_id.in_(escola_ids))
+        total_alunos = query_alunos.scalar() or 0
         
-        # Total de avaliações registradas no ano
-        total_avaliacoes = db.query(func.count(AvaliacaoAgregada.id)).filter(
+        # Total de avaliações registradas no ano (baseado no escopo)
+        query_avaliacoes = db.query(func.count(AvaliacaoAgregada.id)).filter(
             AvaliacaoAgregada.ano_letivo == ano_letivo
-        ).scalar() or 0
+        )
+        if turma_ids is not None:
+            query_avaliacoes = query_avaliacoes.filter(AvaliacaoAgregada.turma_id.in_(turma_ids))
+        elif escola_ids is not None:
+            query_avaliacoes = query_avaliacoes.join(Turma, AvaliacaoAgregada.turma_id == Turma.id).filter(
+                Turma.escola_id.in_(escola_ids)
+            )
+        total_avaliacoes = query_avaliacoes.scalar() or 0
         
-        # Total de diagnósticos cadastrados no ano
+        # Total de diagnósticos cadastrados no ano (não filtra por escopo - são templates globais)
         total_diagnosticos = db.query(func.count(Diagnostico.id)).filter(
             Diagnostico.ano_letivo == ano_letivo,
             Diagnostico.ativo == True
@@ -81,37 +142,64 @@ async def get_dashboard_stats(
         # MÉTRICAS SAEB
         # ============================================
         
-        # Simulados ativos no ano
+        # Simulados ativos no ano (não filtra por escopo - são templates globais)
         total_simulados = db.query(func.count(ProvaSimuladoSAEB.id)).filter(
             ProvaSimuladoSAEB.ano_letivo == ano_letivo,
             ProvaSimuladoSAEB.ativo == True
         ).scalar() or 0
         
-        # Participantes únicos em simulados
+        # Participantes únicos em simulados (baseado no escopo)
         participantes_saeb = 0
         total_participacoes = 0
         media_saeb = 0.0
         
         try:
-            participantes_saeb = db.query(func.count(distinct(ResultadoSAEB.aluno_id))).join(
+            query_participantes = db.query(func.count(distinct(ResultadoSAEB.aluno_id))).join(
                 ProvaSimuladoSAEB
+            ).join(
+                Aluno, ResultadoSAEB.aluno_id == Aluno.id
+            ).join(
+                Turma, Aluno.turma_id == Turma.id
             ).filter(
                 ProvaSimuladoSAEB.ano_letivo == ano_letivo
-            ).scalar() or 0
+            )
+            if turma_ids is not None:
+                query_participantes = query_participantes.filter(Turma.id.in_(turma_ids))
+            elif escola_ids is not None:
+                query_participantes = query_participantes.filter(Turma.escola_id.in_(escola_ids))
+            participantes_saeb = query_participantes.scalar() or 0
             
             # Total de participações (resultados)
-            total_participacoes = db.query(func.count(ResultadoSAEB.id)).join(
+            query_participacoes = db.query(func.count(ResultadoSAEB.id)).join(
                 ProvaSimuladoSAEB
+            ).join(
+                Aluno, ResultadoSAEB.aluno_id == Aluno.id
+            ).join(
+                Turma, Aluno.turma_id == Turma.id
             ).filter(
                 ProvaSimuladoSAEB.ano_letivo == ano_letivo
-            ).scalar() or 0
+            )
+            if turma_ids is not None:
+                query_participacoes = query_participacoes.filter(Turma.id.in_(turma_ids))
+            elif escola_ids is not None:
+                query_participacoes = query_participacoes.filter(Turma.escola_id.in_(escola_ids))
+            total_participacoes = query_participacoes.scalar() or 0
             
-            # Média geral SAEB
-            media_result = db.query(func.avg(ResultadoSAEB.nota_percentual)).join(
+            # Média geral SAEB (baseado no escopo)
+            query_media = db.query(func.avg(ResultadoSAEB.nota_percentual)).join(
                 ProvaSimuladoSAEB
+            ).join(
+                Aluno, ResultadoSAEB.aluno_id == Aluno.id
+            ).join(
+                Turma, Aluno.turma_id == Turma.id
             ).filter(
                 ProvaSimuladoSAEB.ano_letivo == ano_letivo
-            ).scalar()
+            )
+            if turma_ids is not None:
+                query_media = query_media.filter(Turma.id.in_(turma_ids))
+            elif escola_ids is not None:
+                query_media = query_media.filter(Turma.escola_id.in_(escola_ids))
+            media_result = query_media.scalar()
             media_saeb = round(float(media_result), 1) if media_result else 0.0
         except Exception as e:
             logger.warning(f"Erro ao calcular métricas SAEB: {str(e)}")
@@ -137,14 +225,24 @@ async def get_dashboard_stats(
         }
         
         try:
-            hipoteses_count = db.query(
+            query_hipoteses = db.query(
                 DiagnosticoResultado.hipotese_escrita,
                 func.count(DiagnosticoResultado.id).label('quantidade')
             ).join(
                 Diagnostico, DiagnosticoResultado.diagnostico_id == Diagnostico.id
+            ).join(
+                Aluno, DiagnosticoResultado.aluno_id == Aluno.id
+            ).join(
+                Turma, Aluno.turma_id == Turma.id
             ).filter(
                 Diagnostico.ano_letivo == ano_letivo
-            ).group_by(
+            )
+            if turma_ids is not None:
+                query_hipoteses = query_hipoteses.filter(Turma.id.in_(turma_ids))
+            elif escola_ids is not None:
+                query_hipoteses = query_hipoteses.filter(Turma.escola_id.in_(escola_ids))
+            
+            hipoteses_count = query_hipoteses.group_by(
                 DiagnosticoResultado.hipotese_escrita
             ).all()
             
@@ -162,12 +260,17 @@ async def get_dashboard_stats(
         
         alertas = []
         
-        # Turmas sem professor
-        turmas_sem_professor = db.query(func.count(Turma.id)).filter(
+        # Turmas sem professor (baseado no escopo)
+        query_turmas_sem_prof = db.query(func.count(Turma.id)).filter(
             Turma.ano_letivo == ano_letivo,
             Turma.ativo == True,
             Turma.professor_id == None
-        ).scalar() or 0
+        )
+        if turma_ids is not None:
+            query_turmas_sem_prof = query_turmas_sem_prof.filter(Turma.id.in_(turma_ids))
+        elif escola_ids is not None:
+            query_turmas_sem_prof = query_turmas_sem_prof.filter(Turma.escola_id.in_(escola_ids))
+        turmas_sem_professor = query_turmas_sem_prof.scalar() or 0
         
         if turmas_sem_professor > 0:
             alertas.append({
@@ -177,27 +280,29 @@ async def get_dashboard_stats(
                 'icone': 'warning'
             })
         
-        # Escolas abaixo da média SAEB (< 50%)
+        # Escolas abaixo da média SAEB (< 50%) - apenas para gestão/diretor
         escolas_baixo_saeb = 0
-        try:
-            escolas_com_saeb = db.query(
-                Turma.escola_id,
-                func.avg(ResultadoSAEB.nota_percentual).label('media')
-            ).join(
-                Aluno, Turma.id == Aluno.turma_id
-            ).join(
-                ResultadoSAEB, Aluno.id == ResultadoSAEB.aluno_id
-            ).join(
-                ProvaSimuladoSAEB, ResultadoSAEB.prova_id == ProvaSimuladoSAEB.id
-            ).filter(
-                ProvaSimuladoSAEB.ano_letivo == ano_letivo
-            ).group_by(
-                Turma.escola_id
-            ).all()
-            
-            escolas_baixo_saeb = sum(1 for e in escolas_com_saeb if e.media and e.media < 50)
-        except Exception as e:
-            logger.warning(f"Erro ao calcular escolas SAEB: {str(e)}")
+        if current_user.perfil != PerfilUsuario.PROFESSOR:
+            try:
+                query_escolas_saeb = db.query(
+                    Turma.escola_id,
+                    func.avg(ResultadoSAEB.nota_percentual).label('media')
+                ).join(
+                    Aluno, Turma.id == Aluno.turma_id
+                ).join(
+                    ResultadoSAEB, Aluno.id == ResultadoSAEB.aluno_id
+                ).join(
+                    ProvaSimuladoSAEB, ResultadoSAEB.prova_id == ProvaSimuladoSAEB.id
+                ).filter(
+                    ProvaSimuladoSAEB.ano_letivo == ano_letivo
+                )
+                if escola_ids is not None:
+                    query_escolas_saeb = query_escolas_saeb.filter(Turma.escola_id.in_(escola_ids))
+                
+                escolas_com_saeb = query_escolas_saeb.group_by(Turma.escola_id).all()
+                escolas_baixo_saeb = sum(1 for e in escolas_com_saeb if e.media and e.media < 50)
+            except Exception as e:
+                logger.warning(f"Erro ao calcular escolas SAEB: {str(e)}")
         
         if escolas_baixo_saeb > 0:
             alertas.append({
@@ -207,7 +312,7 @@ async def get_dashboard_stats(
                 'icone': 'trending_down'
             })
         
-        # Alunos sem diagnóstico (do ano letivo atual)
+        # Alunos sem diagnóstico (baseado no escopo)
         alunos_sem_diagnostico = 0
         try:
             # Subquery para pegar IDs de alunos com diagnóstico no ano
@@ -218,13 +323,18 @@ async def get_dashboard_stats(
             ).subquery()
             
             # Contar alunos do ano sem diagnóstico
-            alunos_sem_diagnostico = db.query(func.count(Aluno.id)).join(
+            query_alunos_sem_diag = db.query(func.count(Aluno.id)).join(
                 Turma, Aluno.turma_id == Turma.id
             ).filter(
                 Aluno.ativo == True,
                 Turma.ano_letivo == ano_letivo,
                 ~Aluno.id.in_(db.query(alunos_com_diagnostico.c.aluno_id))
-            ).scalar() or 0
+            )
+            if turma_ids is not None:
+                query_alunos_sem_diag = query_alunos_sem_diag.filter(Turma.id.in_(turma_ids))
+            elif escola_ids is not None:
+                query_alunos_sem_diag = query_alunos_sem_diag.filter(Turma.escola_id.in_(escola_ids))
+            alunos_sem_diagnostico = query_alunos_sem_diag.scalar() or 0
         except Exception as e:
             logger.warning(f"Erro ao calcular diagnósticos pendentes: {str(e)}")
         
@@ -236,10 +346,17 @@ async def get_dashboard_stats(
                 'icone': 'schedule'
             })
         
-        # Progresso de avaliações lançadas
-        turmas_com_avaliacao = db.query(func.count(distinct(AvaliacaoAgregada.turma_id))).filter(
+        # Progresso de avaliações lançadas (baseado no escopo)
+        query_turmas_aval = db.query(func.count(distinct(AvaliacaoAgregada.turma_id))).filter(
             AvaliacaoAgregada.ano_letivo == ano_letivo
-        ).scalar() or 0
+        )
+        if turma_ids is not None:
+            query_turmas_aval = query_turmas_aval.filter(AvaliacaoAgregada.turma_id.in_(turma_ids))
+        elif escola_ids is not None:
+            query_turmas_aval = query_turmas_aval.join(Turma, AvaliacaoAgregada.turma_id == Turma.id).filter(
+                Turma.escola_id.in_(escola_ids)
+            )
+        turmas_com_avaliacao = query_turmas_aval.scalar() or 0
         
         if total_turmas > 0:
             percentual_avaliacoes = round((turmas_com_avaliacao / total_turmas) * 100, 0)
@@ -260,10 +377,17 @@ async def get_dashboard_stats(
         for bim in [1, 2, 3, 4]:
             media_bimestre = None
             try:
-                media_bimestre = db.query(func.avg(AvaliacaoAgregada.media_turma)).filter(
+                query_bimestre = db.query(func.avg(AvaliacaoAgregada.media_turma)).filter(
                     AvaliacaoAgregada.ano_letivo == ano_letivo,
                     AvaliacaoAgregada.bimestre == bim
-                ).scalar()
+                )
+                if turma_ids is not None:
+                    query_bimestre = query_bimestre.filter(AvaliacaoAgregada.turma_id.in_(turma_ids))
+                elif escola_ids is not None:
+                    query_bimestre = query_bimestre.join(Turma, AvaliacaoAgregada.turma_id == Turma.id).filter(
+                        Turma.escola_id.in_(escola_ids)
+                    )
+                media_bimestre = query_bimestre.scalar()
             except Exception:
                 pass
             
@@ -274,42 +398,75 @@ async def get_dashboard_stats(
             })
         
         # ============================================
-        # TOP 5 ESCOLAS (por média SAEB)
+        # TOP 5 ESCOLAS (por média SAEB) - Apenas para gestão municipal
         # ============================================
         
         escolas_ranking = []
-        try:
-            top_escolas = db.query(
-                Escola.id,
-                Escola.nome,
-                func.count(distinct(Turma.id)).label('turmas'),
-                func.count(distinct(Aluno.id)).label('alunos'),
-                func.avg(ResultadoSAEB.nota_percentual).label('media_saeb')
-            ).join(
-                Turma, Escola.id == Turma.escola_id
-            ).join(
-                Aluno, Turma.id == Aluno.turma_id
-            ).outerjoin(
-                ResultadoSAEB, Aluno.id == ResultadoSAEB.aluno_id
-            ).filter(
-                Escola.ativo == True,
-                Turma.ano_letivo == ano_letivo
-            ).group_by(
-                Escola.id, Escola.nome
-            ).order_by(
-                func.avg(ResultadoSAEB.nota_percentual).desc().nullslast()
-            ).limit(5).all()
-            
-            for escola in top_escolas:
-                escolas_ranking.append({
-                    'id': escola.id,
-                    'nome': escola.nome,
-                    'turmas': escola.turmas or 0,
-                    'alunos': escola.alunos or 0,
-                    'media_saeb': round(float(escola.media_saeb), 1) if escola.media_saeb else 0.0
-                })
-        except Exception as e:
-            logger.warning(f"Erro ao calcular ranking escolas: {str(e)}")
+        if current_user.perfil == PerfilUsuario.GESTAO_MUNICIPAL:
+            try:
+                top_escolas = db.query(
+                    Escola.id,
+                    Escola.nome,
+                    func.count(distinct(Turma.id)).label('turmas'),
+                    func.count(distinct(Aluno.id)).label('alunos'),
+                    func.avg(ResultadoSAEB.nota_percentual).label('media_saeb')
+                ).join(
+                    Turma, Escola.id == Turma.escola_id
+                ).join(
+                    Aluno, Turma.id == Aluno.turma_id
+                ).outerjoin(
+                    ResultadoSAEB, Aluno.id == ResultadoSAEB.aluno_id
+                ).filter(
+                    Escola.ativo == True,
+                    Turma.ano_letivo == ano_letivo
+                ).group_by(
+                    Escola.id, Escola.nome
+                ).order_by(
+                    func.avg(ResultadoSAEB.nota_percentual).desc().nullslast()
+                ).limit(5).all()
+                
+                for escola in top_escolas:
+                    escolas_ranking.append({
+                        'id': escola.id,
+                        'nome': escola.nome,
+                        'turmas': escola.turmas or 0,
+                        'alunos': escola.alunos or 0,
+                        'media_saeb': round(float(escola.media_saeb), 1) if escola.media_saeb else 0.0
+                    })
+            except Exception as e:
+                logger.warning(f"Erro ao calcular ranking escolas: {str(e)}")
+        elif current_user.perfil == PerfilUsuario.DIRETOR_COORDENADOR and escola_ids:
+            # Diretor vê ranking das turmas da sua escola
+            try:
+                top_turmas = db.query(
+                    Turma.id,
+                    Turma.nome,
+                    func.count(distinct(Aluno.id)).label('alunos'),
+                    func.avg(ResultadoSAEB.nota_percentual).label('media_saeb')
+                ).join(
+                    Aluno, Turma.id == Aluno.turma_id
+                ).outerjoin(
+                    ResultadoSAEB, Aluno.id == ResultadoSAEB.aluno_id
+                ).filter(
+                    Turma.escola_id.in_(escola_ids),
+                    Turma.ano_letivo == ano_letivo,
+                    Turma.ativo == True
+                ).group_by(
+                    Turma.id, Turma.nome
+                ).order_by(
+                    func.avg(ResultadoSAEB.nota_percentual).desc().nullslast()
+                ).limit(5).all()
+                
+                for turma in top_turmas:
+                    escolas_ranking.append({
+                        'id': turma.id,
+                        'nome': turma.nome,
+                        'turmas': 1,
+                        'alunos': turma.alunos or 0,
+                        'media_saeb': round(float(turma.media_saeb), 1) if turma.media_saeb else 0.0
+                    })
+            except Exception as e:
+                logger.warning(f"Erro ao calcular ranking turmas: {str(e)}")
         
         # ============================================
         # RETORNO CONSOLIDADO
