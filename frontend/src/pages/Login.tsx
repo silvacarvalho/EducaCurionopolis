@@ -58,8 +58,8 @@ const Login: React.FC = () => {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Box 
             sx={{ 
-              width: { xs: 200, sm: 150 },
-              height: { xs: 200, sm: 150 },
+              width: { xs: 200, sm: 200 },
+              height: { xs: 200, sm: 200 },
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -74,8 +74,8 @@ const Login: React.FC = () => {
               src="/favicon.svg" 
               alt="EDUCA+ Logo"
               style={{ 
-                width: '100%', 
-                height: '100%', 
+                width: '85%', 
+                height: '85%', 
                 objectFit: 'cover' 
               }}
             />
