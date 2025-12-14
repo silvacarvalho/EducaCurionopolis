@@ -89,7 +89,11 @@ async def list_turmas(
     if ano_letivo:
         query = query.filter(Turma.ano_letivo == ano_letivo)
 
-    turmas = query.filter(Turma.ativo == True).offset(skip).limit(limit).all()
+    # Ordenar por ano escolar e nome da turma
+    turmas = query.filter(Turma.ativo == True).order_by(
+        Turma.ano_escolar,
+        Turma.nome
+    ).offset(skip).limit(limit).all()
 
     # Add total_alunos count to each turma
     result = []
