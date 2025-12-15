@@ -561,115 +561,134 @@ const SAEBV2ProfessorPage: React.FC = () => {
           <title>${simuladoExportado.simulado_nome} - ${simuladoExportado.ano_escolar}º ano</title>
           <style>
             @media print {
-              @page { margin: 2cm; }
+              @page { margin: 1.5cm; }
               body { margin: 0; }
+            }
+
+            * {
+              box-sizing: border-box;
             }
 
             body {
               font-family: Arial, sans-serif;
-              line-height: 1.6;
+              line-height: 1.4;
               color: #333;
               max-width: 21cm;
               margin: 0 auto;
-              padding: 20px;
+              padding: 10px;
+              font-size: 11pt;
             }
 
             .header {
               text-align: center;
-              margin-bottom: 30px;
+              margin-bottom: 10px;
               border-bottom: 2px solid #333;
-              padding-bottom: 20px;
+              padding-bottom: 8px;
             }
 
             .header h1 {
               margin: 0;
-              font-size: 24px;
+              font-size: 18px;
               text-transform: uppercase;
             }
 
             .header .info {
-              margin-top: 10px;
-              font-size: 14px;
+              margin-top: 5px;
+              font-size: 12px;
             }
 
             .aluno-info {
-              margin-bottom: 30px;
-              padding: 15px;
+              margin-bottom: 15px;
+              padding: 8px 12px;
               border: 1px solid #333;
               background-color: #f5f5f5;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 5px 20px;
+            }
+
+            .aluno-info div {
+              flex: 1 1 45%;
+              min-width: 200px;
             }
 
             .aluno-info strong {
               display: inline-block;
-              width: 100px;
+              width: 70px;
             }
 
             .disciplina-section {
-              margin-bottom: 40px;
-            }
-
-            .disciplina-section:first-child {
-              page-break-before: auto;
-            }
-
-            .disciplina-section:not(:first-child) {
-              page-break-before: always;
+              margin-bottom: 15px;
             }
 
             .disciplina-title {
               background-color: #333;
               color: white;
-              padding: 10px;
-              margin: 20px 0 10px 0;
+              padding: 6px 10px;
+              margin: 10px 0 8px 0;
               text-align: center;
-              font-size: 18px;
+              font-size: 14px;
+              font-weight: bold;
             }
 
             .bloco-title {
               background-color: #666;
               color: white;
-              padding: 8px;
-              margin: 15px 0 10px 0;
-              font-size: 16px;
+              padding: 4px 8px;
+              margin: 8px 0 6px 0;
+              font-size: 12px;
             }
 
             .questao {
-              margin-bottom: 25px;
+              margin-bottom: 12px;
               page-break-inside: avoid;
+              padding-bottom: 8px;
+              border-bottom: 1px dotted #ddd;
+            }
+
+            .questao:last-child {
+              border-bottom: none;
             }
 
             .questao-header {
-              font-size: 16px;
-              margin-bottom: 10px;
+              font-size: 12px;
+              margin-bottom: 4px;
+              font-weight: bold;
             }
 
             .descritor {
-              font-size: 12px;
+              font-size: 10px;
               color: #666;
               font-weight: normal;
             }
 
             .enunciado {
-              margin: 10px 0;
+              margin: 4px 0 6px 0;
               text-align: justify;
+              font-size: 11px;
+              line-height: 1.3;
             }
 
             .alternativas {
-              margin-left: 20px;
+              margin-left: 10px;
+              columns: 2;
+              column-gap: 20px;
             }
 
             .alternativa {
-              margin: 8px 0;
-              padding: 5px;
+              margin: 3px 0;
+              padding: 2px 0;
+              font-size: 11px;
+              break-inside: avoid;
             }
 
             .footer {
-              margin-top: 50px;
+              margin-top: 20px;
               text-align: center;
-              font-size: 12px;
+              font-size: 10px;
               color: #666;
               border-top: 1px solid #ccc;
-              padding-top: 10px;
+              padding-top: 8px;
             }
           </style>
         </head>
@@ -677,23 +696,23 @@ const SAEBV2ProfessorPage: React.FC = () => {
           <div class="header">
             <h1>EDUCA+ Curionópolis</h1>
             <div class="info">
-              <strong>${simuladoExportado.simulado_nome}</strong><br>
-              ${simuladoExportado.ano_escolar}º ano - ${simuladoExportado.ano_letivo}<br>
-              Total de Questões: ${simuladoExportado.total_questoes}
+              <strong>${simuladoExportado.simulado_nome}</strong> | 
+              ${simuladoExportado.ano_escolar}º ano - ${simuladoExportado.ano_letivo} | 
+              Total: ${simuladoExportado.total_questoes} questões
             </div>
           </div>
 
           <div class="aluno-info">
-            <div><strong>Nome:</strong> _________________________________________________</div>
-            <div><strong>Matrícula:</strong> _________________________________________________</div>
-            <div><strong>Data:</strong> _____/_____/_________</div>
+            <div><strong>Nome:</strong> ________________________________________</div>
+            <div><strong>Matrícula:</strong> ____________________</div>
+            <div><strong>Turma:</strong> ____________________</div>
+            <div><strong>Data:</strong> ____/____/________</div>
           </div>
 
           ${questoesHTML}
 
           <div class="footer">
-            Prefeitura Municipal de Curionópolis - Secretaria de Educação<br>
-            Sistema EDUCA+ Curionópolis
+            Prefeitura Municipal de Curionópolis - Secretaria de Educação | Sistema EDUCA+
           </div>
         </body>
         </html>
