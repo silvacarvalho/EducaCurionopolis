@@ -1784,8 +1784,10 @@ async def get_resultados_turma(
     alunos = db.query(Aluno).filter(Aluno.turma_id == turma_id).all()
     aluno_ids = [a.id for a in alunos]
 
-    # Get results
-    resultados = db.query(ResultadoSimuladoAluno).filter(
+    # Get results with aluno relationship loaded
+    resultados = db.query(ResultadoSimuladoAluno).options(
+        joinedload(ResultadoSimuladoAluno.aluno)
+    ).filter(
         ResultadoSimuladoAluno.simulado_id == simulado_id,
         ResultadoSimuladoAluno.aluno_id.in_(aluno_ids)
     ).all()
@@ -2554,7 +2556,7 @@ async def analisar_simulado_psicometria(
         dados_questoes[sq_id]['total_respostas'] += 1
         dados_questoes[sq_id]['distribuicao'][resposta.resposta] += 1
 
-        acertou = 1 if resposta.correto else 0
+        acertou = 1 if resposta.correta else 0
         if acertou:
             dados_questoes[sq_id]['total_acertos'] += 1
 
@@ -2663,7 +2665,7 @@ async def analisar_simulado_psicometria(
                 RespostaAlunoSAEB.resultado_id == resultado.id,
                 RespostaAlunoSAEB.simulado_questao_id == sq.id
             ).first()
-            linha.append(1 if (resposta and resposta.correto) else 0)
+            linha.append(1 if (resposta and resposta.correta) else 0)
         matriz_respostas.append(linha)
 
     alpha = calcular_alpha_cronbach(matriz_respostas)
@@ -2825,7 +2827,7 @@ async def dashboard_metricas(
 
             total_acertos = db.query(func.count(RespostaAlunoSAEB.id)).filter(
                 RespostaAlunoSAEB.simulado_questao_id == sq.id,
-                RespostaAlunoSAEB.correto == True
+                RespostaAlunoSAEB.correta == True
             ).scalar() or 0
 
             if total_resp > 0:
@@ -2889,7 +2891,7 @@ async def dashboard_metricas(
                         RespostaAlunoSAEB.resultado_id == resultado.id,
                         RespostaAlunoSAEB.simulado_questao_id == sq.id
                     ).first()
-                    linha.append(1 if (resposta and resposta.correto) else 0)
+                    linha.append(1 if (resposta and resposta.correta) else 0)
                 matriz_respostas.append(linha)
 
             alpha = calcular_alpha_cronbach(matriz_respostas)
@@ -2905,7 +2907,7 @@ async def dashboard_metricas(
 
             total_acertos = db.query(func.count(RespostaAlunoSAEB.id)).filter(
                 RespostaAlunoSAEB.simulado_questao_id == sq.id,
-                RespostaAlunoSAEB.correto == True
+                RespostaAlunoSAEB.correta == True
             ).scalar() or 0
 
             if total_resp == 0:
@@ -2923,7 +2925,7 @@ async def dashboard_metricas(
                     RespostaAlunoSAEB.simulado_questao_id == sq.id
                 ).all()
 
-                respostas_list = [(r.resultado.aluno_id, 1 if r.correto else 0) for r in respostas_q]
+                respostas_list = [(r.resultado.aluno_id, 1 if r.correta else 0) for r in respostas_q]
                 acertos_sup, acertos_inf = separar_grupos_extremos(respostas_list, escores_totais)
                 tamanho_grupo = max(1, int(len(resultados_sim) * 0.27))
                 indice_disc, _ = calcular_indice_discriminacao(acertos_sup, acertos_inf, tamanho_grupo)
