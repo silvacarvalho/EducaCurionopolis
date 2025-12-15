@@ -37,6 +37,8 @@ import {
 } from '@mui/icons-material';
 import { turmasAPI, escolasAPI, professoresAPI } from '../../services/api';
 import { Turma, Escola, Professor } from '../../types';
+import AlertModal from '../AlertModal';
+import useAlertModal from '../../hooks/useAlertModal';
 
 interface TurmaComDetalhes extends Turma {
   escola?: {
@@ -63,6 +65,9 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Alert Modal
+  const { alertState, showError, showSuccess, closeAlert } = useAlertModal();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingTurma, setEditingTurma] = useState<TurmaComDetalhes | null>(null);
   const [filterEscola, setFilterEscola] = useState<string>('');
@@ -106,7 +111,9 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
       setTurmas(response.data);
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao carregar turmas');
+      const errorMsg = err.response?.data?.detail || 'Erro ao carregar turmas';
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -201,7 +208,9 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
       handleCloseDialog();
       loadTurmas();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao salvar turma');
+      const errorMsg = err.response?.data?.detail || 'Erro ao salvar turma';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -215,7 +224,9 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
       setSuccess('Turma desativada com sucesso!');
       loadTurmas();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao desativar turma');
+      const errorMsg = err.response?.data?.detail || 'Erro ao desativar turma';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -574,6 +585,15 @@ const TurmasTab: React.FC<TurmasTabProps> = ({ onTurmaSelect }) => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertState.open}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
     </Box>
   );
 };

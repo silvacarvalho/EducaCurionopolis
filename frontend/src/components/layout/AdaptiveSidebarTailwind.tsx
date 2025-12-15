@@ -13,7 +13,6 @@ import {
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   People as PeopleIcon,
-  ExpandLess,
   ExpandMore,
   Close as CloseIcon,
 } from '@mui/icons-material';
@@ -168,8 +167,28 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
   const [isMouseOverPopover, setIsMouseOverPopover] = useState(false);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const menuConfig = user ? getMenuConfig(user.perfil, unreadMessages) : [];
+
+  // Função para encontrar o menu ativo baseado na rota atual
+  const getActiveMenuText = React.useCallback((): string | null => {
+    for (const item of menuConfig) {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(subItem => {
+          if (!subItem.path) return false;
+          if (subItem.path === '/') {
+            return location.pathname === '/';
+          }
+          return location.pathname.startsWith(subItem.path);
+        });
+        if (hasActiveSubItem) {
+          return item.text;
+        }
+      }
+    }
+    return null;
+  }, [location.pathname, user?.perfil]);
 
   // Fechar sidebar ao navegar no mobile
   const handleNavigation = (path: string) => {
@@ -181,11 +200,14 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
   };
 
   const handleMenuToggle = (menuText: string) => {
-    setExpandedMenus(prev =>
-      prev.includes(menuText)
-        ? prev.filter(t => t !== menuText)
-        : [...prev, menuText]
-    );
+    // Se clicar no menu que já está expandido, fecha ele
+    if (expandedMenus.includes(menuText)) {
+      setExpandedMenus([]);
+      return;
+    }
+    
+    // Se clicar em outro menu, abre apenas esse (fecha todos os outros)
+    setExpandedMenus([menuText]);
   };
 
   const isActive = (path: string) => {
@@ -249,6 +271,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
     setPopoverContent(null);
   };
 
+  // Cleanup de timeout
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current) {
@@ -256,6 +279,32 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
       }
     };
   }, []);
+
+  // Listener para cliques fora do sidebar - reseta para o menu ativo
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        // Clicou fora do sidebar, reseta para mostrar apenas o menu ativo
+        const activeMenu = getActiveMenuText();
+        if (activeMenu) {
+          setExpandedMenus(prev => {
+            // Só atualiza se não estiver apenas com o menu ativo
+            if (prev.length !== 1 || prev[0] !== activeMenu) {
+              return [activeMenu];
+            }
+            return prev;
+          });
+        } else {
+          setExpandedMenus([]);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [getActiveMenuText]);
 
   // Mantém aberto automaticamente o grupo de menu que contém a página ativa
   useEffect(() => {
@@ -314,6 +363,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
 
       {/* Sidebar */}
       <div
+        ref={sidebarRef}
         className={sidebarClasses}
         style={{ background: 'linear-gradient(180deg, #1e88e5 0%, #1976d2 50%, #1565c0 100%)' }}
       >
@@ -387,22 +437,39 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
                         <span className="flex-1 text-left text-sm font-medium">
                           {item.text}
                         </span>
-                        {expandedMenus.includes(item.text) ? (
-                          <ExpandLess className="text-white" />
-                        ) : (
-                          <ExpandMore className="text-white" />
-                        )}
+                        <div className={`flex items-center justify-center w-6 h-6 rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                          expandedMenus.includes(item.text) 
+                            ? 'bg-white/15 rotate-180' 
+                            : 'bg-transparent rotate-0'
+                        }`}>
+                          <ExpandMore className={`text-sm transition-colors duration-300 ${
+                            expandedMenus.includes(item.text) ? 'text-white/90' : 'text-white/60'
+                          }`} />
+                        </div>
                       </>
                     )}
                   </button>
-                  {/* Submenus */}
-                  {(open || isMobile) && expandedMenus.includes(item.text) && (
-                    <div className="bg-black/10">
+                  {/* Submenus com animação */}
+                  <div 
+                    className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                      (open || isMobile) && expandedMenus.includes(item.text) 
+                        ? 'max-h-96 opacity-100' 
+                        : 'max-h-0 opacity-0'
+                    }`}
+                  >
+                    <div className="bg-gradient-to-b from-white/[0.02] to-white/[0.05] rounded-lg mx-1 my-0.5 overflow-hidden">
                       {item.subItems.map((subItem, subIndex) => (
                         <button
                           key={`submenu-${index}-${subIndex}`}
                           onClick={() => subItem.path && handleNavigation(subItem.path)}
+                          style={{
+                            animationDelay: `${subIndex * 60}ms`,
+                          }}
                           className={`w-full flex items-center gap-2 pl-9 pr-3 py-2 md:py-1 mx-0.5 rounded-md transition-all duration-200 ${
+                            (open || isMobile) && expandedMenus.includes(item.text) 
+                              ? 'animate-fadeSlideIn' 
+                              : ''
+                          } ${
                             subItem.path && isActive(subItem.path)
                               ? 'bg-white/20 shadow-sm hover:bg-white/25'
                               : 'hover:bg-white/[0.08] active:bg-white/15 hover:translate-x-0.5'
@@ -421,7 +488,7 @@ const AdaptiveSidebarTailwind: React.FC<AdaptiveSidebarProps> = ({
                         </button>
                       ))}
                     </div>
-                  )}
+                  </div>
                 </>
               ) : (
                 // Item simples sem submenus

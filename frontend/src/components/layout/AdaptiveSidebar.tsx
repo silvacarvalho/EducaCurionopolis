@@ -32,8 +32,6 @@ import {
   Settings as SettingsIcon,
   ExpandLess,
   ExpandMore,
-  Palette,
-  Code,
   People as PeopleIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -152,16 +150,12 @@ interface AdaptiveSidebarProps {
   open: boolean;
   onToggle: () => void;
   unreadMessages?: number;
-  onLayoutToggle?: () => void;
-  useTailwind?: boolean;
 }
 
 const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
   open,
   onToggle,
   unreadMessages = 0,
-  onLayoutToggle,
-  useTailwind = false
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -171,6 +165,7 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
   const [popoverContent, setPopoverContent] = useState<MenuItem | null>(null);
   const [isMouseOverPopover, setIsMouseOverPopover] = useState(false);
   const closeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sidebarRef = React.useRef<HTMLDivElement>(null);
 
   const menuConfig = user ? getMenuConfig(user.perfil, unreadMessages) : [];
 
@@ -196,18 +191,25 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
   const handleMenuToggle = (menuText: string) => {
     const activeMenu = getActiveMenuText();
     
-    // Se for o menu ativo, não permite fechar
-    if (menuText === activeMenu) {
+    // Se clicar no menu que já está expandido, fecha ele
+    if (expandedMenus.includes(menuText)) {
+      setExpandedMenus([]);
       return;
     }
     
-    // Para outros menus, toggle normal
-    setExpandedMenus(prev =>
-      prev.includes(menuText)
-        ? prev.filter(t => t !== menuText)
-        : [...prev, menuText]
-    );
+    // Se clicar em outro menu, abre apenas esse (fecha todos os outros)
+    setExpandedMenus([menuText]);
   };
+
+  // Função para resetar para o menu ativo quando clicar fora
+  const resetToActiveMenu = React.useCallback(() => {
+    const activeMenu = getActiveMenuText();
+    if (activeMenu) {
+      setExpandedMenus([activeMenu]);
+    } else {
+      setExpandedMenus([]);
+    }
+  }, [getActiveMenuText]);
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -270,6 +272,7 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
     setPopoverContent(null);
   };
 
+  // Cleanup de timeout
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current) {
@@ -277,6 +280,32 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
       }
     };
   }, []);
+
+  // Listener para cliques fora do sidebar - reseta para o menu ativo
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        // Clicou fora do sidebar, reseta para mostrar apenas o menu ativo
+        const activeMenu = getActiveMenuText();
+        if (activeMenu) {
+          setExpandedMenus(prev => {
+            // Só atualiza se não estiver apenas com o menu ativo
+            if (prev.length !== 1 || prev[0] !== activeMenu) {
+              return [activeMenu];
+            }
+            return prev;
+          });
+        } else {
+          setExpandedMenus([]);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [getActiveMenuText]);
 
   // Mantém aberto automaticamente o grupo de menu que contém a página ativa
   useEffect(() => {
@@ -316,6 +345,7 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
 
   return (
     <Drawer
+      ref={sidebarRef}
       variant="permanent"
       className="adaptive-sidebar no-print"
       sx={{
@@ -330,7 +360,7 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
           background: 'linear-gradient(180deg, #1e88e5 0%, #1976d2 50%, #1565c0 100%)',
           color: 'rgba(255, 255, 255, 0.95)',
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          overflowX: 'hidden',
+          overflow: 'hidden',
           borderRight: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '4px 0 24px rgba(21, 101, 192, 0.2)',
           '@media print': {
@@ -491,11 +521,30 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
                           component="span"
                           sx={{
                             display: 'flex',
-                            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            transition: 'all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
                             transform: expandedMenus.includes(item.text) ? 'rotate(180deg)' : 'rotate(0deg)',
+                            backgroundColor: expandedMenus.includes(item.text) 
+                              ? 'rgba(255, 255, 255, 0.15)' 
+                              : 'transparent',
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            },
                           }}
                         >
-                          <ExpandMore sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '1.1rem' }} />
+                          <ExpandMore 
+                            sx={{ 
+                              color: expandedMenus.includes(item.text) 
+                                ? 'rgba(255, 255, 255, 0.9)' 
+                                : 'rgba(255, 255, 255, 0.6)', 
+                              fontSize: '1.1rem',
+                              transition: 'color 0.3s ease',
+                            }} 
+                          />
                         </Box>
                       </>
                     )}
@@ -503,13 +552,28 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
                 </ListItem>
                 <Collapse 
                   in={open && expandedMenus.includes(item.text)} 
-                  timeout={300}
+                  timeout={{ enter: 350, exit: 250 }}
                   easing={{
-                    enter: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    enter: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
                     exit: 'cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
+                  sx={{
+                    '& .MuiCollapse-wrapperInner': {
+                      transition: 'opacity 0.3s ease',
+                    },
+                  }}
                 >
-                  <List component="div" disablePadding>
+                  <List 
+                    component="div" 
+                    disablePadding
+                    sx={{
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%)',
+                      borderRadius: 1,
+                      mx: 1,
+                      my: 0.5,
+                      overflow: 'hidden',
+                    }}
+                  >
                     {item.subItems.map((subItem, subIndex) => (
                       <ListItem
                         key={`submenu-${index}-${subIndex}`}
@@ -517,16 +581,16 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
                         sx={{ 
                           display: 'block',
                           animation: expandedMenus.includes(item.text) 
-                            ? `fadeSlideIn 0.3s ease ${subIndex * 0.05}s both`
+                            ? `fadeSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${subIndex * 0.06}s both`
                             : 'none',
                           '@keyframes fadeSlideIn': {
                             '0%': {
                               opacity: 0,
-                              transform: 'translateX(-10px)',
+                              transform: 'translateY(-8px) scale(0.95)',
                             },
                             '100%': {
                               opacity: 1,
-                              transform: 'translateX(0)',
+                              transform: 'translateY(0) scale(1)',
                             },
                           },
                         }}
@@ -653,74 +717,6 @@ const AdaptiveSidebar: React.FC<AdaptiveSidebarProps> = ({
           </Box>
         ))}
       </List>
-
-      {/* Footer com botão de toggle de layout */}
-      {onLayoutToggle && (
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            p: 1.5,
-            borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-            background: 'rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <ListItemButton
-            onClick={onLayoutToggle}
-            sx={{
-              minHeight: 40,
-              justifyContent: open ? 'initial' : 'center',
-              px: 2,
-              py: 1,
-              borderRadius: 2,
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-              },
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                minWidth: 0,
-                mr: open ? 1.5 : 'auto',
-                justifyContent: 'center',
-                color: 'rgba(255, 255, 255, 0.9)',
-                '& .MuiSvgIcon-root': {
-                  fontSize: '1.25rem',
-                },
-              }}
-            >
-              {useTailwind ? <Palette /> : <Code />}
-            </ListItemIcon>
-            {open && (
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    color: 'rgba(255, 255, 255, 0.95)',
-                    display: 'block',
-                  }}
-                >
-                  {useTailwind ? 'Material-UI' : 'Tailwind CSS'}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontSize: '0.65rem',
-                    color: 'rgba(255, 255, 255, 0.7)',
-                  }}
-                >
-                  Versão: {useTailwind ? 'Tailwind' : 'MUI'}
-                </Typography>
-              </Box>
-            )}
-          </ListItemButton>
-        </Box>
-      )}
 
       {/* Popover para submenus quando collapsed */}
       <Popover

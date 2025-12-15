@@ -32,6 +32,8 @@ import {
 import { escolasAPI, diretoresAPI } from '../../services/api';
 import { Escola, Usuario } from '../../types';
 import { useFilteredData } from '../../hooks/useFilteredData';
+import AlertModal from '../AlertModal';
+import useAlertModal from '../../hooks/useAlertModal';
 
 const EscolasTab: React.FC = () => {
   const [escolas, setEscolas] = useState<Escola[]>([]);
@@ -43,6 +45,9 @@ const EscolasTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Alert Modal
+  const { alertState, showError, showSuccess, closeAlert } = useAlertModal();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEscola, setEditingEscola] = useState<Escola | null>(null);
   const [importing, setImporting] = useState(false);
@@ -70,7 +75,9 @@ const EscolasTab: React.FC = () => {
       setEscolas(response.data);
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao carregar escolas');
+      const errorMsg = err.response?.data?.detail || 'Erro ao carregar escolas';
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -142,7 +149,9 @@ const EscolasTab: React.FC = () => {
       loadEscolas();
       loadDiretores(); // Reload to update available directors
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao salvar escola');
+      const errorMsg = err.response?.data?.detail || 'Erro ao salvar escola';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -157,7 +166,9 @@ const EscolasTab: React.FC = () => {
       loadEscolas();
       loadDiretores(); // Reload to update available directors
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao desativar escola');
+      const errorMsg = err.response?.data?.detail || 'Erro ao desativar escola';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -467,6 +478,15 @@ const EscolasTab: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertState.open}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
     </Box>
   );
 };

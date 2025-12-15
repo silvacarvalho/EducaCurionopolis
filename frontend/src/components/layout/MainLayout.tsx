@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Box, AppBar, Toolbar, Typography, InputBase, IconButton, Badge, Avatar, Menu, MenuItem, alpha } from '@mui/material';
-import { Search as SearchIcon, Notifications as NotificationsIcon, AccountCircle, Palette, Code } from '@mui/icons-material';
+import { Search as SearchIcon, Notifications as NotificationsIcon, AccountCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useContextualSearch } from '../../contexts/ContextualSearchContext';
 import AdaptiveSidebar from './AdaptiveSidebar';
-import AdaptiveSidebarTailwind from './AdaptiveSidebarTailwind';
-import MainLayoutTailwind from './MainLayoutTailwind';
 import api from '../../services/api';
 
 interface MainLayoutProps {
@@ -20,12 +18,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title, headerExtra })
   const { logout, user } = useAuth();
   const { searchQuery, setSearchQuery } = useContextualSearch();
 
-  // Estado do A/B Test (Tailwind vs MUI)
-  const [useTailwind, setUseTailwind] = useState(() => {
-    const saved = localStorage.getItem('layoutVersion');
-    return saved === 'tailwind';
-  });
-
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     // Recuperar estado do localStorage
     const saved = localStorage.getItem('sidebarOpen');
@@ -33,11 +25,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title, headerExtra })
   });
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
-
-  // Salvar preferência de layout no localStorage
-  useEffect(() => {
-    localStorage.setItem('layoutVersion', useTailwind ? 'tailwind' : 'mui');
-  }, [useTailwind]);
 
   // Salvar estado do sidebar no localStorage
   useEffect(() => {
@@ -95,19 +82,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title, headerExtra })
     navigate('/mensagens');
   };
 
-  const toggleLayout = () => {
-    setUseTailwind(!useTailwind);
-  };
-
-  // Se estiver usando Tailwind, renderizar a versão Tailwind
-  if (useTailwind) {
-    return (
-      <MainLayoutTailwind title={title}>
-        {children}
-      </MainLayoutTailwind>
-    );
-  }
-
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -131,8 +105,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title, headerExtra })
           open={sidebarOpen}
           onToggle={handleToggleSidebar}
           unreadMessages={unreadMessages}
-          onLayoutToggle={toggleLayout}
-          useTailwind={useTailwind}
         />
       </Box>
 

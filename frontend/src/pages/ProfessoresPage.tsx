@@ -38,6 +38,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { professoresAPI, escolasAPI } from '../services/api';
+import AlertModal from '../components/AlertModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 import { Professor, Escola } from '../types';
 import MainLayout from '../components/layout/MainLayout';
 
@@ -66,6 +68,7 @@ interface ProfessorComUsuario {
 const ProfessoresPage: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { alertState, showError, closeAlert } = useAlertModal();
   const [professores, setProfessores] = useState<ProfessorComUsuario[]>([]);
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,7 +102,9 @@ const ProfessoresPage: React.FC = () => {
       setProfessores(response.data);
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao carregar professores');
+      const errorMsg = err.response?.data?.detail || 'Erro ao carregar professores';
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -198,7 +203,9 @@ const ProfessoresPage: React.FC = () => {
       handleCloseDialog();
       loadProfessores();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao salvar professor');
+      const errorMsg = err.response?.data?.detail || 'Erro ao salvar professor';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -212,7 +219,9 @@ const ProfessoresPage: React.FC = () => {
       setSuccess('Professor desativado com sucesso!');
       loadProfessores();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao desativar professor');
+      const errorMsg = err.response?.data?.detail || 'Erro ao desativar professor';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -485,6 +494,14 @@ const ProfessoresPage: React.FC = () => {
           </Dialog>
         </Paper>
       </Box>
+
+      <AlertModal
+        open={alertState.open}
+        type={alertState.type}
+        title={alertState.title}
+        message={alertState.message}
+        onClose={closeAlert}
+      />
     </MainLayout>
   );
 };

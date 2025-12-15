@@ -32,6 +32,8 @@ import {
 import { diretoresAPI, escolasAPI } from '../../services/api';
 import { Usuario, Escola } from '../../types';
 import { useFilteredData } from '../../hooks/useFilteredData';
+import AlertModal from '../AlertModal';
+import useAlertModal from '../../hooks/useAlertModal';
 
 const DiretoresTab: React.FC = () => {
   const [diretores, setDiretores] = useState<Usuario[]>([]);
@@ -42,6 +44,9 @@ const DiretoresTab: React.FC = () => {
   const filteredDiretores = useFilteredData(diretores, ['nome_completo', 'cpf', 'email', 'telefone']);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Alert Modal
+  const { alertState, showError, showSuccess, closeAlert } = useAlertModal();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingDiretor, setEditingDiretor] = useState<Usuario | null>(null);
   const [importing, setImporting] = useState(false);
@@ -68,7 +73,9 @@ const DiretoresTab: React.FC = () => {
       setDiretores(response.data);
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao carregar diretores');
+      const errorMsg = err.response?.data?.detail || 'Erro ao carregar diretores';
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -146,7 +153,9 @@ const DiretoresTab: React.FC = () => {
       loadDiretores();
       loadEscolas(); // Reload to update school info
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao salvar diretor');
+      const errorMsg = err.response?.data?.detail || 'Erro ao salvar diretor';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -160,7 +169,9 @@ const DiretoresTab: React.FC = () => {
       setSuccess('Diretor desativado com sucesso!');
       loadDiretores();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao desativar diretor');
+      const errorMsg = err.response?.data?.detail || 'Erro ao desativar diretor';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -472,6 +483,15 @@ const DiretoresTab: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertState.open}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
     </Box>
   );
 };

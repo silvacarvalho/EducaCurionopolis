@@ -39,6 +39,8 @@ import {
 } from '@mui/icons-material';
 import { alunosAPI, turmasAPI, escolasAPI } from '../../services/api';
 import { Aluno, Turma, Escola } from '../../types';
+import AlertModal from '../AlertModal';
+import useAlertModal from '../../hooks/useAlertModal';
 
 interface AlunoComDetalhes extends Aluno {
   turma?: {
@@ -60,6 +62,9 @@ const AlunosTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  
+  // Alert Modal
+  const { alertState, showError, showSuccess, closeAlert } = useAlertModal();
   const [openDialog, setOpenDialog] = useState(false);
   const [openTransferDialog, setOpenTransferDialog] = useState(false);
   const [editingAluno, setEditingAluno] = useState<AlunoComDetalhes | null>(null);
@@ -94,7 +99,9 @@ const AlunosTab: React.FC = () => {
       setAlunos(response.data);
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao carregar alunos');
+      const errorMsg = err.response?.data?.detail || 'Erro ao carregar alunos';
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -212,7 +219,9 @@ const AlunosTab: React.FC = () => {
       handleCloseDialog();
       loadAlunos();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao salvar aluno');
+      const errorMsg = err.response?.data?.detail || 'Erro ao salvar aluno';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -227,7 +236,9 @@ const AlunosTab: React.FC = () => {
       handleCloseTransferDialog();
       loadAlunos();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao transferir aluno');
+      const errorMsg = err.response?.data?.detail || 'Erro ao transferir aluno';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -241,7 +252,9 @@ const AlunosTab: React.FC = () => {
       setSuccess('Aluno desativado com sucesso!');
       loadAlunos();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Erro ao desativar aluno');
+      const errorMsg = err.response?.data?.detail || 'Erro ao desativar aluno';
+      setError(errorMsg);
+      showError(errorMsg);
     }
   };
 
@@ -683,6 +696,15 @@ const AlunosTab: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertState.open}
+        onClose={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
     </Box>
   );
 };

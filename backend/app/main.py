@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 from pathlib import Path
@@ -497,6 +499,112 @@ if FRONTEND_BUILD_DIR.exists():
 # ============================================
 # ERROR HANDLERS
 # ============================================
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Handler para erros de validação do Pydantic.
+    Retorna mensagens de erro claras e em português.
+    """
+    errors = exc.errors()
+    error_messages = []
+    
+    field_translations = {
+        'cpf': 'CPF',
+        'email': 'E-mail',
+        'nome_completo': 'Nome completo',
+        'nome': 'Nome',
+        'senha': 'Senha',
+        'telefone': 'Telefone',
+        'matricula': 'Matrícula',
+        'turma_id': 'Turma',
+        'escola_id': 'Escola',
+        'disciplina_id': 'Disciplina',
+        'aluno_id': 'Aluno',
+        'professor_id': 'Professor',
+        'diretor_id': 'Diretor',
+        'ano_escolar': 'Ano escolar',
+        'bimestre': 'Bimestre',
+        'nota': 'Nota',
+        'data_nascimento': 'Data de nascimento',
+        'endereco': 'Endereço',
+        'codigo_inep': 'Código INEP',
+    }
+    
+    type_translations = {
+        'missing': 'Campo obrigatório',
+        'string_type': 'Deve ser texto',
+        'int_type': 'Deve ser um número inteiro',
+        'float_type': 'Deve ser um número',
+        'value_error': 'Valor inválido',
+        'type_error': 'Tipo inválido',
+        'json_invalid': 'JSON inválido',
+        'string_too_short': 'Texto muito curto',
+        'string_too_long': 'Texto muito longo',
+        'greater_than': 'Valor deve ser maior',
+        'less_than': 'Valor deve ser menor',
+        'email_validator': 'E-mail inválido',
+    }
+    
+    for error in errors:
+        field = error.get('loc', ['campo'])
+        field_name = field[-1] if field else 'campo'
+        translated_field = field_translations.get(str(field_name), str(field_name))
+        
+        error_type = error.get('type', 'value_error')
+        translated_type = type_translations.get(error_type, error.get('msg', 'Valor inválido'))
+        
+        error_messages.append(f"{translated_field}: {translated_type}")
+    
+    # Retornar primeira mensagem de erro ou lista completa
+    detail = error_messages[0] if len(error_messages) == 1 else "; ".join(error_messages)
+    
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": detail,
+            "errors": error_messages
+        }
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """
+    Handler para exceções HTTP.
+    Garante que todas as respostas de erro sejam consistentes.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail if isinstance(exc.detail, str) else str(exc.detail)
+        }
+    )
+
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """
+    Handler para exceções não tratadas.
+    Captura erros inesperados e retorna mensagem amigável.
+    """
+    import traceback
+    print(f"[ERROR] Erro não tratado: {str(exc)}")
+    print(f"[ERROR] Traceback: {traceback.format_exc()}")
+    
+    # Não expor detalhes do erro em produção
+    if settings.DEBUG:
+        detail = f"Erro interno: {str(exc)}"
+    else:
+        detail = "Ocorreu um erro interno. Por favor, tente novamente ou contate o suporte."
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": detail
+        }
+    )
+
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
