@@ -2382,7 +2382,7 @@ async def exportar_simulado_impressao(
 ):
     """
     Export simulado data for printing
-    Returns all questions with alternatives
+    Returns all questions with alternatives organized by disciplina and bloco
     """
     # Get simulado
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
@@ -2419,35 +2419,53 @@ async def exportar_simulado_impressao(
             "descritor_codigo": q.descritor.codigo if q.descritor else None
         }
 
+        # Get bloco value (it's an enum, so we need the .value)
+        bloco_value = q.bloco.value if hasattr(q.bloco, 'value') else q.bloco
+
         if q.disciplina == ModelDisciplina.PORTUGUES:
-            if q.bloco == "1":
+            if bloco_value == 1:
                 questoes_portugues_b1.append(questao_data)
             else:
                 questoes_portugues_b2.append(questao_data)
         else:
-            if q.bloco == "1":
+            if bloco_value == 1:
                 questoes_matematica_b1.append(questao_data)
             else:
                 questoes_matematica_b2.append(questao_data)
 
+    # Build response in format expected by frontend
+    disciplinas = []
+    
+    # Add Português if has questions
+    if questoes_portugues_b1 or questoes_portugues_b2:
+        blocos_port = []
+        if questoes_portugues_b1:
+            blocos_port.append({"bloco": 1, "questoes": questoes_portugues_b1})
+        if questoes_portugues_b2:
+            blocos_port.append({"bloco": 2, "questoes": questoes_portugues_b2})
+        disciplinas.append({
+            "disciplina": "portugues",
+            "blocos": blocos_port
+        })
+    
+    # Add Matemática if has questions
+    if questoes_matematica_b1 or questoes_matematica_b2:
+        blocos_mat = []
+        if questoes_matematica_b1:
+            blocos_mat.append({"bloco": 1, "questoes": questoes_matematica_b1})
+        if questoes_matematica_b2:
+            blocos_mat.append({"bloco": 2, "questoes": questoes_matematica_b2})
+        disciplinas.append({
+            "disciplina": "matematica",
+            "blocos": blocos_mat
+        })
+
     return {
-        "simulado": {
-            "id": simulado.id,
-            "nome": simulado.nome,
-            "descricao": simulado.descricao,
-            "ano_escolar": simulado.ano_escolar,
-            "ano_letivo": simulado.ano_letivo
-        },
-        "questoes": {
-            "portugues": {
-                "bloco_1": questoes_portugues_b1,
-                "bloco_2": questoes_portugues_b2
-            },
-            "matematica": {
-                "bloco_1": questoes_matematica_b1,
-                "bloco_2": questoes_matematica_b2
-            }
-        },
+        "simulado_nome": simulado.nome,
+        "simulado_descricao": simulado.descricao,
+        "ano_escolar": simulado.ano_escolar,
+        "ano_letivo": simulado.ano_letivo,
+        "disciplinas": disciplinas,
         "total_questoes": len(simulado_questoes)
     }
 
