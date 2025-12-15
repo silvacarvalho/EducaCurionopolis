@@ -1976,18 +1976,32 @@ async def gerar_tokens_acesso(
     """
     Generate access tokens for all students in a class
     One unique token per student
-    Professor only (can only generate for their own participations)
+    Professor only (can only generate for their own participations or turmas they teach)
     """
     # Get participacao
     participacao = db.query(ParticipacaoSimulado).filter(
-        ParticipacaoSimulado.id == participacao_id,
-        ParticipacaoSimulado.professor_id == current_professor.id
+        ParticipacaoSimulado.id == participacao_id
     ).first()
 
     if not participacao:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participação não encontrada ou você não tem permissão"
+            detail="Participação não encontrada"
+        )
+    
+    # Get turma first
+    turma = db.query(Turma).options(joinedload(Turma.alunos)).filter(
+        Turma.id == participacao.turma_id
+    ).first()
+    
+    # Verify professor has access (is owner or teaches the turma)
+    is_owner = participacao.professor_id == current_professor.id
+    teaches_turma = turma and turma.professor_id == current_professor.id if turma else False
+    
+    if not is_owner and not teaches_turma:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para gerar tokens para esta participação"
         )
 
     # Check if tokens already exist
@@ -2000,11 +2014,6 @@ async def gerar_tokens_acesso(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Tokens já foram gerados para esta participação. Use o endpoint de listagem para visualizá-los."
         )
-
-    # Get all students from turma
-    turma = db.query(Turma).options(joinedload(Turma.alunos)).filter(
-        Turma.id == participacao.turma_id
-    ).first()
 
     if not turma or not turma.alunos:
         raise HTTPException(
@@ -2079,16 +2088,26 @@ async def listar_tokens_acesso(
     List all access tokens for a participation
     Professor only (their own participations)
     """
-    # Get participacao
+    # Get participacao - professor can access if they are the owner OR if they teach the turma
     participacao = db.query(ParticipacaoSimulado).filter(
-        ParticipacaoSimulado.id == participacao_id,
-        ParticipacaoSimulado.professor_id == current_professor.id
+        ParticipacaoSimulado.id == participacao_id
     ).first()
-
+    
     if not participacao:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Participação não encontrada ou você não tem permissão"
+            detail="Participação não encontrada"
+        )
+    
+    # Verify professor has access (is owner or teaches the turma)
+    is_owner = participacao.professor_id == current_professor.id
+    turma = db.query(Turma).filter(Turma.id == participacao.turma_id).first()
+    teaches_turma = turma and turma.professor_id == current_professor.id if turma else False
+    
+    if not is_owner and not teaches_turma:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para acessar esta participação"
         )
 
     # Get tokens
@@ -2098,13 +2117,7 @@ async def listar_tokens_acesso(
         TokenAcessoSimulado.participacao_id == participacao_id
     ).order_by(TokenAcessoSimulado.created_at).all()
 
-    if not tokens:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum token encontrado. Gere tokens primeiro."
-        )
-
-    # Prepare response
+    # Return empty list if no tokens (instead of 404)
     tokens_response = []
     for token in tokens:
         tokens_response.append(TokenAcessoResponse(
@@ -2123,7 +2136,7 @@ async def listar_tokens_acesso(
     return TokenAcessoListResponse(
         participacao_id=participacao_id,
         simulado_nome=participacao.simulado.nome,
-        turma_nome=db.query(Turma).filter(Turma.id == participacao.turma_id).first().nome,
+        turma_nome=turma.nome if turma else "Turma não encontrada",
         tokens=tokens_response
     )
 
