@@ -904,9 +904,15 @@ class TokenAcessoSimulado(Base):
     def is_valid(self):
         """Check if token is still valid"""
         from datetime import datetime, timezone as tz
+        now = datetime.now(tz.utc)
+        # Handle both timezone-aware and naive datetimes
+        expiracao = self.data_expiracao
+        if expiracao.tzinfo is None:
+            # Assume UTC if no timezone
+            expiracao = expiracao.replace(tzinfo=tz.utc)
         return (
             self.ativo and
-            self.data_expiracao > datetime.now(tz.utc)
+            expiracao > now
         )
 
 

@@ -209,20 +209,54 @@ const SAEBV2ProfessorPage: React.FC = () => {
     }
   };
 
-  const handleCopyToken = (token: string) => {
-    navigator.clipboard.writeText(token);
-    showNotification('Token copiado!', 'success');
+  const handleCopyToken = async (token: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(token);
+      } else {
+        // Fallback for older browsers or non-HTTPS
+        const textArea = document.createElement('textarea');
+        textArea.value = token;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      showNotification('Token copiado!', 'success');
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+      showNotification('Erro ao copiar token', 'error');
+    }
   };
 
-  const handleCopyAllTokens = () => {
+  const handleCopyAllTokens = async () => {
     if (!tokensData) return;
 
     const tokenList = tokensData.tokens
       .map(t => `${t.aluno_nome} (${t.aluno_matricula}): ${t.token}`)
       .join('\n');
 
-    navigator.clipboard.writeText(tokenList);
-    showNotification('Todos os tokens copiados!', 'success');
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(tokenList);
+      } else {
+        // Fallback for older browsers or non-HTTPS
+        const textArea = document.createElement('textarea');
+        textArea.value = tokenList;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      showNotification('Todos os tokens copiados!', 'success');
+    } catch (err) {
+      console.error('Erro ao copiar:', err);
+      showNotification('Erro ao copiar tokens', 'error');
+    }
   };
 
   const handlePrintTokens = () => {
@@ -572,11 +606,14 @@ const SAEBV2ProfessorPage: React.FC = () => {
 
             .disciplina-section {
               margin-bottom: 40px;
-              page-break-before: always;
             }
 
             .disciplina-section:first-child {
               page-break-before: auto;
+            }
+
+            .disciplina-section:not(:first-child) {
+              page-break-before: always;
             }
 
             .disciplina-title {
