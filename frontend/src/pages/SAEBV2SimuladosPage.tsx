@@ -142,9 +142,11 @@ const SAEBV2SimuladosPage: React.FC = () => {
 
   const loadQuestoes = async () => {
     try {
-      const response = await saebV2API.listQuestoes();
-      setQuestoes(response.data);
+      const response = await saebV2API.listQuestoes({ limit: 1000 });
+      console.log('Questões carregadas:', response.data?.length || 0);
+      setQuestoes(response.data || []);
     } catch (error) {
+      console.error('Erro ao carregar questões:', error);
       showNotification('Erro ao carregar questões', 'error');
     }
   };

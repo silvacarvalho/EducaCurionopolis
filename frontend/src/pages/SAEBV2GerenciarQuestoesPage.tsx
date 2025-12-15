@@ -98,12 +98,14 @@ const SAEBV2GerenciarQuestoesPage: React.FC = () => {
       // Carregar todas as questões disponíveis (apenas ativas e do mesmo ano escolar)
       const todasQuestoesResponse = await saebV2API.listQuestoes({ 
         ativo: true,
-        ano_escolar: simuladoResponse.data.ano_escolar 
+        ano_escolar: simuladoResponse.data.ano_escolar,
+        limit: 1000
       });
-      setQuestoesDisponiveis(todasQuestoesResponse.data);
+      console.log('Questões disponíveis carregadas:', todasQuestoesResponse.data?.length || 0);
+      setQuestoesDisponiveis(todasQuestoesResponse.data || []);
     } catch (error) {
       showNotification('Erro ao carregar dados', 'error');
-      console.error(error);
+      console.error('Erro detalhado ao carregar dados:', error);
     } finally {
       setLoading(false);
     }

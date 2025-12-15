@@ -600,7 +600,7 @@ async def list_questoes(
     bloco: Optional[int] = None,
     ativo: Optional[bool] = True,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 1000,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_active_user)
 ):
