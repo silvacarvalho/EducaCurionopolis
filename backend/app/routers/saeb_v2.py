@@ -1468,7 +1468,10 @@ async def list_participacoes_professor(
     current_professor: Professor = Depends(get_current_professor)
 ):
     """List all simulados released by current professor"""
-    participacoes = db.query(ParticipacaoSimulado).filter(
+    participacoes = db.query(ParticipacaoSimulado).options(
+        joinedload(ParticipacaoSimulado.simulado),
+        joinedload(ParticipacaoSimulado.turma)
+    ).filter(
         ParticipacaoSimulado.professor_id == current_professor.id
     ).all()
 
@@ -2409,6 +2412,7 @@ async def exportar_simulado_impressao(
     for sq in simulado_questoes:
         q = sq.questao
         questao_data = {
+            "id": sq.id,  # ID do SimuladoQuestao para identificação única
             "ordem": sq.ordem,
             "enunciado": q.enunciado,
             "alternativa_a": q.alternativa_a,
@@ -2416,7 +2420,8 @@ async def exportar_simulado_impressao(
             "alternativa_c": q.alternativa_c,
             "alternativa_d": q.alternativa_d,
             "alternativa_e": q.alternativa_e,
-            "descritor_codigo": q.descritor.codigo if q.descritor else None
+            "descritor_codigo": q.descritor.codigo if q.descritor else None,
+            "descritor_descricao": q.descritor.descricao if q.descritor else None
         }
 
         # Get bloco value (it's an enum, so we need the .value)

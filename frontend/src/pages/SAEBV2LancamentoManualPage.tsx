@@ -1,8 +1,9 @@
 /**
  * SAEB V2 - Lançamento Manual Page
  * Interface for teachers to manually enter student responses from paper-based exams
+ * Optimized: One student at a time to avoid performance issues
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -12,15 +13,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  RadioGroup,
-  Radio,
-  FormControlLabel,
   Card,
   CardContent,
   Grid,
@@ -30,31 +22,32 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   LinearProgress,
+  List,
+  ListItemButton,
+  ListItemText,
+  ListItemIcon,
+  Divider,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  CheckCircle as SuccessIcon,
-  Error as ErrorIcon,
   Print as PrintIcon,
-  Assignment as AssignmentIcon,
+  NavigateBefore as PrevIcon,
+  NavigateNext as NextIcon,
+  Person as PersonIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { useNotification } from '../contexts/NotificationContext';
-import { saebV2API, turmasAPI, alunosAPI } from '../services/api';
+import { saebV2API, alunosAPI } from '../services/api';
 import {
-  SimuladoSAEB,
-  Turma,
   Aluno,
   ParticipacaoSimulado,
   SimuladoExportado,
   RespostaManual,
-  LancamentoManualBulkResponse,
 } from '../types';
 
 const SAEBV2LancamentoManualPage: React.FC = () => {
@@ -62,6 +55,7 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Selection states
   const [participacoes, setParticipacoes] = useState<ParticipacaoSimulado[]>([]);
@@ -69,15 +63,39 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [simuladoExportado, setSimuladoExportado] = useState<SimuladoExportado | null>(null);
 
-  // Response tracking
+  // Current student selection
+  const [selectedAlunoIndex, setSelectedAlunoIndex] = useState(0);
+  const [alunosSalvos, setAlunosSalvos] = useState<Set<number>>(new Set());
+
+  // Response tracking - single student at a time for better performance
   const [respostas, setRespostas] = useState<Map<number, Map<number, string>>>(new Map());
   // Map structure: Map<aluno_id, Map<simulado_questao_id, resposta>>
 
-  // Result dialog
-  const [resultDialogOpen, setResultDialogOpen] = useState(false);
-  const [resultData, setResultData] = useState<LancamentoManualBulkResponse | null>(null);
+  const steps = ['Selecionar Simulado e Turma', 'Lançar Respostas', 'Finalizar'];
 
-  const steps = ['Selecionar Simulado e Turma', 'Lançar Respostas', 'Confirmar e Salvar'];
+  // Current selected student
+  const selectedAluno = useMemo(() => {
+    return alunos[selectedAlunoIndex] || null;
+  }, [alunos, selectedAlunoIndex]);
+
+  // All questions flattened for easier iteration
+  const todasQuestoes = useMemo(() => {
+    if (!simuladoExportado) return [];
+    const questoes: Array<{ id: number; ordem: number; disciplina: string; descritor_codigo: string }> = [];
+    simuladoExportado.disciplinas.forEach(disc => {
+      disc.blocos.forEach(bloco => {
+        bloco.questoes.forEach(questao => {
+          questoes.push({
+            id: questao.id,
+            ordem: questao.ordem,
+            disciplina: disc.disciplina,
+            descritor_codigo: questao.descritor_codigo,
+          });
+        });
+      });
+    });
+    return questoes.sort((a, b) => a.ordem - b.ordem);
+  }, [simuladoExportado]);
 
   useEffect(() => {
     loadParticipacoes();
@@ -117,6 +135,8 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
         initialRespostas.set(aluno.id, new Map());
       });
       setRespostas(initialRespostas);
+      setSelectedAlunoIndex(0);
+      setAlunosSalvos(new Set());
 
       setActiveStep(1);
     } catch (error) {
@@ -126,95 +146,144 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
     }
   };
 
-  const handleRespostaChange = (alunoId: number, questaoId: number, resposta: string) => {
-    setRespostas(prev => {
-      const newRespostas = new Map(prev);
-      const alunoRespostas = new Map(prev.get(alunoId) || new Map());
-      alunoRespostas.set(questaoId, resposta);
-      newRespostas.set(alunoId, alunoRespostas);
-      return newRespostas;
-    });
-  };
+  // Save current student's responses to backend
+  const salvarRespostasAluno = useCallback(async (alunoId: number, mostrarNotificacao: boolean = true) => {
+    if (!selectedParticipacao || !simuladoExportado) return false;
 
-  const handleSalvar = async () => {
-    if (!selectedParticipacao || !simuladoExportado) return;
+    const alunoRespostas = respostas.get(alunoId);
+    if (!alunoRespostas || alunoRespostas.size === 0) {
+      // No responses to save
+      return true;
+    }
 
     try {
-      setLoading(true);
+      setSaving(true);
 
-      // Build lancamentos array
-      const lancamentos = alunos.map(aluno => {
-        const alunoRespostas = respostas.get(aluno.id) || new Map();
-        const respostasArray: RespostaManual[] = [];
-
-        // Convert Map to array
-        simuladoExportado.disciplinas.forEach(disc => {
-          disc.blocos.forEach(bloco => {
-            bloco.questoes.forEach(questao => {
-              const resposta = alunoRespostas.get(questao.id);
-              if (resposta) {
-                respostasArray.push({
-                  simulado_questao_id: questao.id,
-                  resposta: resposta,
-                });
-              }
-            });
-          });
+      const respostasArray: RespostaManual[] = [];
+      alunoRespostas.forEach((resposta, questaoId) => {
+        respostasArray.push({
+          simulado_questao_id: questaoId,
+          resposta: resposta,
         });
+      });
 
-        return {
-          aluno_id: aluno.id,
-          simulado_id: selectedParticipacao.simulado_id,
-          respostas: respostasArray,
-        };
-      }).filter(l => l.respostas.length > 0); // Only students with at least one answer
+      const lancamentos = [{
+        aluno_id: alunoId,
+        simulado_id: selectedParticipacao.simulado_id,
+        respostas: respostasArray,
+      }];
 
-      if (lancamentos.length === 0) {
-        showNotification('Nenhuma resposta foi lançada', 'warning');
-        return;
-      }
-
-      // Send bulk request
-      const response = await saebV2API.lancamentoManualLote({
+      await saebV2API.lancamentoManualLote({
         simulado_id: selectedParticipacao.simulado_id,
         turma_id: selectedParticipacao.turma_id,
         lancamentos: lancamentos,
       });
 
-      setResultData(response.data);
-      setResultDialogOpen(true);
+      // Mark student as saved
+      setAlunosSalvos(prev => new Set(prev).add(alunoId));
+
+      if (mostrarNotificacao) {
+        const aluno = alunos.find(a => a.id === alunoId);
+        showNotification(`Respostas de ${aluno?.nome_completo || 'aluno'} salvas com sucesso!`, 'success');
+      }
+
+      return true;
     } catch (error: any) {
-      console.error('Erro ao salvar lançamentos:', error);
-      showNotification(error.response?.data?.detail || 'Erro ao salvar lançamentos', 'error');
+      console.error('Erro ao salvar respostas:', error);
+      showNotification(error.response?.data?.detail || 'Erro ao salvar respostas', 'error');
+      return false;
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
+  }, [selectedParticipacao, simuladoExportado, respostas, alunos, showNotification]);
+
+  // Navigate to different student (with auto-save)
+  const navigateToAluno = useCallback(async (newIndex: number) => {
+    if (newIndex < 0 || newIndex >= alunos.length) return;
+
+    // Save current student's responses before navigating
+    if (selectedAluno) {
+      const alunoRespostas = respostas.get(selectedAluno.id);
+      if (alunoRespostas && alunoRespostas.size > 0) {
+        const saved = await salvarRespostasAluno(selectedAluno.id, false);
+        if (!saved) {
+          // Ask user if they want to continue without saving
+          const continuar = window.confirm('Erro ao salvar. Deseja continuar sem salvar?');
+          if (!continuar) return;
+        }
+      }
+    }
+
+    setSelectedAlunoIndex(newIndex);
+  }, [alunos.length, selectedAluno, respostas, salvarRespostasAluno]);
+
+  const handleRespostaChange = useCallback((questaoId: number, resposta: string) => {
+    if (!selectedAluno) return;
+
+    setRespostas(prev => {
+      const newRespostas = new Map(prev);
+      const alunoRespostas = new Map(prev.get(selectedAluno.id) || new Map());
+      alunoRespostas.set(questaoId, resposta);
+      newRespostas.set(selectedAluno.id, alunoRespostas);
+      return newRespostas;
+    });
+
+    // Remove from saved list since there are unsaved changes
+    setAlunosSalvos(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(selectedAluno.id);
+      return newSet;
+    });
+  }, [selectedAluno]);
+
+  const handleFinalizar = async () => {
+    // Save current student first
+    if (selectedAluno) {
+      const alunoRespostas = respostas.get(selectedAluno.id);
+      if (alunoRespostas && alunoRespostas.size > 0 && !alunosSalvos.has(selectedAluno.id)) {
+        await salvarRespostasAluno(selectedAluno.id, false);
+      }
+    }
+
+    // Go to finalization step
+    setActiveStep(2);
   };
 
   const handlePrintSimulado = async () => {
     if (!selectedParticipacao) return;
-
-    // Open simulado in new window for printing
     const url = `/saeb-v2/simulado/${selectedParticipacao.simulado_id}/imprimir`;
     window.open(url, '_blank');
   };
 
-  const getProgressoAluno = (alunoId: number): number => {
+  // Progress calculations
+  const getProgressoAluno = useCallback((alunoId: number): number => {
     const alunoRespostas = respostas.get(alunoId);
     if (!alunoRespostas || !simuladoExportado) return 0;
-
     const totalQuestoes = simuladoExportado.total_questoes;
     const respostasCount = alunoRespostas.size;
     return Math.round((respostasCount / totalQuestoes) * 100);
-  };
+  }, [respostas, simuladoExportado]);
 
-  const getTotalRespostas = (): number => {
-    let total = 0;
+  const progressoGeral = useMemo(() => {
+    if (!simuladoExportado || alunos.length === 0) return { respostas: 0, total: 0, percent: 0 };
+    const totalPossivel = alunos.length * simuladoExportado.total_questoes;
+    let totalRespostas = 0;
     respostas.forEach(alunoRespostas => {
-      total += alunoRespostas.size;
+      totalRespostas += alunoRespostas.size;
     });
-    return total;
-  };
+    return {
+      respostas: totalRespostas,
+      total: totalPossivel,
+      percent: Math.round((totalRespostas / totalPossivel) * 100),
+    };
+  }, [respostas, simuladoExportado, alunos]);
+
+  const alunosComProgresso = useMemo(() => {
+    return alunos.filter(a => {
+      const r = respostas.get(a.id);
+      return r && r.size > 0;
+    }).length;
+  }, [alunos, respostas]);
 
   if (loading && activeStep === 0) {
     return (
@@ -272,154 +341,261 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
           </Paper>
         )}
 
-        {/* Step 1: Enter Responses */}
-        {activeStep === 1 && selectedParticipacao && simuladoExportado && (
+        {/* Step 1: Enter Responses - One student at a time */}
+        {activeStep === 1 && selectedParticipacao && simuladoExportado && selectedAluno && (
           <>
-            {/* Header Card */}
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="h6">{simuladoExportado.simulado_nome}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Turma: {selectedParticipacao.turma?.nome} | {simuladoExportado.ano_escolar}º ano | {simuladoExportado.ano_letivo}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <Typography variant="body2" color="text.secondary">Total de Questões</Typography>
-                    <Typography variant="h5">{simuladoExportado.total_questoes}</Typography>
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <Typography variant="body2" color="text.secondary">Respostas Lançadas</Typography>
-                    <Typography variant="h5" color="primary">{getTotalRespostas()}</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Button
-                      variant="outlined"
-                      startIcon={<PrintIcon />}
-                      onClick={handlePrintSimulado}
-                      size="small"
-                    >
-                      Imprimir Simulado
-                    </Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
+            {/* Progress Header - Compacto */}
+            <Paper sx={{ mb: 1, p: 1, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+              <Box sx={{ flexGrow: 1, minWidth: 200 }}>
+                <Typography variant="subtitle1" fontWeight="bold" noWrap>{simuladoExportado.simulado_nome}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {selectedParticipacao.turma?.nome} | {simuladoExportado.ano_escolar}º ano
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 150 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={progressoGeral.percent}
+                  sx={{ flexGrow: 1, height: 6, borderRadius: 1 }}
+                />
+                <Typography variant="caption" fontWeight="bold">{progressoGeral.percent}%</Typography>
+              </Box>
+              <Chip label={`${alunosComProgresso}/${alunos.length} alunos`} size="small" variant="outlined" />
+              <Chip label={`${progressoGeral.respostas}/${progressoGeral.total} resp.`} size="small" color="primary" />
+              <Button
+                variant="outlined"
+                startIcon={<PrintIcon />}
+                onClick={handlePrintSimulado}
+                size="small"
+              >
+                Imprimir
+              </Button>
+            </Paper>
 
-            {/* Responses Table */}
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Lançar Respostas dos Alunos
-              </Typography>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Lance as respostas de cada aluno conforme as provas em papel. Você pode deixar questões em branco se o aluno não respondeu.
-              </Alert>
-
-              <TableContainer sx={{ maxHeight: '70vh' }}>
-                <Table stickyHeader size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ minWidth: 200, position: 'sticky', left: 0, bgcolor: 'background.paper', zIndex: 3 }}>
-                        Aluno
-                      </TableCell>
-                      <TableCell sx={{ minWidth: 100 }}>Progresso</TableCell>
-                      {simuladoExportado.disciplinas.map(disc =>
-                        disc.blocos.map(bloco =>
-                          bloco.questoes.map(questao => (
-                            <TableCell key={questao.id} align="center" sx={{ minWidth: 80 }}>
-                              <Typography variant="caption" display="block">
-                                Q{questao.ordem}
-                              </Typography>
-                            </TableCell>
-                          ))
-                        )
-                      )}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {alunos.map((aluno) => {
+            <Grid container spacing={1}>
+              {/* Student List - Left Sidebar */}
+              <Grid item xs={12} md={2.5}>
+                <Paper sx={{ height: 'calc(100vh - 240px)', display: 'flex', flexDirection: 'column' }}>
+                  <Box sx={{ p: 1, bgcolor: 'primary.main', color: 'white' }}>
+                    <Typography variant="body2" fontWeight="bold">Alunos ({alunos.length})</Typography>
+                  </Box>
+                  <List sx={{ flexGrow: 1, overflow: 'auto', py: 0 }}>
+                    {alunos.map((aluno, index) => {
                       const progresso = getProgressoAluno(aluno.id);
+                      const salvo = alunosSalvos.has(aluno.id);
+                      const isSelected = index === selectedAlunoIndex;
+
                       return (
-                        <TableRow key={aluno.id}>
-                          <TableCell sx={{ position: 'sticky', left: 0, bgcolor: 'background.paper', zIndex: 2 }}>
-                            <Typography variant="body2" fontWeight="medium">
-                              {aluno.nome_completo}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {aluno.matricula}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <LinearProgress
-                                variant="determinate"
-                                value={progresso}
-                                sx={{ flexGrow: 1, height: 6, borderRadius: 1 }}
-                              />
-                              <Typography variant="caption">{progresso}%</Typography>
-                            </Box>
-                          </TableCell>
-                          {simuladoExportado.disciplinas.map(disc =>
-                            disc.blocos.map(bloco =>
-                              bloco.questoes.map(questao => {
-                                const resposta = respostas.get(aluno.id)?.get(questao.id) || '';
-                                return (
-                                  <TableCell key={questao.id} align="center">
-                                    <RadioGroup
-                                      row
-                                      value={resposta}
-                                      onChange={(e) => handleRespostaChange(aluno.id, questao.id, e.target.value)}
-                                      sx={{ justifyContent: 'center', gap: 0.5 }}
-                                    >
-                                      {['a', 'b', 'c', 'd', 'e'].map(alt => (
-                                        <FormControlLabel
-                                          key={alt}
-                                          value={alt}
-                                          control={<Radio size="small" />}
-                                          label={alt.toUpperCase()}
-                                          labelPlacement="top"
-                                          sx={{
-                                            m: 0,
-                                            '& .MuiFormControlLabel-label': {
-                                              fontSize: '0.75rem',
-                                            },
-                                          }}
-                                        />
-                                      ))}
-                                    </RadioGroup>
-                                  </TableCell>
-                                );
-                              })
-                            )
-                          )}
-                        </TableRow>
+                        <React.Fragment key={aluno.id}>
+                          <ListItemButton
+                            selected={isSelected}
+                            onClick={() => navigateToAluno(index)}
+                            sx={{
+                              borderLeft: isSelected ? 4 : 0,
+                              borderColor: 'primary.main',
+                              bgcolor: isSelected ? 'action.selected' : undefined,
+                            }}
+                          >
+                            <ListItemIcon sx={{ minWidth: 36 }}>
+                              {salvo ? (
+                                <CheckIcon color="success" fontSize="small" />
+                              ) : progresso > 0 ? (
+                                <PersonIcon color="primary" fontSize="small" />
+                              ) : (
+                                <PersonIcon color="disabled" fontSize="small" />
+                              )}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={
+                                <Typography variant="body2" noWrap fontWeight={isSelected ? 'bold' : 'normal'}>
+                                  {aluno.nome_completo}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={progresso}
+                                    sx={{ flexGrow: 1, height: 4, borderRadius: 1 }}
+                                    color={salvo ? 'success' : 'primary'}
+                                  />
+                                  <Typography variant="caption" sx={{ minWidth: 32 }}>
+                                    {progresso}%
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItemButton>
+                          <Divider />
+                        </React.Fragment>
                       );
                     })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                  </List>
+                </Paper>
+              </Grid>
 
-              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 3 }}>
-                <Button onClick={() => setActiveStep(0)}>Voltar</Button>
-                <Button
-                  variant="contained"
-                  onClick={() => setActiveStep(2)}
-                  disabled={getTotalRespostas() === 0}
-                >
-                  Revisar e Salvar
-                </Button>
-              </Box>
-            </Paper>
+              {/* Response Entry - Main Area */}
+              <Grid item xs={12} md={9.5}>
+                <Paper sx={{ p: 1.5, height: 'calc(100vh - 240px)', display: 'flex', flexDirection: 'column' }}>
+                  {/* Student Header with Navigation - Compacto */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Tooltip title="Aluno anterior (salva automaticamente)">
+                        <span>
+                          <IconButton
+                            onClick={() => navigateToAluno(selectedAlunoIndex - 1)}
+                            disabled={selectedAlunoIndex === 0 || saving}
+                            color="primary"
+                            size="small"
+                          >
+                            <PrevIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight="bold">{selectedAluno.nome_completo}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {selectedAluno.matricula} | {selectedAlunoIndex + 1}/{alunos.length}
+                        </Typography>
+                      </Box>
+                      <Tooltip title="Próximo aluno (salva automaticamente)">
+                        <span>
+                          <IconButton
+                            onClick={() => navigateToAluno(selectedAlunoIndex + 1)}
+                            disabled={selectedAlunoIndex === alunos.length - 1 || saving}
+                            color="primary"
+                            size="small"
+                          >
+                            <NextIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {saving && <CircularProgress size={20} />}
+                      {alunosSalvos.has(selectedAluno.id) && (
+                        <Chip icon={<CheckIcon />} label="Salvo" color="success" size="small" sx={{ height: 24 }} />
+                      )}
+                      <Button
+                        variant="outlined"
+                        startIcon={<SaveIcon />}
+                        onClick={() => salvarRespostasAluno(selectedAluno.id)}
+                        disabled={saving || (respostas.get(selectedAluno.id)?.size || 0) === 0}
+                        size="small"
+                      >
+                        Salvar
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  <Divider sx={{ mb: 1 }} />
+
+                  {/* Questions List - Uma coluna */}
+                  <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+                    {todasQuestoes.map((questao) => {
+                      const resposta = respostas.get(selectedAluno.id)?.get(questao.id) || '';
+                      return (
+                        <Box
+                          key={questao.id}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 2,
+                            py: 0.75,
+                            px: 1,
+                            borderBottom: 1,
+                            borderColor: 'divider',
+                            bgcolor: resposta ? 'success.50' : 'background.paper',
+                            '&:hover': { bgcolor: resposta ? 'success.100' : 'action.hover' },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 100 }}>
+                            <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 35 }}>
+                              Q{questao.ordem}
+                            </Typography>
+                            <Chip
+                              label={questao.disciplina.slice(0, 3).toUpperCase()}
+                              size="small"
+                              color={questao.disciplina.toLowerCase().includes('mat') ? 'primary' : 'secondary'}
+                              sx={{ height: 20, fontSize: '0.7rem' }}
+                            />
+                          </Box>
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            {['A', 'B', 'C', 'D', 'E'].map(alt => (
+                              <Button
+                                key={alt}
+                                variant={resposta === alt ? 'contained' : 'outlined'}
+                                color={resposta === alt ? 'primary' : 'inherit'}
+                                size="small"
+                                onClick={() => handleRespostaChange(questao.id, alt)}
+                                sx={{
+                                  minWidth: 36,
+                                  px: 1,
+                                  py: 0.5,
+                                  fontWeight: resposta === alt ? 'bold' : 'normal',
+                                }}
+                              >
+                                {alt}
+                              </Button>
+                            ))}
+                          </Box>
+                          {resposta && (
+                            <CheckIcon color="success" fontSize="small" />
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  {/* Footer Actions - Compacto */}
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'space-between', mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                    <Button onClick={() => setActiveStep(0)} size="small">Voltar</Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<PrevIcon />}
+                        onClick={() => navigateToAluno(selectedAlunoIndex - 1)}
+                        disabled={selectedAlunoIndex === 0 || saving}
+                      >
+                        Anterior
+                      </Button>
+                      {selectedAlunoIndex < alunos.length - 1 ? (
+                        <Button
+                          variant="contained"
+                          endIcon={<NextIcon />}
+                          onClick={() => navigateToAluno(selectedAlunoIndex + 1)}
+                          disabled={saving}
+                        >
+                          Próximo Aluno
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          color="success"
+                          onClick={handleFinalizar}
+                          disabled={saving || alunosComProgresso === 0}
+                        >
+                          Finalizar Lançamento
+                        </Button>
+                      )}
+                    </Box>
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
           </>
         )}
 
-        {/* Step 2: Confirm and Save */}
+        {/* Step 2: Finalization Summary */}
         {activeStep === 2 && selectedParticipacao && simuladoExportado && (
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Revisar e Confirmar Lançamento
+              Lançamento Finalizado
             </Typography>
+
+            <Alert severity="success" sx={{ mb: 3 }}>
+              Os lançamentos foram salvos automaticamente durante o processo.
+            </Alert>
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} md={4}>
@@ -434,138 +610,32 @@ const SAEBV2LancamentoManualPage: React.FC = () => {
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="body2" color="text.secondary">Alunos com Respostas</Typography>
-                    <Typography variant="h4" color="primary">
-                      {Array.from(respostas.values()).filter(r => r.size > 0).length}
-                    </Typography>
+                    <Typography variant="h4" color="primary">{alunosComProgresso}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="body2" color="text.secondary">Total de Respostas</Typography>
-                    <Typography variant="h4" color="success.main">{getTotalRespostas()}</Typography>
+                    <Typography variant="body2" color="text.secondary">Alunos Salvos</Typography>
+                    <Typography variant="h4" color="success.main">{alunosSalvos.size}</Typography>
                   </CardContent>
                 </Card>
               </Grid>
             </Grid>
 
-            <Alert severity="warning" sx={{ mb: 3 }}>
-              <strong>Atenção:</strong> Após confirmar, os resultados serão calculados automaticamente e não poderão ser alterados.
-              Verifique se todas as respostas foram lançadas corretamente.
-            </Alert>
-
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-              <Button onClick={() => setActiveStep(1)}>Voltar</Button>
+              <Button onClick={() => setActiveStep(1)}>Voltar para Edição</Button>
               <Button
                 variant="contained"
-                color="success"
-                startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-                onClick={handleSalvar}
-                disabled={loading}
+                onClick={() => navigate('/saeb-v2/professor')}
               >
-                {loading ? 'Salvando...' : 'Confirmar e Salvar'}
+                Concluir
               </Button>
             </Box>
           </Paper>
         )}
       </Box>
-
-      {/* Result Dialog */}
-      <Dialog
-        open={resultDialogOpen}
-        onClose={() => setResultDialogOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AssignmentIcon />
-            Resultado do Lançamento
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {resultData && (
-            <Box>
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={4}>
-                  <Card variant="outlined">
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h3">{resultData.total_lancamentos}</Typography>
-                      <Typography variant="body2" color="text.secondary">Total</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={4}>
-                  <Card variant="outlined" sx={{ bgcolor: 'success.light' }}>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h3" color="success.dark">{resultData.sucesso}</Typography>
-                      <Typography variant="body2" color="success.dark">Sucesso</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={4}>
-                  <Card variant="outlined" sx={{ bgcolor: 'error.light' }}>
-                    <CardContent sx={{ textAlign: 'center' }}>
-                      <Typography variant="h3" color="error.dark">{resultData.falhas}</Typography>
-                      <Typography variant="body2" color="error.dark">Falhas</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-
-              {resultData.falhas > 0 && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  Alguns lançamentos falharam. Verifique os detalhes abaixo.
-                </Alert>
-              )}
-
-              <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 400 }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Aluno</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Detalhes</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {resultData.resultados.map((res, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{res.aluno_nome}</TableCell>
-                        <TableCell>
-                          {res.success ? (
-                            <Chip label="Sucesso" size="small" color="success" icon={<SuccessIcon />} />
-                          ) : (
-                            <Chip label="Erro" size="small" color="error" icon={<ErrorIcon />} />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {res.success ? (
-                            <Typography variant="body2">
-                              {res.resultado?.total_acertos}/{res.resultado?.total_questoes} acertos ({res.resultado?.porcentagem}%)
-                            </Typography>
-                          ) : (
-                            <Typography variant="body2" color="error">{res.error}</Typography>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setResultDialogOpen(false);
-            navigate('/saeb-v2/professor');
-          }}>
-            Fechar e Voltar
-          </Button>
-        </DialogActions>
-      </Dialog>
     </MainLayout>
   );
 };

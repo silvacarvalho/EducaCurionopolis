@@ -729,6 +729,8 @@ class ParticipacaoSimuladoResponse(BaseSchema):
     liberado: bool
     data_liberacao: Optional[datetime]
     created_at: datetime
+    simulado: Optional[SimuladoSAEBResponse] = None
+    turma: Optional[TurmaResponse] = None
 
 
 # Resposta Aluno Schemas
