@@ -60,14 +60,16 @@ def gerar_token_unico(db: Session) -> str:
     """
     Generate unique 6-character token (3 letters + 3 numbers, shuffled, uppercase)
     Format: A9K2M5, 3T7B1H, K4N9A2
+    Note: Excludes 0 (zero) to avoid confusion with O (letter)
     """
     import random
     import string
 
     while True:
-        # Generate 3 letters and 3 numbers
+        # Generate 3 letters and 3 numbers (excluding 0 to avoid confusion with O)
         letters = [random.choice(string.ascii_uppercase) for _ in range(3)]
-        numbers = [random.choice(string.digits) for _ in range(3)]
+        digits_without_zero = '123456789'
+        numbers = [random.choice(digits_without_zero) for _ in range(3)]
 
         # Combine and shuffle
         chars = letters + numbers

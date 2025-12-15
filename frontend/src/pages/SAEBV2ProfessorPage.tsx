@@ -234,11 +234,17 @@ const SAEBV2ProfessorPage: React.FC = () => {
       return;
     }
 
+    // Get current domain for instructions
+    const currentDomain = window.location.origin;
+    const accessUrl = `${currentDomain}/saeb-acesso`;
+
     // Generate HTML for token labels/tickets
     const tokensHTML = tokensData.tokens.map((token) => `
       <div class="token-card">
         <div class="token-header">
-          <div class="logo">📚</div>
+          <div class="logo">
+            <img src="/favicon.svg" alt="Logo" />
+          </div>
           <div class="title">
             <h2>EDUCA+ Curionópolis</h2>
             <p>Simulado SAEB - Token de Acesso</p>
@@ -269,7 +275,7 @@ const SAEBV2ProfessorPage: React.FC = () => {
         </div>
         <div class="instructions">
           <p><strong>Instruções:</strong></p>
-          <p>1. Acesse: <strong>seu-site.com/saeb-acesso</strong></p>
+          <p>1. Acesse: <strong>${accessUrl}</strong></p>
           <p>2. Digite o token acima (6 caracteres)</p>
           <p>3. Realize o simulado online</p>
           <p><em>⚠ Não compartilhe seu token com outros alunos</em></p>
@@ -323,8 +329,15 @@ const SAEBV2ProfessorPage: React.FC = () => {
           }
 
           .logo {
-            font-size: 32px;
-            line-height: 1;
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+          }
+
+          .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
           }
 
           .title h2 {
