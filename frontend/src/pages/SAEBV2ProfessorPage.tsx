@@ -218,23 +218,49 @@ const SAEBV2ProfessorPage: React.FC = () => {
 
   const handleCopyToken = async (token: string) => {
     try {
+      // First attempt: Modern Clipboard API (requires HTTPS or localhost)
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(token);
-      } else {
-        // Fallback for older browsers or non-HTTPS
-        const textArea = document.createElement('textarea');
-        textArea.value = token;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
+        showNotification('Token copiado!', 'success');
+        return;
+      }
+      
+      // Fallback method for older browsers or non-HTTPS environments
+      const textArea = document.createElement('textarea');
+      textArea.value = token;
+      
+      // Ensure the textarea is visible and accessible
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showNotification('Token copiado!', 'success');
+        } else {
+          throw new Error('Comando copy falhou');
+        }
+      } catch (err) {
+        console.error('Erro no execCommand:', err);
+        throw err;
+      } finally {
         document.body.removeChild(textArea);
       }
-      showNotification('Token copiado!', 'success');
     } catch (err) {
-      console.error('Erro ao copiar:', err);
-      showNotification('Erro ao copiar token', 'error');
+      console.error('Erro ao copiar token:', err);
+      showNotification('Erro ao copiar token. Tente copiar manualmente: ' + token, 'error');
     }
   };
 
@@ -246,22 +272,48 @@ const SAEBV2ProfessorPage: React.FC = () => {
       .join('\n');
 
     try {
+      // First attempt: Modern Clipboard API
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(tokenList);
-      } else {
-        // Fallback for older browsers or non-HTTPS
-        const textArea = document.createElement('textarea');
-        textArea.value = tokenList;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-9999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
+        showNotification('Todos os tokens copiados!', 'success');
+        return;
+      }
+      
+      // Fallback method
+      const textArea = document.createElement('textarea');
+      textArea.value = tokenList;
+      
+      // Ensure the textarea is visible and accessible
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showNotification('Todos os tokens copiados!', 'success');
+        } else {
+          throw new Error('Comando copy falhou');
+        }
+      } catch (err) {
+        console.error('Erro no execCommand:', err);
+        throw err;
+      } finally {
         document.body.removeChild(textArea);
       }
-      showNotification('Todos os tokens copiados!', 'success');
     } catch (err) {
-      console.error('Erro ao copiar:', err);
+      console.error('Erro ao copiar tokens:', err);
       showNotification('Erro ao copiar tokens', 'error');
     }
   };

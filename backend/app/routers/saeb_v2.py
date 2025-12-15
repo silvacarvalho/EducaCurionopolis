@@ -11,6 +11,7 @@ import openpyxl
 import io
 
 from ..database import get_db
+from ..config import get_settings
 from ..models import (
     DescritorSAEB, QuestaoSAEB, SimuladoSAEB, SimuladoQuestao,
     ParticipacaoSimulado, RespostaAlunoSAEB, ResultadoSimuladoAluno,
@@ -2161,8 +2162,8 @@ async def autenticar_por_token(
     Returns temporary JWT token for student session
     """
     from jose import jwt
-    from datetime import timedelta
 
+    settings = get_settings()
     token_str = auth_data.token.upper()
 
     # Find token
