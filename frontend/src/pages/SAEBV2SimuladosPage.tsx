@@ -265,12 +265,13 @@ const SAEBV2SimuladosPage: React.FC = () => {
   };
 
   const getQuestoesByDisciplinaBloco = (disciplina: DisciplinaSAEB, bloco: BlocoSAEB) => {
-    return questoes.filter(
+    const filtered = questoes.filter(
       (q) =>
-        q.disciplina === disciplina &&
-        q.bloco === bloco &&
+        String(q.disciplina) === String(disciplina) &&
+        Number(q.bloco) === Number(bloco) &&
         q.ano_escolar === form.ano_escolar
     );
+    return filtered;
   };
 
   const renderQuestaoSelector = (disciplina: DisciplinaSAEB, bloco: BlocoSAEB, label: string) => {

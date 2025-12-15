@@ -136,9 +136,9 @@ const SAEBV2GerenciarQuestoesPage: React.FC = () => {
   };
 
   const questoesFiltradas = questoesDisponiveis.filter((q) => {
-    if (filtroDisciplina !== 'todas' && q.disciplina !== filtroDisciplina) return false;
+    if (filtroDisciplina !== 'todas' && String(q.disciplina) !== String(filtroDisciplina)) return false;
     // Comparar bloco convertendo para número, pois o Select retorna string
-    if (filtroBloco !== 'todos' && q.bloco !== Number(filtroBloco)) return false;
+    if (filtroBloco !== 'todos' && Number(q.bloco) !== Number(filtroBloco)) return false;
     // Não mostrar questões já adicionadas
     const jaAdicionada = questoesSimulado.some((sq) => sq.questao?.id === q.id);
     return !jaAdicionada;
