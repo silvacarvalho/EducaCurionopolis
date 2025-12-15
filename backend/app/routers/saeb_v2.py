@@ -1404,8 +1404,9 @@ async def liberar_simulado_turma(
     """
     Teacher releases simulado to their class
     Creates participation record allowing students to take the exam
+    Accepts simulados with status PUBLICADO or EM_ANDAMENTO (to allow multiple class releases)
     """
-    # Verify simulado exists and is published
+    # Verify simulado exists and is available for release
     simulado = db.query(SimuladoSAEB).filter(
         SimuladoSAEB.id == participacao_data.simulado_id,
         SimuladoSAEB.ativo == True
@@ -1417,10 +1418,11 @@ async def liberar_simulado_turma(
             detail="Simulado não encontrado ou inativo"
         )
 
-    if simulado.status != ModelStatus.PUBLICADO:
+    # Allow liberation if simulado is PUBLICADO or EM_ANDAMENTO (already released to another class)
+    if simulado.status not in [ModelStatus.PUBLICADO, ModelStatus.EM_ANDAMENTO]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Simulado ainda não foi publicado"
+            detail="Simulado ainda não foi publicado ou já foi encerrado"
         )
 
     # Verify turma exists and belongs to professor's school
@@ -2259,7 +2261,7 @@ async def lancar_resultado_manual(
         )
     ).delete(synchronize_session=False)
 
-    # Insert new answers
+    # Insert new answers - save individually
     for resposta_data in lancamento.respostas:
         # Get questao to check correct answer
         simulado_questao = db.query(SimuladoQuestao).options(
@@ -2280,8 +2282,7 @@ async def lancar_resultado_manual(
             correta=correta
         )
         db.add(nova_resposta)
-
-    db.commit()
+        db.commit()  # Commit individual para cada resposta
 
     # Calculate and update result
     atualizar_resultado_aluno(db, lancamento.simulado_id, lancamento.aluno_id)
@@ -2335,7 +2336,7 @@ async def lancar_resultados_lote(
                 )
             ).delete(synchronize_session=False)
 
-            # Insert new answers
+            # Insert new answers - save individually
             for resposta_data in lancamento.respostas:
                 simulado_questao = db.query(SimuladoQuestao).options(
                     joinedload(SimuladoQuestao.questao)
@@ -2355,8 +2356,7 @@ async def lancar_resultados_lote(
                     correta=correta
                 )
                 db.add(nova_resposta)
-
-            db.commit()
+                db.commit()  # Commit individual para cada resposta
 
             # Calculate result (without checking closure for each student - we'll check once at the end)
             atualizar_resultado_aluno(db, lancamento.simulado_id, lancamento.aluno_id, verificar_encerramento=False)

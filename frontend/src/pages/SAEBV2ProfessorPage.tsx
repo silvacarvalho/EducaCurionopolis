@@ -113,8 +113,15 @@ const SAEBV2ProfessorPage: React.FC = () => {
 
   const loadSimulados = async () => {
     try {
-      const response = await saebV2API.listSimulados({ status: StatusSimulado.PUBLICADO });
-      setSimulados(response.data);
+      // Load PUBLICADO simulados
+      const responsePublicado = await saebV2API.listSimulados({ status: StatusSimulado.PUBLICADO });
+      
+      // Load EM_ANDAMENTO simulados (those already released to at least one class)
+      const responseEmAndamento = await saebV2API.listSimulados({ status: StatusSimulado.EM_ANDAMENTO });
+      
+      // Combine both lists
+      const allSimulados = [...responsePublicado.data, ...responseEmAndamento.data];
+      setSimulados(allSimulados);
     } catch (error) {
       console.error('Erro ao carregar simulados:', error);
     }
