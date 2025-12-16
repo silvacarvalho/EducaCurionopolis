@@ -2162,7 +2162,16 @@ async def listar_tokens_acesso(
     # Sort tokens by student name for better UX
     tokens_response.sort(key=lambda t: t.aluno_nome)
     
-    return TokenAcessoListResponse(tokens=tokens_response)
+    # Get simulado and turma info for response
+    simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == participacao.simulado_id).first()
+    turma = db.query(Turma).filter(Turma.id == participacao.turma_id).first()
+    
+    return TokenAcessoListResponse(
+        participacao_id=participacao.id,
+        simulado_nome=simulado.nome if simulado else "Simulado não encontrado",
+        turma_nome=turma.nome if turma else "Turma não encontrada",
+        tokens=tokens_response
+    )
 
 
 @router.post("/tokens/{token_id}/regenerar", response_model=TokenAcessoResponse)
