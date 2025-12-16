@@ -2140,40 +2140,38 @@ async def listar_tokens_acesso(
             detail="Você não tem permissão para acessar esta participação"
         )
 
-    # Get tokens
+    # Get tokens - only active ones, ordered by created_at DESC to get the most recent
+    # Group by aluno_id to get only the latest token per student
     tokens = db.query(TokenAcessoSimulado).options(
         joinedload(TokenAcessoSimulado.aluno)
     ).filter(
-        TokenAcessoSimulado.participacao_id == participacao_id
-    ).order_by(TokenAcessoSimulado.created_at).all()
+        TokenAcessoSimulado.participacao_id == participacao_id,
+        TokenAcessoSimulado.ativo == True  # Only active tokens
+    ).order_by(TokenAcessoSimulado.created_at.desc()).all()
 
     # Return empty list if no tokens (instead of 404)
     tokens_response = []
+    seen_alunos = set()  # Track which students we've already added
+    
     for token in tokens:
-        tokens_response.append(TokenAcessoResponse(
-            id=token.id,
-            token=token.token,
-            aluno_id=token.aluno.id,
-            aluno_nome=token.aluno.nome_completo,
-            aluno_matricula=token.aluno.matricula,
-            usado=token.usado,
-            data_primeiro_acesso=token.data_primeiro_acesso,
+        # Only add the first (most recent) token for each student
+        if token.aluno_id not in seen_alunos:
+            seen_alunos.add(token.aluno_id)
+            tokens_response.append(TokenAcessoResponse(
+                id=token.id,
+                token=token.token,
+                aluno_id=token.aluno.id,
+                aluno_nome=token.aluno.nome_completo,
+                aluno_matricula=token.aluno.matricula,
+                usado=token.usado,
+                data_primeiro_acesso=token.data_primeiro_acesso,
             data_expiracao=token.data_expiracao,
             ativo=token.ativo,
             created_at=token.created_at
         ))
-
-    return TokenAcessoListResponse(
-        participacao_id=participacao_id,
-        simulado_nome=participacao.simulado.nome,
-        turma_nome=turma.nome if turma else "Turma não encontrada",
-        tokens=tokens_response
-    )
-
-
-@router.post("/tokens/{token_id}/regenerar", response_model=TokenAcessoResponse)
-async def regenerar_token_aluno(
-    token_id: int,
+    
+    # Sort tokens by student name for better UX
+    tokens_response.sort(key=lambda t: t.aluno_nome)
     db: Session = Depends(get_db),
     current_professor: Professor = Depends(get_current_professor)
 ):
