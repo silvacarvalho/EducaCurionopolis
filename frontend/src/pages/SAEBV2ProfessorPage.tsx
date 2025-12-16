@@ -277,7 +277,7 @@ const SAEBV2ProfessorPage: React.FC = () => {
       
       // Reload tokens list
       if (tokensData) {
-        await loadTokensForParticipacao(tokensData.participacao_id);
+        await handleVisualizarTokens(tokensData.participacao_id);
       }
     } catch (error: any) {
       console.error('Erro ao regenerar token:', error);
