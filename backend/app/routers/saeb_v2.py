@@ -5,7 +5,7 @@ Handles descriptors, questions, simulados, student answers, and reports
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from typing import List, Optional, Union
+from typing import List, Optional
 from datetime import datetime, timedelta
 import openpyxl
 import io
@@ -34,7 +34,7 @@ from ..schemas import (
     LancamentoManualCreate, LancamentoManualBulkCreate
 )
 from ..auth import get_current_active_user, require_gestao_municipal
-from ..dependencies import get_current_professor, get_current_user_or_student
+from ..dependencies import get_current_professor, get_current_student_from_token
 
 router = APIRouter()
 
@@ -1033,9 +1033,9 @@ async def get_simulado(
     simulado_id: int,
     include_gabarito: bool = False,
     db: Session = Depends(get_db),
-    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
+    student_session: dict = Depends(get_current_student_from_token)
 ):
-    """Get simulado by ID with questions"""
+    """Get simulado by ID with questions - Student access only"""
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
     if not simulado:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Simulado não encontrado")
@@ -1169,9 +1169,9 @@ async def update_simulado(
 async def listar_questoes_simulado(
     simulado_id: int,
     db: Session = Depends(get_db),
-    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
+    student_session: dict = Depends(get_current_student_from_token)
 ):
-    """Lista todas as questões de um simulado específico"""
+    """Lista todas as questões de um simulado específico - Student access only"""
     # Verificar se simulado existe
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
     if not simulado:
@@ -1626,19 +1626,14 @@ async def submit_resposta(
 async def submit_respostas_bulk(
     bulk_data: RespostaAlunoSAEBBulk,
     db: Session = Depends(get_db),
-    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
+    student_session: dict = Depends(get_current_student_from_token)
 ):
     """
-    Student submits all answers at once
+    Student submits all answers at once - Student access only
     More efficient than submitting one by one
     """
-    # Get aluno_id based on authentication type
-    if isinstance(current_user_or_student, dict):
-        # Student token authentication
-        aluno_id = current_user_or_student["aluno_id"]
-    else:
-        # Regular user authentication
-        aluno_id = current_user_or_student.id
+    # Get aluno_id from student token
+    aluno_id = student_session["aluno_id"]
     
     # Get aluno record
     aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
@@ -1729,14 +1724,11 @@ async def submit_respostas_bulk(
 async def get_minhas_respostas(
     simulado_id: int,
     db: Session = Depends(get_db),
-    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
+    student_session: dict = Depends(get_current_student_from_token)
 ):
-    """Get student's answers for a simulado"""
-    # Get aluno_id based on authentication type
-    if isinstance(current_user_or_student, dict):
-        aluno_id = current_user_or_student["aluno_id"]
-    else:
-        aluno_id = current_user_or_student.id
+    """Get student's answers for a simulado - Student access only"""
+    # Get aluno_id from student token
+    aluno_id = student_session["aluno_id"]
     
     aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
     if not aluno:
@@ -1758,14 +1750,11 @@ async def get_minhas_respostas(
 async def get_meu_resultado(
     simulado_id: int,
     db: Session = Depends(get_db),
-    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
+    student_session: dict = Depends(get_current_student_from_token)
 ):
-    """Get student's result for a simulado"""
-    # Get aluno_id based on authentication type
-    if isinstance(current_user_or_student, dict):
-        aluno_id = current_user_or_student["aluno_id"]
-    else:
-        aluno_id = current_user_or_student.id
+    """Get student's result for a simulado - Student access only"""
+    # Get aluno_id from student token
+    aluno_id = student_session["aluno_id"]
     
     aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
     if not aluno:
@@ -2165,13 +2154,20 @@ async def listar_tokens_acesso(
                 aluno_matricula=token.aluno.matricula,
                 usado=token.usado,
                 data_primeiro_acesso=token.data_primeiro_acesso,
-            data_expiracao=token.data_expiracao,
-            ativo=token.ativo,
-            created_at=token.created_at
-        ))
+                data_expiracao=token.data_expiracao,
+                ativo=token.ativo,
+                created_at=token.created_at
+            ))
     
     # Sort tokens by student name for better UX
     tokens_response.sort(key=lambda t: t.aluno_nome)
+    
+    return TokenAcessoListResponse(tokens=tokens_response)
+
+
+@router.post("/tokens/{token_id}/regenerar", response_model=TokenAcessoResponse)
+async def regenerar_token_aluno(
+    token_id: int,
     db: Session = Depends(get_db),
     current_professor: Professor = Depends(get_current_professor)
 ):

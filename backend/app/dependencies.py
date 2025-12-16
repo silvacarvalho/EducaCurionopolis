@@ -2,17 +2,14 @@
 Common dependencies for API routes
 """
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import Optional, Union
 from jose import jwt, JWTError
 
 from .database import get_db
 from .models import Usuario, Escola, Professor, Turma, Aluno, PerfilUsuario
-from .auth import get_current_active_user
+from .auth import get_current_active_user, oauth2_scheme_optional
 from .config import get_settings
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 # ============================================
@@ -174,69 +171,77 @@ def verify_professor_disciplina(
     return True
 
 # ============================================
-# STUDENT TOKEN AUTHENTICATION
+# STUDENT TOKEN AUTHENTICATION (SEPARATE FROM USER AUTH)
 # ============================================
 
-async def get_current_user_or_student(
-    token: Optional[str] = Depends(oauth2_scheme),
+async def get_current_student_from_token(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db)
-) -> Union[Usuario, dict]:
+) -> dict:
     """
-    Dependency that accepts either:
-    - Regular user authentication (Usuario)
-    - Student token authentication (dict with student session data)
+    Dependency for STUDENT-ONLY authentication via access token.
+    
+    This is completely separate from regular user authentication.
+    Only validates student tokens generated for simulado access.
     
     Returns:
-    - Usuario object for regular users
-    - dict with keys: aluno_id, simulado_id, participacao_id, type='student_token' for students
+    - dict with keys: aluno_id, simulado_id, participacao_id, type='student_token'
     
-    Use this for endpoints that students need to access (simulado details, questions, etc.)
+    Raises 401 if:
+    - No token provided
+    - Token is invalid
+    - Token is not a student token
     """
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
+            detail="Token de acesso do aluno é obrigatório",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
     settings = get_settings()
     
     try:
-        # Try to decode token
+        # Decode token
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         
-        # Check if it's a student token
+        # Validate it's a student token
         token_type = payload.get("type")
-        if token_type == "student_token":
-            # Student token - return session data
-            return {
-                "type": "student_token",
-                "aluno_id": payload.get("aluno_id"),
-                "simulado_id": payload.get("simulado_id"),
-                "participacao_id": payload.get("participacao_id")
-            }
-        
-        # Regular user token
-        email = payload.get("sub")
-        if not email:
+        if token_type != "student_token":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token"
+                detail="Token inválido. Use o token de acesso do aluno fornecido pelo professor."
             )
         
-        # Get user from database
-        usuario = db.query(Usuario).filter(Usuario.email == email).first()
-        if not usuario or not usuario.ativo:
+        # Extract student session data
+        aluno_id = payload.get("aluno_id")
+        simulado_id = payload.get("simulado_id")
+        participacao_id = payload.get("participacao_id")
+        
+        if not aluno_id or not simulado_id or not participacao_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found or inactive"
+                detail="Token de acesso incompleto"
             )
         
-        return usuario
+        # Verify student exists
+        aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+        if not aluno:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Aluno não encontrado"
+            )
+        
+        return {
+            "type": "student_token",
+            "aluno_id": aluno_id,
+            "simulado_id": simulado_id,
+            "participacao_id": participacao_id
+        }
         
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail="Token de acesso inválido ou expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )
