@@ -1075,8 +1075,9 @@ async def get_simulado(
             }
         }
 
-        # Only include gabarito if explicitly requested (for GESTÃO MUNICIPAL or after submission)
-        if include_gabarito or current_user.perfil == PerfilUsuario.GESTAO_MUNICIPAL:
+        # Only include gabarito if explicitly requested
+        # Students should never see gabarito before submission
+        if include_gabarito:
             questao_dict["gabarito"] = q.gabarito
         else:
             questao_dict["gabarito"] = ""  # Hide gabarito from students
@@ -2219,9 +2220,16 @@ async def regenerar_token_aluno(
             detail="Não é possível regenerar token de simulado encerrado"
         )
 
-    # Deactivate old token
-    old_token.ativo = False
-    db.add(old_token)
+    # Deactivate ALL previous tokens for this student in this participacao
+    previous_tokens = db.query(TokenAcessoSimulado).filter(
+        TokenAcessoSimulado.participacao_id == participacao.id,
+        TokenAcessoSimulado.aluno_id == old_token.aluno_id,
+        TokenAcessoSimulado.ativo == True
+    ).all()
+    
+    for token in previous_tokens:
+        token.ativo = False
+        db.add(token)
 
     # Generate new token
     new_token_str = gerar_token_unico(db)
