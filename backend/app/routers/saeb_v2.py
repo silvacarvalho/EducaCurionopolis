@@ -1036,6 +1036,13 @@ async def get_simulado(
     student_session: dict = Depends(get_current_student_from_token)
 ):
     """Get simulado by ID with questions - Student access only"""
+    # Validate that student is accessing their assigned simulado
+    if student_session["simulado_id"] != simulado_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem acesso a este simulado"
+        )
+    
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
     if not simulado:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Simulado não encontrado")
@@ -1173,6 +1180,13 @@ async def listar_questoes_simulado(
     student_session: dict = Depends(get_current_student_from_token)
 ):
     """Lista todas as questões de um simulado específico - Student access only"""
+    # Validate that student is accessing their assigned simulado
+    if student_session["simulado_id"] != simulado_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem acesso a este simulado"
+        )
+    
     # Verificar se simulado existe
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
     if not simulado:
@@ -1728,6 +1742,13 @@ async def get_minhas_respostas(
     student_session: dict = Depends(get_current_student_from_token)
 ):
     """Get student's answers for a simulado - Student access only"""
+    # Validate that student is accessing their assigned simulado
+    if student_session["simulado_id"] != simulado_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem acesso a este simulado"
+        )
+    
     # Get aluno_id from student token
     aluno_id = student_session["aluno_id"]
     
@@ -1754,6 +1775,13 @@ async def get_meu_resultado(
     student_session: dict = Depends(get_current_student_from_token)
 ):
     """Get student's result for a simulado - Student access only"""
+    # Validate that student is accessing their assigned simulado
+    if student_session["simulado_id"] != simulado_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem acesso a este simulado"
+        )
+    
     # Get aluno_id from student token
     aluno_id = student_session["aluno_id"]
     
