@@ -38,6 +38,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for existing token and fetch user data
     const initAuth = async () => {
       const token = localStorage.getItem('access_token');
+      const studentSession = localStorage.getItem('student_session');
+
+      // Skip user data fetch if it's a student session
+      if (studentSession) {
+        setLoading(false);
+        return;
+      }
 
       if (token) {
         try {
@@ -76,10 +83,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    const studentSession = localStorage.getItem('student_session');
+    
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     setUser(null);
-    window.location.href = '/login';
+    
+    // Redirect based on session type
+    if (studentSession) {
+      localStorage.removeItem('student_session');
+      window.location.href = '/saeb-acesso';
+    } else {
+      window.location.href = '/login';
+    }
   };
 
   const updateUser = (updatedUser: Usuario) => {
