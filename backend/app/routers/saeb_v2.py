@@ -2151,6 +2151,88 @@ async def listar_tokens_acesso(
     )
 
 
+@router.post("/tokens/{token_id}/regenerar", response_model=TokenAcessoResponse)
+async def regenerar_token_aluno(
+    token_id: int,
+    db: Session = Depends(get_db),
+    current_professor: Professor = Depends(get_current_professor)
+):
+    """
+    Regenerate access token for a specific student
+    Deactivates the old token and creates a new one
+    Professor only - can only regenerate for their own participations or turmas they teach
+    """
+    # Get existing token
+    old_token = db.query(TokenAcessoSimulado).options(
+        joinedload(TokenAcessoSimulado.aluno),
+        joinedload(TokenAcessoSimulado.participacao).joinedload(ParticipacaoSimulado.simulado)
+    ).filter(TokenAcessoSimulado.id == token_id).first()
+
+    if not old_token:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Token não encontrado"
+        )
+
+    # Get participacao and turma
+    participacao = old_token.participacao
+    turma = db.query(Turma).filter(Turma.id == participacao.turma_id).first()
+
+    # Verify professor has access
+    is_owner = participacao.professor_id == current_professor.id
+    teaches_turma = turma and turma.professor_id == current_professor.id if turma else False
+    
+    if not is_owner and not teaches_turma:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para regenerar este token"
+        )
+
+    # Check if simulado is still active
+    simulado = participacao.simulado
+    if simulado.status == ModelStatus.ENCERRADO:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Não é possível regenerar token de simulado encerrado"
+        )
+
+    # Deactivate old token
+    old_token.ativo = False
+    db.add(old_token)
+
+    # Generate new token
+    new_token_str = gerar_token_unico(db)
+    data_expiracao = simulado.data_limite if simulado.data_limite else datetime.now() + timedelta(days=30)
+
+    novo_token = TokenAcessoSimulado(
+        token=new_token_str,
+        participacao_id=participacao.id,
+        aluno_id=old_token.aluno_id,
+        data_expiracao=data_expiracao,
+        ativo=True
+    )
+    db.add(novo_token)
+    db.commit()
+    db.refresh(novo_token)
+
+    return TokenAcessoResponse(
+        id=novo_token.id,
+        token=novo_token.token,
+        aluno_id=old_token.aluno.id,
+        aluno_nome=old_token.aluno.nome_completo,
+        aluno_matricula=old_token.aluno.matricula,
+        usado=False,
+        data_primeiro_acesso=None,
+        data_expiracao=novo_token.data_expiracao,
+        ativo=True,
+        created_at=novo_token.created_at
+    )
+
+
+# ============================================
+# STUDENT AUTHENTICATION ENDPOINT (PUBLIC)
+# ============================================
+
 @router.post("/auth/token", response_model=TokenAuthResponse)
 async def autenticar_por_token(
     auth_data: TokenAuthRequest,

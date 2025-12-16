@@ -34,10 +34,20 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Check if it's a student session before redirecting
+      const studentSession = localStorage.getItem('student_session');
+      
+      if (studentSession) {
+        // For student sessions, redirect to student login page instead
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('student_session');
+        window.location.href = '/saeb-acesso';
+      } else {
+        // For regular users, redirect to main login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -326,9 +336,20 @@ apiV2.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Check if it's a student session before redirecting
+      const studentSession = localStorage.getItem('student_session');
+      
+      if (studentSession) {
+        // For student sessions, redirect to student login page instead
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('student_session');
+        window.location.href = '/saeb-acesso';
+      } else {
+        // For regular users, redirect to main login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -421,6 +442,10 @@ export const saebV2API = {
   // Listar todos os tokens de uma participação
   listarTokens: (participacaoId: number) =>
     apiV2.get(`/saeb/participacoes/${participacaoId}/tokens`),
+
+  // Regenerar token de um aluno específico
+  regenerarToken: (tokenId: number) =>
+    apiV2.post(`/saeb/tokens/${tokenId}/regenerar`),
 
   // ============================================
   // TOKEN ACCESS - ALUNO (PUBLIC ENDPOINT)

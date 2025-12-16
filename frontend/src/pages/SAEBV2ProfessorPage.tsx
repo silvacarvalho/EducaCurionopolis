@@ -42,6 +42,7 @@ import {
   Print as PrintIcon,
   ContentCopy as CopyIcon,
   Assignment as AssignmentIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
@@ -261,6 +262,31 @@ const SAEBV2ProfessorPage: React.FC = () => {
     } catch (err) {
       console.error('Erro ao copiar token:', err);
       showNotification('Erro ao copiar token. Tente copiar manualmente: ' + token, 'error');
+    }
+  };
+
+  const handleRegenerarToken = async (tokenId: number, alunoNome: string) => {
+    if (!confirm(`Deseja realmente regenerar o token do aluno ${alunoNome}? O token anterior será invalidado.`)) {
+      return;
+    }
+
+    try {
+      setLoadingTokens(true);
+      const response = await saebV2API.regenerarToken(tokenId);
+      showNotification(`Token regenerado com sucesso para ${alunoNome}!`, 'success');
+      
+      // Reload tokens list
+      if (tokensData) {
+        await loadTokensForParticipacao(tokensData.participacao_id);
+      }
+    } catch (error: any) {
+      console.error('Erro ao regenerar token:', error);
+      showNotification(
+        error.response?.data?.detail || 'Erro ao regenerar token',
+        'error'
+      );
+    } finally {
+      setLoadingTokens(false);
     }
   };
 
@@ -1251,7 +1277,7 @@ const SAEBV2ProfessorPage: React.FC = () => {
                           <TableCell>Matrícula</TableCell>
                           <TableCell align="center">Token</TableCell>
                           <TableCell align="center">Status</TableCell>
-                          <TableCell align="center">Ação</TableCell>
+                          <TableCell align="center">Ações</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -1295,13 +1321,25 @@ const SAEBV2ProfessorPage: React.FC = () => {
                               )}
                             </TableCell>
                             <TableCell align="center">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleCopyToken(token.token)}
-                                title="Copiar token"
-                              >
-                                <CopyIcon fontSize="small" />
-                              </IconButton>
+                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleCopyToken(token.token)}
+                                  title="Copiar token"
+                                  color="primary"
+                                >
+                                  <CopyIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleRegenerarToken(token.id, token.aluno_nome)}
+                                  title="Regenerar token"
+                                  color="warning"
+                                  disabled={loadingTokens}
+                                >
+                                  <RefreshIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
                             </TableCell>
                           </TableRow>
                         ))}

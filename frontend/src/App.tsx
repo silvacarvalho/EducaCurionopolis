@@ -40,6 +40,7 @@ import SAEBV2DashboardPage from './pages/SAEBV2DashboardPage';
 import GestoresPage from './pages/GestoresPage';
 
 // Simple Protected Route for authenticated users only
+// Also accepts student sessions (token-based authentication)
 const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -47,11 +48,29 @@ const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children 
     return <Box>Carregando...</Box>;
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  // Check for regular user authentication
+  if (isAuthenticated) {
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
+  // Check for student session (token-based authentication)
+  const studentSession = localStorage.getItem('student_session');
+  const accessToken = localStorage.getItem('access_token');
+  
+  if (studentSession && accessToken) {
+    try {
+      // Validate that student session data is valid JSON
+      JSON.parse(studentSession);
+      return <>{children}</>;
+    } catch (e) {
+      // Invalid student session, clear it
+      localStorage.removeItem('student_session');
+      localStorage.removeItem('access_token');
+    }
+  }
+
+  // No valid authentication found, redirect to login
+  return <Navigate to="/login" replace />;
 };
 
 function App() {
