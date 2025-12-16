@@ -5,7 +5,7 @@ Handles descriptors, questions, simulados, student answers, and reports
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime, timedelta
 import openpyxl
 import io
@@ -23,6 +23,7 @@ from ..schemas import (
     DescritorSAEBCreate, DescritorSAEBUpdate, DescritorSAEBResponse,
     DescritorSAEBBulkImport, DescritorSAEBBulkImportResponse,
     QuestaoSAEBCreate, QuestaoSAEBUpdate, QuestaoSAEBResponse, QuestaoSAEBComDescritor,
+    QuestaoSAEBSimulado,
     SimuladoSAEBCreate, SimuladoSAEBUpdate, SimuladoSAEBResponse, SimuladoSAEBDetalhado,
     ParticipacaoSimuladoCreate, ParticipacaoSimuladoResponse,
     RespostaAlunoSAEBCreate, RespostaAlunoSAEBBulk, RespostaAlunoSAEBResponse,
@@ -34,7 +35,7 @@ from ..schemas import (
     LancamentoManualCreate, LancamentoManualBulkCreate
 )
 from ..auth import get_current_active_user, require_gestao_municipal
-from ..dependencies import get_current_professor, get_current_student_from_token
+from ..dependencies import get_current_professor, get_current_student_from_token, get_user_or_student
 
 router = APIRouter()
 
@@ -1033,15 +1034,16 @@ async def get_simulado(
     simulado_id: int,
     include_gabarito: bool = False,
     db: Session = Depends(get_db),
-    student_session: dict = Depends(get_current_student_from_token)
+    current_user_or_student: Union[Usuario, dict] = Depends(get_user_or_student)
 ):
-    """Get simulado by ID with questions - Student access only"""
-    # Validate that student is accessing their assigned simulado
-    if student_session["simulado_id"] != simulado_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Você não tem acesso a este simulado"
-        )
+    """Get simulado by ID with questions - Accessible by both users and students"""
+    # If student token, validate they can only access their assigned simulado
+    if isinstance(current_user_or_student, dict) and current_user_or_student.get("type") == "student_token":
+        if current_user_or_student["simulado_id"] != simulado_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem acesso a este simulado"
+            )
     
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
     if not simulado:
@@ -1057,37 +1059,54 @@ async def get_simulado(
     questoes_data = []
     for sq in simulado_questoes:
         q = sq.questao
+        
+        # Skip questions without descritor
+        if not q.descritor:
+            continue
+        
+        # Safely handle None values and convert enums
+        try:
+            disciplina_value = q.disciplina.value if q.disciplina else ""
+            bloco_value = q.bloco.value if q.bloco else 1
+        except Exception as e:
+            print(f"Erro ao processar questão {q.id}: {e}")
+            continue
+            
         questao_dict = {
             "id": q.id,
             "descritor_id": q.descritor_id,
-            "enunciado": q.enunciado,
-            "disciplina": q.disciplina.value,
-            "bloco": q.bloco.value,
-            "ano_escolar": q.ano_escolar,
-            "alternativa_a": q.alternativa_a,
-            "alternativa_b": q.alternativa_b,
-            "alternativa_c": q.alternativa_c,
-            "alternativa_d": q.alternativa_d,
-            "alternativa_e": q.alternativa_e,
+            "enunciado": q.enunciado or "",
+            "disciplina": disciplina_value,
+            "bloco": bloco_value,
+            "ano_escolar": q.ano_escolar or 0,
+            "alternativa_a": q.alternativa_a or "",
+            "alternativa_b": q.alternativa_b or "",
+            "alternativa_c": q.alternativa_c or "",
+            "alternativa_d": q.alternativa_d or "",
+            "alternativa_e": q.alternativa_e or "",
             "ativo": q.ativo,
             "created_at": q.created_at,
             "descritor": {
                 "id": q.descritor.id,
-                "disciplina": q.descritor.disciplina.value,
-                "ano_escolar": q.descritor.ano_escolar,
-                "codigo": q.descritor.codigo,
-                "descricao": q.descritor.descricao,
+                "disciplina": q.descritor.disciplina.value if q.descritor.disciplina else "",
+                "ano_escolar": q.descritor.ano_escolar or 0,
+                "codigo": q.descritor.codigo or "",
+                "descricao": q.descritor.descricao or "",
                 "ativo": q.descritor.ativo,
                 "created_at": q.descritor.created_at
             }
         }
 
-        # Only include gabarito if explicitly requested
-        # Students should never see gabarito before submission
-        if include_gabarito:
-            questao_dict["gabarito"] = q.gabarito
+        # Determine if gabarito should be shown
+        # Users (gestores, professores) can always see gabarito if requested
+        # Students never see gabarito unless explicitly allowed
+        is_student = isinstance(current_user_or_student, dict) and current_user_or_student.get("type") == "student_token"
+        
+        if include_gabarito and not is_student:
+            # Se gabarito está vazio ou None, retornar None
+            questao_dict["gabarito"] = q.gabarito if q.gabarito and q.gabarito.strip() else None
         else:
-            questao_dict["gabarito"] = ""  # Hide gabarito from students
+            questao_dict["gabarito"] = None  # Hide gabarito from students
 
         questoes_data.append(questao_dict)
 

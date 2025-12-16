@@ -221,16 +221,16 @@ const SAEBV2SimuladosPage: React.FC = () => {
 
         const newQuestoes: QuestoesPorBloco = {
           portugues_bloco1: questoesData
-            .filter((q: any) => q.disciplina === 'portugues' && (q.bloco === 1 || q.bloco === '1'))
+            .filter((q: any) => q.disciplina === 'portugues' && (parseInt(q.bloco) === 1 || q.bloco === 1 || q.bloco === '1'))
             .map((q: any) => q.id),
           portugues_bloco2: questoesData
-            .filter((q: any) => q.disciplina === 'portugues' && (q.bloco === 2 || q.bloco === '2'))
+            .filter((q: any) => q.disciplina === 'portugues' && (parseInt(q.bloco) === 2 || q.bloco === 2 || q.bloco === '2'))
             .map((q: any) => q.id),
           matematica_bloco1: questoesData
-            .filter((q: any) => q.disciplina === 'matematica' && (q.bloco === 1 || q.bloco === '1'))
+            .filter((q: any) => q.disciplina === 'matematica' && (parseInt(q.bloco) === 1 || q.bloco === 1 || q.bloco === '1'))
             .map((q: any) => q.id),
           matematica_bloco2: questoesData
-            .filter((q: any) => q.disciplina === 'matematica' && (q.bloco === 2 || q.bloco === '2'))
+            .filter((q: any) => q.disciplina === 'matematica' && (parseInt(q.bloco) === 2 || q.bloco === 2 || q.bloco === '2'))
             .map((q: any) => q.id),
         };
         setQuestoesSelecionadas(newQuestoes);

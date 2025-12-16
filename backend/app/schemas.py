@@ -658,6 +658,25 @@ class QuestaoSAEBComDescritor(QuestaoSAEBResponse):
     descritor: DescritorSAEBResponse
 
 
+# Questao para Simulado (gabarito opcional para alunos)
+class QuestaoSAEBSimulado(BaseSchema):
+    id: int
+    descritor_id: int
+    enunciado: str
+    disciplina: str
+    bloco: int
+    ano_escolar: int
+    alternativa_a: str
+    alternativa_b: str
+    alternativa_c: str
+    alternativa_d: str
+    alternativa_e: str
+    gabarito: Optional[str] = Field(None, pattern="^[A-E]$")  # Opcional para alunos
+    ativo: bool
+    created_at: datetime
+    descritor: DescritorSAEBResponse
+
+
 # Configuracao SAEB Schemas
 class ConfiguracaoSAEBBase(BaseSchema):
     ano_escolar: int = Field(..., ge=5, le=9)
@@ -712,7 +731,7 @@ class SimuladoSAEBResponse(SimuladoSAEBBase):
 
 
 class SimuladoSAEBDetalhado(SimuladoSAEBResponse):
-    questoes: List[QuestaoSAEBComDescritor]
+    questoes: List['QuestaoSAEBSimulado']  # Use o schema com gabarito opcional
 
 
 # Participacao Schemas

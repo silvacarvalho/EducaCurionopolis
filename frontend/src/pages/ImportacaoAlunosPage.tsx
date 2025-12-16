@@ -77,14 +77,22 @@ const ImportacaoAlunosPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && response.data.length === 0) {
-        setError('Nenhuma turma cadastrada. Cadastre turmas antes de importar alunos.');
+      console.log('Turmas carregadas:', response.data); // Debug
+      
+      // Filtrar apenas turmas ativas
+      const turmasAtivas = response.data ? response.data.filter((t: Turma) => t.ativo) : [];
+      
+      if (turmasAtivas.length === 0) {
+        setError('Nenhuma turma ativa cadastrada. Cadastre turmas antes de importar alunos.');
+      } else {
+        setError(''); // Limpar erro se houver turmas
       }
       
-      setTurmas(response.data);
+      setTurmas(turmasAtivas);
     } catch (err: any) {
       console.error('Erro ao carregar turmas:', err);
       setError(err.response?.data?.detail || 'Erro ao carregar turmas. Verifique se há turmas cadastradas.');
+      setTurmas([]); // Garantir que turmas seja um array vazio em caso de erro
     } finally {
       setLoading(false);
     }

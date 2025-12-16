@@ -245,3 +245,85 @@ async def get_current_student_from_token(
             detail="Token de acesso inválido ou expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+async def get_user_or_student(
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db)
+) -> Union[Usuario, dict]:
+    """
+    Dependency that accepts BOTH regular users AND student tokens.
+    
+    Returns:
+    - Usuario object for regular users (gestores, professores, etc.)
+    - dict with keys: aluno_id, simulado_id, participacao_id, type='student_token' for students
+    
+    Use this for endpoints that both users and students need to access (e.g., view simulado details).
+    """
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Autenticação necessária",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    settings = get_settings()
+    
+    try:
+        # Decode token
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        
+        # Check token type
+        token_type = payload.get("type")
+        
+        if token_type == "student_token":
+            # Student token - return session data
+            aluno_id = payload.get("aluno_id")
+            simulado_id = payload.get("simulado_id")
+            participacao_id = payload.get("participacao_id")
+            
+            if not aluno_id or not simulado_id or not participacao_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token de acesso incompleto"
+                )
+            
+            # Verify student exists
+            aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
+            if not aluno:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Aluno não encontrado"
+                )
+            
+            return {
+                "type": "student_token",
+                "aluno_id": aluno_id,
+                "simulado_id": simulado_id,
+                "participacao_id": participacao_id
+            }
+        else:
+            # Regular user token
+            email = payload.get("sub")
+            if not email:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token inválido"
+                )
+            
+            # Get user from database
+            usuario = db.query(Usuario).filter(Usuario.email == email).first()
+            if not usuario or not usuario.ativo:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Usuário não encontrado ou inativo"
+                )
+            
+            return usuario
+        
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido ou expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
