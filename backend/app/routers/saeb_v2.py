@@ -5,7 +5,7 @@ Handles descriptors, questions, simulados, student answers, and reports
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime, timedelta
 import openpyxl
 import io
@@ -34,7 +34,7 @@ from ..schemas import (
     LancamentoManualCreate, LancamentoManualBulkCreate
 )
 from ..auth import get_current_active_user, require_gestao_municipal
-from ..dependencies import get_current_professor
+from ..dependencies import get_current_professor, get_current_user_or_student
 
 router = APIRouter()
 
@@ -1033,7 +1033,7 @@ async def get_simulado(
     simulado_id: int,
     include_gabarito: bool = False,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
 ):
     """Get simulado by ID with questions"""
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
@@ -1169,7 +1169,7 @@ async def update_simulado(
 async def listar_questoes_simulado(
     simulado_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
 ):
     """Lista todas as questões de um simulado específico"""
     # Verificar se simulado existe
@@ -1626,14 +1626,22 @@ async def submit_resposta(
 async def submit_respostas_bulk(
     bulk_data: RespostaAlunoSAEBBulk,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
 ):
     """
     Student submits all answers at once
     More efficient than submitting one by one
     """
+    # Get aluno_id based on authentication type
+    if isinstance(current_user_or_student, dict):
+        # Student token authentication
+        aluno_id = current_user_or_student["aluno_id"]
+    else:
+        # Regular user authentication
+        aluno_id = current_user_or_student.id
+    
     # Get aluno record
-    aluno = db.query(Aluno).filter(Aluno.id == current_user.id).first()
+    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
     if not aluno:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1721,10 +1729,16 @@ async def submit_respostas_bulk(
 async def get_minhas_respostas(
     simulado_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
 ):
     """Get student's answers for a simulado"""
-    aluno = db.query(Aluno).filter(Aluno.id == current_user.id).first()
+    # Get aluno_id based on authentication type
+    if isinstance(current_user_or_student, dict):
+        aluno_id = current_user_or_student["aluno_id"]
+    else:
+        aluno_id = current_user_or_student.id
+    
+    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
     if not aluno:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
 
@@ -1744,10 +1758,16 @@ async def get_minhas_respostas(
 async def get_meu_resultado(
     simulado_id: int,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user_or_student: Union[Usuario, dict] = Depends(get_current_user_or_student)
 ):
     """Get student's result for a simulado"""
-    aluno = db.query(Aluno).filter(Aluno.id == current_user.id).first()
+    # Get aluno_id based on authentication type
+    if isinstance(current_user_or_student, dict):
+        aluno_id = current_user_or_student["aluno_id"]
+    else:
+        aluno_id = current_user_or_student.id
+    
+    aluno = db.query(Aluno).filter(Aluno.id == aluno_id).first()
     if not aluno:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
 
