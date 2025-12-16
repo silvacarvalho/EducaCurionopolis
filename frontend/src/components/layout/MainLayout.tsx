@@ -199,17 +199,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, title, headerExtra })
               />
             </Box>
 
-            {/* Notifications */}
-            <IconButton
-              size="large"
-              color="inherit"
-              onClick={handleNotifications}
-              sx={{ mr: 1 }}
-            >
-              <Badge badgeContent={unreadMessages} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+            {/* Notifications - Hidden for students */}
+            {!localStorage.getItem('student_session') && (
+              <IconButton
+                size="large"
+                color="inherit"
+                onClick={handleNotifications}
+                sx={{ mr: 1 }}
+              >
+                <Badge badgeContent={unreadMessages} color="error">
+                  <NotificationsIcon />
+                </Badge>
+              </IconButton>
+            )}
 
 
             {/* User Menu */}

@@ -577,6 +577,7 @@ export interface ResultadoSimuladoAluno {
   finalizado: boolean;
   created_at: string;
   aluno?: Aluno;
+  simulado?: SimuladoSAEB;
 }
 
 export interface RelatorioSimulado {

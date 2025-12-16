@@ -786,6 +786,7 @@ class ResultadoSimuladoAlunoResponse(BaseSchema):
     data_finalizacao: Optional[datetime]
     created_at: datetime
     aluno: Optional[AlunoResponse] = None
+    simulado: Optional[SimuladoSAEBResponse] = None
 
 
 class ResultadoSimuladoDetalhado(ResultadoSimuladoAlunoResponse):

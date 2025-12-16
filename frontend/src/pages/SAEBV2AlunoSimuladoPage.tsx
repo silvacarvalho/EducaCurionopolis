@@ -52,6 +52,7 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
   const [finished, setFinished] = useState(false);
   const [resultado, setResultado] = useState<ResultadoSimuladoAluno | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [showReview, setShowReview] = useState(false);
 
   useEffect(() => {
     if (simuladoId) {
@@ -154,6 +155,97 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
   }
 
   if (finished && resultado) {
+    // Modo de revisão: mostrar questões com gabarito
+    if (showReview) {
+      return (
+        <Box sx={{ pb: { xs: 10, sm: 4 } }}>
+          <AppBarWithUserMenu title={`Revisão: ${simuladoNome}`} showBackButton />
+
+          <Container maxWidth="lg" sx={{ mt: { xs: 2, sm: 4 }, mb: 4, px: { xs: 2, sm: 3 } }}>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Revise suas respostas. Questões corretas estão em verde e erradas em vermelho.
+            </Alert>
+
+            {questoes.map((sq, index) => {
+              const minhaResposta = respostas[sq.id];
+              const gabarito = sq.questao?.gabarito;
+              const acertou = minhaResposta === gabarito;
+
+              return (
+                <Paper
+                  key={sq.id}
+                  sx={{
+                    p: { xs: 2, sm: 3 },
+                    mb: 2,
+                    border: `2px solid ${acertou ? '#4caf50' : '#f44336'}`,
+                    backgroundColor: acertou ? 'rgba(76, 175, 80, 0.05)' : 'rgba(244, 67, 54, 0.05)'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                      Questão {index + 1}
+                    </Typography>
+                    <Chip
+                      label={acertou ? 'Acertou' : 'Errou'}
+                      color={acertou ? 'success' : 'error'}
+                      size="small"
+                    />
+                  </Box>
+
+                  <Typography variant="body1" sx={{ mb: 3, whiteSpace: 'pre-wrap', fontSize: { xs: '0.95rem', sm: '1rem' }, lineHeight: 1.6 }}>
+                    {sq.questao?.enunciado}
+                  </Typography>
+
+                  <Box>
+                    {['A', 'B', 'C', 'D', 'E'].map((letter) => {
+                      const alternativeKey = `alternativa_${letter.toLowerCase()}` as keyof typeof sq.questao;
+                      const alternativeText = sq.questao?.[alternativeKey] ?? '';
+                      const isCorrect = letter === gabarito;
+                      const isUserAnswer = letter === minhaResposta;
+
+                      return (
+                        <Box
+                          key={letter}
+                          sx={{
+                            p: 1.5,
+                            mb: 1,
+                            borderRadius: 1,
+                            backgroundColor: isCorrect
+                              ? 'rgba(76, 175, 80, 0.15)'
+                              : isUserAnswer && !isCorrect
+                              ? 'rgba(244, 67, 54, 0.15)'
+                              : 'transparent',
+                            border: `2px solid ${isCorrect ? '#4caf50' : isUserAnswer && !isCorrect ? '#f44336' : 'transparent'}`,
+                            fontWeight: isCorrect || isUserAnswer ? 'bold' : 'normal',
+                          }}
+                        >
+                          <Typography sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                            {letter}) {alternativeText}
+                            {isCorrect && ' ✓ (Gabarito)'}
+                            {isUserAnswer && !isCorrect && ' ✗ (Sua resposta)'}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Paper>
+              );
+            })}
+
+            <Button
+              variant="contained"
+              onClick={() => setShowReview(false)}
+              sx={{ mt: 2 }}
+              fullWidth
+            >
+              Voltar ao Resultado
+            </Button>
+          </Container>
+        </Box>
+      );
+    }
+
+    // Tela de resultado padrão
     return (
       <Box>
         <AppBarWithUserMenu title="Resultado do Simulado" showBackButton />
@@ -204,10 +296,26 @@ const SAEBV2AlunoSimuladoPage: React.FC = () => {
                 </Grid>
               </Grid>
 
+              {/* Botão para ver gabarito - só disponível se simulado encerrado */}
+              {resultado.simulado?.status === 'encerrado' ? (
+                <Button
+                  variant="outlined"
+                  onClick={() => setShowReview(true)}
+                  sx={{ mt: 3, py: { xs: 1.5, sm: 1 }, px: { xs: 4, sm: 3 } }}
+                  fullWidth
+                >
+                  Ver Questões com Gabarito
+                </Button>
+              ) : (
+                <Alert severity="info" sx={{ mt: 3 }}>
+                  O gabarito estará disponível após o encerramento do simulado.
+                </Alert>
+              )}
+
               <Button
                 variant="contained"
                 onClick={() => navigate('/saeb-v2/aluno')}
-                sx={{ mt: 4, py: { xs: 1.5, sm: 1 }, px: { xs: 4, sm: 3 } }}
+                sx={{ mt: 2, py: { xs: 1.5, sm: 1 }, px: { xs: 4, sm: 3 } }}
                 fullWidth
               >
                 Voltar para Simulados

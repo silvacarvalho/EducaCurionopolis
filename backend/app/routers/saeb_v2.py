@@ -1206,6 +1206,17 @@ async def listar_questoes_simulado(
             detail="Você não tem acesso a este simulado"
         )
     
+    # Get aluno_id from student token
+    aluno_id = student_session["aluno_id"]
+    
+    # Verificar se aluno finalizou o simulado
+    resultado_aluno = db.query(ResultadoSimuladoAluno).filter(
+        ResultadoSimuladoAluno.simulado_id == simulado_id,
+        ResultadoSimuladoAluno.aluno_id == aluno_id
+    ).first()
+    
+    show_gabarito = resultado_aluno is not None and resultado_aluno.finalizado
+    
     # Verificar se simulado existe
     simulado = db.query(SimuladoSAEB).filter(SimuladoSAEB.id == simulado_id).first()
     if not simulado:
@@ -1232,8 +1243,13 @@ async def listar_questoes_simulado(
                     "disciplina": questao.disciplina,
                     "bloco": questao.bloco,
                     "ano_escolar": questao.ano_escolar,
-                    "gabarito": questao.gabarito,
-                    "ativo": questao.ativo,  # Incluir status ativo da questão
+                    "gabarito": questao.gabarito if show_gabarito else None,  # Só mostra gabarito se finalizou
+                    "ativo": questao.ativo,
+                    "alternativa_a": questao.alternativa_a,
+                    "alternativa_b": questao.alternativa_b,
+                    "alternativa_c": questao.alternativa_c,
+                    "alternativa_d": questao.alternativa_d,
+                    "alternativa_e": questao.alternativa_e,
                     "descritor": {
                         "id": descritor.id if descritor else None,
                         "codigo": descritor.codigo if descritor else None,
@@ -1808,7 +1824,9 @@ async def get_meu_resultado(
     if not aluno:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
 
-    resultado = db.query(ResultadoSimuladoAluno).filter(
+    resultado = db.query(ResultadoSimuladoAluno).options(
+        joinedload(ResultadoSimuladoAluno.simulado)
+    ).filter(
         ResultadoSimuladoAluno.simulado_id == simulado_id,
         ResultadoSimuladoAluno.aluno_id == aluno.id
     ).first()
