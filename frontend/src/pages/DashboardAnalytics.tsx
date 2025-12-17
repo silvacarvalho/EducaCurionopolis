@@ -58,7 +58,6 @@ import {
   ExpandMore,
   Close,
   Dashboard,
-  Business,
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -119,13 +118,6 @@ interface DashboardStats {
     bimestre: number;
     label: string;
     media: number;
-  }>;
-  top_escolas: Array<{
-    id: number;
-    nome: string;
-    turmas: number;
-    alunos: number;
-    media_saeb: number;
   }>;
 }
 
@@ -498,29 +490,6 @@ const DashboardAnalytics: React.FC = () => {
             <Dashboard sx={{ fontSize: 18 }} />
             Visão Geral
           </Box>
-          <Box
-            onClick={() => setTabValue(1)}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 2.5,
-              py: 1.25,
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              transition: 'all 0.2s',
-              color: tabValue === 1 ? 'white' : '#64748b',
-              backgroundColor: tabValue === 1 ? '#3b82f6' : 'transparent',
-              '&:hover': {
-                backgroundColor: tabValue === 1 ? '#3b82f6' : '#f1f5f9',
-              },
-            }}
-          >
-            <Business sx={{ fontSize: 18 }} />
-            Por Escola
-          </Box>
         </Box>
 
         {tabValue === 0 && stats && (
@@ -785,168 +754,6 @@ const DashboardAnalytics: React.FC = () => {
                   </Grid>
                 ))}
             </Grid>
-          </>
-        )}
-
-        {tabValue === 1 && stats && (
-          <>
-            {/* Tabela de Escolas */}
-            <Paper sx={{ 
-              borderRadius: '16px', 
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-              overflow: 'hidden'
-            }}>
-              <Box sx={{ 
-                p: { xs: 2, sm: 3 }, 
-                borderBottom: '1px solid #f1f5f9',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <Typography variant="h6" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <School sx={{ color: '#3b82f6', fontSize: 20 }} />
-                  Desempenho por Escola
-                </Typography>
-                {stats.top_escolas.length > 0 && (
-                  <Button 
-                    size="small" 
-                    onClick={() => navigate('/escolas')}
-                    sx={{ 
-                      color: '#3b82f6',
-                      fontWeight: 500,
-                      fontSize: '0.875rem',
-                      '&:hover': { textDecoration: 'underline', background: 'transparent' }
-                    }}
-                  >
-                    Ver todas →
-                  </Button>
-                )}
-              </Box>
-              
-              {stats.top_escolas.length > 0 ? (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                        <TableCell sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Escola</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Turmas</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Alunos</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Média SAEB</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {stats.top_escolas.map((escola) => (
-                        <TableRow
-                          key={escola.id}
-                          hover
-                          sx={{ 
-                            cursor: 'pointer',
-                            transition: 'background 0.2s',
-                            '&:hover': { bgcolor: '#f8fafc' },
-                            '& td': { borderBottom: '1px solid #f1f5f9' }
-                          }}
-                          onClick={() => navigate(`/escolas`)}
-                        >
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                              <Box sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '10px',
-                                background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                flexShrink: 0
-                              }}>
-                                <School sx={{ fontSize: 18 }} />
-                              </Box>
-                              <Box>
-                                <Typography fontWeight="600" color="#0f172a" fontSize="0.875rem">{escola.nome}</Typography>
-                              </Box>
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Typography fontSize="0.875rem">{escola.turmas}</Typography>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Typography fontSize="0.875rem">{escola.alunos}</Typography>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                              <Box sx={{ 
-                                width: 100, 
-                                height: 8, 
-                                bgcolor: '#e2e8f0', 
-                                borderRadius: '4px',
-                                overflow: 'hidden'
-                              }}>
-                                <Box sx={{ 
-                                  width: `${escola.media_saeb}%`, 
-                                  height: '100%', 
-                                  borderRadius: '4px',
-                                  background: escola.media_saeb >= 70 
-                                    ? 'linear-gradient(90deg, #22c55e, #16a34a)' 
-                                    : escola.media_saeb >= 50 
-                                    ? 'linear-gradient(90deg, #f97316, #ea580c)' 
-                                    : 'linear-gradient(90deg, #ef4444, #dc2626)'
-                                }} />
-                              </Box>
-                              <Typography variant="body2" fontWeight="500" fontSize="0.875rem">
-                                {escola.media_saeb}%
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell align="center">
-                            <Chip
-                              label={escola.media_saeb >= 70 ? 'Bom' : escola.media_saeb >= 50 ? 'Regular' : 'Atenção'}
-                              size="small"
-                              sx={{
-                                fontWeight: 500,
-                                fontSize: '0.75rem',
-                                bgcolor: escola.media_saeb >= 70 ? '#dcfce7' : escola.media_saeb >= 50 ? '#fef3c7' : '#fee2e2',
-                                color: escola.media_saeb >= 70 ? '#16a34a' : escola.media_saeb >= 50 ? '#d97706' : '#dc2626',
-                                borderRadius: '20px'
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                  <School sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Nenhuma escola encontrada
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Não há dados de escolas disponíveis para o ano letivo {anoLetivo}.
-                  </Typography>
-                  <Alert severity="info" sx={{ maxWidth: 500, mx: 'auto', textAlign: 'left' }}>
-                    <Typography variant="body2">
-                      <strong>Possíveis causas:</strong>
-                    </Typography>
-                    <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-                      <li>As escolas ainda não possuem turmas cadastradas para {anoLetivo}</li>
-                      <li>Não há alunos matriculados nas turmas</li>
-                      <li>Seu perfil de acesso não permite visualizar esta informação</li>
-                    </ul>
-                  </Alert>
-                  <Button 
-                    variant="contained" 
-                    onClick={() => navigate('/escolas')} 
-                    sx={{ mt: 2 }}
-                    startIcon={<School />}
-                  >
-                    Gerenciar Escolas
-                  </Button>
-                </Box>
-              )}
-            </Paper>
           </>
         )}
       </Box>
