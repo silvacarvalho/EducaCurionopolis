@@ -349,7 +349,7 @@ async def get_dashboard_stats(
                 alertas.append({
                     'tipo': 'info',
                     'titulo': 'Diagnósticos pendentes',
-                    'descricao': f'{alunos_sem_diagnostico} aluno(s) aguardam',
+                    'descricao': f'{alunos_sem_diagnostico} diagnósticos aguardam aplicação',
                     'icone': 'schedule',
                     'link': '/diagnostico-avaliar',
                     'acao': 'Aplicar diagnóstico'
