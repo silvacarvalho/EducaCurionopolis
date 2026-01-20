@@ -71,6 +71,7 @@ import {
   Pie,
   Cell,
   Legend,
+  LabelList,
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { dashboardAPI } from '../services/api';
@@ -117,7 +118,14 @@ interface DashboardStats {
   desempenho_bimestre: Array<{
     bimestre: number;
     label: string;
-    media: number;
+    abaixo_media: number;
+    na_media: number;
+    acima_media: number;
+    qtd_abaixo_media: number;
+    qtd_na_media: number;
+    qtd_acima_media: number;
+    media_geral: number;
+    total_alunos: number;
   }>;
 }
 
@@ -629,16 +637,66 @@ const DashboardAnalytics: React.FC = () => {
                     }}
                   >
                     <Assessment color="primary" />
-                    Desempenho por Bimestre
+                    Desempenho por Bimestre (%)
                   </Typography>
                   <Box sx={{ height: { xs: 220, sm: 280 } }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={stats.desempenho_bimestre}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                        <YAxis domain={[0, 10]} tick={{ fontSize: 12 }} />
-                        <Tooltip formatter={(value) => [`${value}`, 'Média']} />
-                        <Bar dataKey="media" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} label={{ value: '%', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip 
+                          formatter={(value: number, name: string, props: any) => {
+                            const qtdKey = name === 'Abaixo da Média' ? 'qtd_abaixo_media' : 
+                                          name === 'Na Média' ? 'qtd_na_media' : 'qtd_acima_media';
+                            const qtd = props.payload[qtdKey];
+                            return [`${value}% (${qtd} aluno${qtd !== 1 ? 's' : ''})`, name];
+                          }}
+                          labelFormatter={(label) => `${label}`}
+                        />
+                        <Legend 
+                          wrapperStyle={{ fontSize: '12px' }}
+                          iconType="rect"
+                        />
+                        <Bar 
+                          dataKey="abaixo_media" 
+                          name="Abaixo da Média" 
+                          fill="#ef4444" 
+                          radius={[4, 4, 0, 0]}
+                        >
+                          <LabelList 
+                            dataKey="qtd_abaixo_media" 
+                            position="center"
+                            style={{ fill: 'white', fontSize: '18px', fontWeight: 'bold' }}
+                            formatter={(value: number) => value > 0 ? value : ''}
+                          />
+                        </Bar>
+                        <Bar 
+                          dataKey="na_media" 
+                          name="Na Média" 
+                          fill="#f59e0b" 
+                          radius={[4, 4, 0, 0]}
+                        >
+                          <LabelList 
+                            dataKey="qtd_na_media" 
+                            position="center"
+                            style={{ fill: 'white', fontSize: '18px', fontWeight: 'bold' }}
+                            formatter={(value: number) => value > 0 ? value : ''}
+                          />
+                        </Bar>
+                        <Bar 
+                          dataKey="acima_media" 
+                          name="Acima da Média" 
+                          fill="#22c55e" 
+                          radius={[4, 4, 0, 0]}
+                        >
+                          <LabelList 
+                            dataKey="qtd_acima_media" 
+                            position="center"
+                            style={{ fill: 'white', fontSize: '18px', fontWeight: 'bold' }}
+                            formatter={(value: number) => value > 0 ? value : ''}
+                          />
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </Box>

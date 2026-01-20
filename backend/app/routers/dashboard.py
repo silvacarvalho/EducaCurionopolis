@@ -395,27 +395,74 @@ async def get_dashboard_stats(
         desempenho_bimestre = []
         
         for bim in [1, 2, 3, 4]:
-            media_bimestre = None
             try:
-                query_bimestre = db.query(func.avg(AvaliacaoAgregada.media_turma)).filter(
+                # Query para somar quantidades de cada nível de desempenho
+                query_bimestre = db.query(
+                    func.sum(AvaliacaoAgregada.qtd_abaixo_media).label('total_abaixo'),
+                    func.sum(AvaliacaoAgregada.qtd_na_media).label('total_na_media'),
+                    func.sum(AvaliacaoAgregada.qtd_acima_media).label('total_acima')
+                ).filter(
                     AvaliacaoAgregada.ano_letivo == ano_letivo,
                     AvaliacaoAgregada.bimestre == bim
                 )
+                
+                # Aplicar filtros de escopo (escola ou turma)
                 if turma_ids is not None:
                     query_bimestre = query_bimestre.filter(AvaliacaoAgregada.turma_id.in_(turma_ids))
                 elif escola_ids is not None:
                     query_bimestre = query_bimestre.join(Turma, AvaliacaoAgregada.turma_id == Turma.id).filter(
                         Turma.escola_id.in_(escola_ids)
                     )
-                media_bimestre = query_bimestre.scalar()
-            except Exception:
-                pass
-            
-            desempenho_bimestre.append({
-                'bimestre': bim,
-                'label': f'{bim}º Bim',
-                'media': round(float(media_bimestre), 1) if media_bimestre else 0.0
-            })
+                
+                resultado = query_bimestre.first()
+                
+                total_abaixo = resultado.total_abaixo or 0
+                total_na_media = resultado.total_na_media or 0
+                total_acima = resultado.total_acima or 0
+                
+                # Calcular média de cada categoria (assumindo: abaixo=5, na_media=7, acima=9)
+                # Ou simplesmente retornar as quantidades para o frontend calcular percentuais
+                total_alunos = total_abaixo + total_na_media + total_acima
+                
+                # Calcular percentual de cada categoria
+                perc_abaixo = round((total_abaixo / total_alunos * 100), 1) if total_alunos > 0 else 0.0
+                perc_na_media = round((total_na_media / total_alunos * 100), 1) if total_alunos > 0 else 0.0
+                perc_acima = round((total_acima / total_alunos * 100), 1) if total_alunos > 0 else 0.0
+                
+                # Calcular média geral ponderada (abaixo=5, na_media=7, acima=9)
+                media_geral = 0.0
+                if total_alunos > 0:
+                    media_geral = round(
+                        (total_abaixo * 5.0 + total_na_media * 7.0 + total_acima * 9.0) / total_alunos,
+                        1
+                    )
+                
+                desempenho_bimestre.append({
+                    'bimestre': bim,
+                    'label': f'{bim}º Bim',
+                    'abaixo_media': perc_abaixo,
+                    'na_media': perc_na_media,
+                    'acima_media': perc_acima,
+                    'qtd_abaixo_media': total_abaixo,
+                    'qtd_na_media': total_na_media,
+                    'qtd_acima_media': total_acima,
+                    'media_geral': media_geral,
+                    'total_alunos': total_alunos
+                })
+            except Exception as e:
+                logger.error(f"Erro ao calcular desempenho bimestre {bim}: {e}")
+                desempenho_bimestre.append({
+                    'bimestre': bim,
+                    'label': f'{bim}º Bim',
+                    'abaixo_media': 0.0,
+                    'na_media': 0.0,
+                    'acima_media': 0.0,
+                    'qtd_abaixo_media': 0,
+                    'qtd_na_media': 0,
+                    'qtd_acima_media': 0,
+                    'media_geral': 0.0,
+                    'total_alunos': 0
+                })
         
         # ============================================
         # TOP 5 ESCOLAS (por média SAEB) - Apenas para gestão municipal
