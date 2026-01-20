@@ -342,6 +342,10 @@ const DashboardAnalytics: React.FC = () => {
     }
   };
 
+  // Gera lista de anos dinamicamente (ano corrente até 2021)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 2021 + 1 }, (_, i) => currentYear - i);
+
   // Função para abrir modais de alerta
   const handleOpenAlertModal = async (modalType: string) => {
     setModalLoading(true);
@@ -438,9 +442,9 @@ const DashboardAnalytics: React.FC = () => {
               value={anoLetivo}
               onChange={(e) => setAnoLetivo(e.target.value as number)}
             >
-              <MenuItem value={2025}>2025</MenuItem>
-              <MenuItem value={2024}>2024</MenuItem>
-              <MenuItem value={2023}>2023</MenuItem>
+              {years.map((year) => (
+                <MenuItem key={year} value={year}>{year}</MenuItem>
+              ))}
             </Select>
           </FormControl>
           <IconButton onClick={loadDashboardStats} disabled={loading}>
